@@ -391,6 +391,89 @@ textarea {
   background: #f2c66a;
 }
 
+.diagnostics-panel {
+  display: grid;
+  gap: 12px;
+  border-radius: 26px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(232, 243, 232, 0.9), rgba(255, 253, 247, 0.92)),
+    radial-gradient(circle at 10% 0%, rgba(47, 111, 94, 0.16), transparent 24%);
+}
+
+.diagnostics-empty,
+.diagnostic-card {
+  border-radius: 20px;
+  padding: 14px 16px;
+  background: rgba(255, 253, 247, 0.84);
+}
+
+.diagnostics-empty {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.diagnostic-card {
+  display: grid;
+  gap: 10px;
+}
+
+.diagnostic-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.diagnostic-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.58;
+}
+
+.diagnostic-suggestion {
+  color: var(--leaf-dark);
+  line-height: 1.5;
+}
+
+.diagnostic-priority {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.diagnostic-priority.high {
+  color: #fff;
+  background: var(--danger);
+}
+
+.diagnostic-priority.medium {
+  color: #6b3d08;
+  background: var(--sun);
+}
+
+.diagnostic-priority.low {
+  color: #1f5a4d;
+  background: #dcefe4;
+}
+
+.diagnostic-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diagnostic-evidence span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--muted);
+  background: #f5ecd9;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .route-card {
   border: 2px solid transparent;
   border-radius: 26px;

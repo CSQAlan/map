@@ -29,6 +29,8 @@ const mapLoading = ref(false);
 const errorMessage = ref('');
 const actionStatus = ref('尚未开始导航，请先确认路线。');
 const mapFeatures = ref([]);
+const diagnosticSuggestions = ref([]);
+const diagnosticsLoading = ref(false);
 const collectionSegments = ref([]);
 const pendingCollectionRecords = ref([]);
 const collectionLoading = ref(false);
@@ -105,6 +107,7 @@ const nextStepText = computed(() => {
 
 onMounted(() => {
   fetchMapData();
+  fetchDiagnostics();
   fetchCollectionSegments();
   fetchPendingCollectionRecords();
 });
@@ -150,6 +153,12 @@ function isRouteFeature(feature) {
   return routeSegmentCodes.value.has(feature.properties?.segment_code);
 }
 
+function priorityLabel(priority) {
+  if (priority === 'HIGH') return '高优先级';
+  if (priority === 'MEDIUM') return '中优先级';
+  return '低优先级';
+}
+
 async function fetchMapData() {
   mapLoading.value = true;
   try {
@@ -160,6 +169,19 @@ async function fetchMapData() {
     mapFeatures.value = [];
   } finally {
     mapLoading.value = false;
+  }
+}
+
+async function fetchDiagnostics() {
+  diagnosticsLoading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/diagnostics/segments?limit=5`);
+    const payload = await response.json().catch(() => ({}));
+    diagnosticSuggestions.value = response.ok ? payload.suggestions ?? [] : [];
+  } catch {
+    diagnosticSuggestions.value = [];
+  } finally {
+    diagnosticsLoading.value = false;
   }
 }
 
@@ -492,6 +514,41 @@ function sendSos() {
                 {{ reason }}
               </li>
             </ul>
+          </article>
+        </section>
+
+        <section class="diagnostics-panel">
+          <div class="panel-heading compact">
+            <p class="section-kicker">适老化诊断</p>
+            <h2>{{ diagnosticsLoading ? '正在生成改造建议' : '校园路段改造建议' }}</h2>
+          </div>
+          <div v-if="diagnosticsLoading" class="diagnostics-empty">
+            正在读取路段数据并生成适老化诊断建议...
+          </div>
+          <div v-else-if="!diagnosticSuggestions.length" class="diagnostics-empty">
+            暂未发现高优先级改造建议，后续可通过现场采集继续补充数据。
+          </div>
+          <article
+            v-for="item in diagnosticSuggestions"
+            :key="`${item.segment_code}-${item.issue_type}`"
+            class="diagnostic-card"
+          >
+            <div class="diagnostic-card-top">
+              <strong>{{ item.segment_name || item.segment_code }}</strong>
+              <span :class="['diagnostic-priority', item.priority.toLowerCase()]">
+                {{ priorityLabel(item.priority) }}
+              </span>
+            </div>
+            <p>{{ item.problem }}</p>
+            <strong class="diagnostic-suggestion">{{ item.suggestion }}</strong>
+            <div class="diagnostic-evidence">
+              <span
+                v-for="evidence in item.evidence"
+                :key="`${item.segment_code}-${item.issue_type}-${evidence}`"
+              >
+                {{ evidence }}
+              </span>
+            </div>
           </article>
         </section>
 
