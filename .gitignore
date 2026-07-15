@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local Python/Conda environment
+.conda/
+.venv/
+venv/
+env/
+
+# Environment and secrets
+.env
+*.env
+!*.env.example
+backend/.env
+
+# Node/Vite
+node_modules/
+dist/
+frontend/dist/
+frontend/node_modules/
+.vite/
+
+# Logs and runtime artifacts
+.logs/
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+

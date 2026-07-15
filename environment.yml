@@ -1,0 +1,21 @@
+name: elder-map-py311
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - fastapi
+      - uvicorn[standard]
+      - sqlalchemy
+      - alembic
+      - psycopg[binary]
+      - geoalchemy2
+      - pydantic
+      - pydantic-settings
+      - redis
+      - shapely
+      - python-dotenv
+      - httpx
+      - pytest

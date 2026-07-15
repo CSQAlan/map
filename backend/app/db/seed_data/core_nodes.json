@@ -1,0 +1,58 @@
+[
+  {
+    "node_code": "N_GATE3",
+    "name": "三号门节点",
+    "lon": 106.3071,
+    "lat": 29.6038,
+    "node_type": "GATE"
+  },
+  {
+    "node_code": "N_CROSS_1",
+    "name": "主路口A",
+    "lon": 106.3076,
+    "lat": 29.6041,
+    "node_type": "CROSSING"
+  },
+  {
+    "node_code": "N_CLINIC",
+    "name": "校医院节点",
+    "lon": 106.3080,
+    "lat": 29.6044,
+    "node_type": "POI_LINK"
+  },
+  {
+    "node_code": "N_CROSS_2",
+    "name": "主路口B",
+    "lon": 106.3085,
+    "lat": 29.6046,
+    "node_type": "CROSSING"
+  },
+  {
+    "node_code": "N_CANTEEN",
+    "name": "食堂节点",
+    "lon": 106.3092,
+    "lat": 29.6049,
+    "node_type": "POI_LINK"
+  },
+  {
+    "node_code": "N_REST_AREA",
+    "name": "休息点节点",
+    "lon": 106.3078,
+    "lat": 29.6039,
+    "node_type": "NORMAL"
+  },
+  {
+    "node_code": "N_WIDE_PATH",
+    "name": "宽缓步道节点",
+    "lon": 106.3084,
+    "lat": 29.6040,
+    "node_type": "NORMAL"
+  },
+  {
+    "node_code": "N_SIDE_PATH",
+    "name": "食堂侧路节点",
+    "lon": 106.3089,
+    "lat": 29.6045,
+    "node_type": "NORMAL"
+  }
+]

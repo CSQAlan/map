@@ -1,0 +1,29 @@
+[
+  {
+    "name": "重庆师范大学三号门",
+    "poi_type": "GATE",
+    "description": "比赛版试点入口",
+    "lon": 106.3071,
+    "lat": 29.6038,
+    "is_accessible": true,
+    "source": "MANUAL"
+  },
+  {
+    "name": "重庆师范大学校医院",
+    "poi_type": "CLINIC",
+    "description": "比赛版试点医疗目的地",
+    "lon": 106.3080,
+    "lat": 29.6044,
+    "is_accessible": true,
+    "source": "MANUAL"
+  },
+  {
+    "name": "重庆师范大学食堂",
+    "poi_type": "CANTEEN",
+    "description": "比赛版试点生活目的地",
+    "lon": 106.3092,
+    "lat": 29.6049,
+    "is_accessible": true,
+    "source": "MANUAL"
+  }
+]
