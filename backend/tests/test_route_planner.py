@@ -1,6 +1,7 @@
 from app.services.route_planner import (
     build_segment_detail,
     enumerate_paths,
+    explain_avoided_segments,
     is_segment_allowed,
     recommend_routes,
     route_score,
@@ -99,6 +100,67 @@ def test_wheelchair_requires_enough_width() -> None:
     }
     assert not is_segment_allowed(segment, "WHEELCHAIR")
     assert is_segment_allowed(segment, "INDEPENDENT")
+
+
+def test_explain_avoided_segments_reports_wheelchair_blockers() -> None:
+    blocked_segment = {
+        "segment_code": "A_B",
+        "name": "stair shortcut",
+        "length_m": 30,
+        "slope_percent": 1,
+        "barrier_free_level": 2,
+        "wheelchair_accessible": False,
+        "width_m": 0.9,
+        "step_count": 2,
+        "has_ramp": False,
+    }
+    safe_segment = {
+        "segment_code": "A_C",
+        "name": "ramp path",
+        "length_m": 30,
+        "slope_percent": 1,
+        "barrier_free_level": 5,
+        "surface_level": 5,
+        "safety_level": 5,
+        "rest_facility_score": 4,
+        "wheelchair_accessible": True,
+        "width_m": 1.5,
+        "step_count": 0,
+        "has_ramp": True,
+    }
+
+    explanations = explain_avoided_segments([blocked_segment, safe_segment], "WHEELCHAIR")
+
+    assert len(explanations) == 1
+    assert explanations[0]["segment_code"] == "A_B"
+    assert explanations[0]["avoidance_level"] == "BLOCKED"
+    assert "台阶" in "，".join(explanations[0]["reasons"])
+    assert "路宽" in "，".join(explanations[0]["reasons"])
+    assert "轮椅" in "，".join(explanations[0]["reasons"])
+
+
+def test_explain_avoided_segments_reports_cane_high_risk_steps() -> None:
+    segment = {
+        "segment_code": "B_C",
+        "name": "step path",
+        "length_m": 30,
+        "slope_percent": 2,
+        "barrier_free_level": 3,
+        "wheelchair_accessible": False,
+        "width_m": 1.2,
+        "step_count": 2,
+        "has_ramp": False,
+        "has_handrail": False,
+        "surface_level": 4,
+        "safety_level": 4,
+    }
+
+    explanations = explain_avoided_segments([segment], "CANE")
+
+    assert len(explanations) == 1
+    assert explanations[0]["segment_code"] == "B_C"
+    assert explanations[0]["avoidance_level"] == "HIGH_RISK"
+    assert "拐杖" in "，".join(explanations[0]["reasons"])
 
 
 def test_enumerate_paths_finds_multiple_simple_paths() -> None:

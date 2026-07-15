@@ -300,6 +300,102 @@ def segment_explanation(segment: Mapping[str, Any], mobility_type: str) -> str:
     return "这段路综合风险较低。"
 
 
+def segment_avoidance_reasons(
+    segment: Mapping[str, Any],
+    mobility_type: str,
+) -> tuple[str | None, list[str]]:
+    normalized_type = normalize_mobility_type(mobility_type)
+    profile = profile_for(normalized_type)
+    reasons = []
+
+    slope = numeric(segment, "slope_percent", 0)
+    step_count = integer(segment, "step_count", 0)
+    width_m = numeric(segment, "width_m", 1.5)
+    surface_level = integer(segment, "surface_level", 3)
+    safety_level = integer(segment, "safety_level", 3)
+    barrier_free_level = integer(segment, "barrier_free_level", 3)
+    rest_score = integer(segment, "rest_facility_score", 3)
+    shade = integer(segment, "shade_coverage_percent", 0)
+    bench_count = integer(segment, "bench_count", 0)
+    crossing_safety = integer(segment, "crossing_safety_level", 3)
+    has_ramp = boolean(segment, "has_ramp", False)
+    has_handrail = boolean(segment, "has_handrail", False)
+    wheelchair_accessible = boolean(segment, "wheelchair_accessible", False)
+
+    if slope > float(profile["max_slope_percent"]):
+        reasons.append(f"坡度 {slope:.1f}% 超过该画像上限 {float(profile['max_slope_percent']):.1f}%")
+    if width_m < float(profile["min_width_m"]):
+        reasons.append(f"路宽 {width_m:.1f} 米低于该画像最低要求 {float(profile['min_width_m']):.1f} 米")
+    if barrier_free_level < int(profile["min_barrier_free_level"]):
+        reasons.append(
+            f"无障碍等级 {barrier_free_level} 低于该画像最低要求 {int(profile['min_barrier_free_level'])}"
+        )
+    if step_count > int(profile["max_steps_without_ramp"]) and not has_ramp:
+        reasons.append("存在台阶且没有坡道，通行负担较高")
+    if profile["require_wheelchair_accessible"] and not wheelchair_accessible:
+        reasons.append("该路段标记为轮椅不可通行")
+
+    if reasons:
+        return "BLOCKED", reasons
+
+    if normalized_type == "WHEELCHAIR":
+        if slope >= 3:
+            reasons.append("坡度偏高，轮椅通行需要更谨慎")
+        if surface_level <= 3:
+            reasons.append("路面平整度一般，轮椅颠簸风险较高")
+        if rest_score <= 2:
+            reasons.append("沿途休息条件较弱")
+    elif normalized_type == "CANE":
+        if step_count > 0 and not has_handrail:
+            reasons.append("存在台阶且缺少扶手，拐杖老人通行风险较高")
+        if slope >= 4:
+            reasons.append("坡度偏高，拐杖老人上下坡压力较大")
+        if surface_level <= 3:
+            reasons.append("路面平整度一般，拐杖支撑稳定性较弱")
+    elif normalized_type == "SLOW_WALKER":
+        if rest_score <= 2 and bench_count == 0:
+            reasons.append("休息设施不足，慢行老人中途恢复不方便")
+        if slope >= 4:
+            reasons.append("坡度偏高，慢行老人持续步行压力较大")
+        if shade < 20:
+            reasons.append("树荫覆盖较少，晴热天气舒适度较低")
+    elif normalized_type == "FAMILY_ASSISTED":
+        if safety_level <= 2 or crossing_safety <= 2:
+            reasons.append("安全或过街条件偏弱，家属陪同步行仍需绕避")
+        if step_count > 0 and not has_ramp:
+            reasons.append("存在台阶且没有坡道，陪同通行不稳定")
+    else:
+        if safety_level <= 2:
+            reasons.append("安全等级偏低")
+        if surface_level <= 2:
+            reasons.append("路面平整度较差")
+
+    return ("HIGH_RISK", reasons) if reasons else (None, [])
+
+
+def explain_avoided_segments(
+    segments: list[Mapping[str, Any]],
+    mobility_type: str,
+    limit: int = 8,
+) -> list[dict[str, Any]]:
+    explanations = []
+    for segment in segments:
+        avoidance_level, reasons = segment_avoidance_reasons(segment, mobility_type)
+        if not avoidance_level:
+            continue
+        explanations.append(
+            {
+                "segment_code": str(segment["segment_code"]),
+                "name": segment.get("name"),
+                "avoidance_level": avoidance_level,
+                "reasons": reasons,
+            }
+        )
+
+    explanations.sort(key=lambda item: 0 if item["avoidance_level"] == "BLOCKED" else 1)
+    return explanations[:limit]
+
+
 def build_segment_detail(segment: Mapping[str, Any], mobility_type: str) -> dict[str, Any]:
     risk_tags, benefit_tags = segment_tags(segment, mobility_type)
     geometry_coordinates = []

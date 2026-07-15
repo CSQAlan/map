@@ -4,7 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.schemas.routes import RouteRecommendResponse
-from app.services.route_planner import SUPPORTED_MOBILITY_TYPES, recommend_routes
+from app.services.route_planner import (
+    SUPPORTED_MOBILITY_TYPES,
+    explain_avoided_segments,
+    recommend_routes,
+)
 
 
 router = APIRouter()
@@ -34,19 +38,28 @@ def recommend_route(
 
     start_node_code = resolve_poi_node_code(db, start_name)
     end_node_code = resolve_poi_node_code(db, end_name)
+    active_segments = load_active_segments(db)
     routes = recommend_routes(
-        load_active_segments(db),
+        active_segments,
         start_node_code,
         end_node_code,
         mobility_type,
     )
+    avoided_segments = explain_avoided_segments(active_segments, mobility_type)
     if not routes:
-        raise HTTPException(status_code=404, detail="No reachable route found")
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "message": "No reachable route found",
+                "avoided_segments": avoided_segments,
+            },
+        )
     return RouteRecommendResponse(
         start_name=start_name,
         end_name=end_name,
         mobility_type=mobility_type,
         routes=routes,
+        avoided_segments=avoided_segments,
     )
 
 

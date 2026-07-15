@@ -22,6 +22,7 @@ const startName = ref(startOptions[0].value);
 const endName = ref(endOptions[1].value);
 const mobilityType = ref('WHEELCHAIR');
 const routes = ref([]);
+const avoidedSegments = ref([]);
 const selectedRouteIndex = ref(0);
 const loading = ref(false);
 const mapLoading = ref(false);
@@ -289,6 +290,7 @@ function formatApiError(detail) {
 async function fetchRoutes() {
   loading.value = true;
   errorMessage.value = '';
+  avoidedSegments.value = [];
   actionStatus.value = '正在根据老人画像重新计算适老路线。';
 
   try {
@@ -301,10 +303,19 @@ async function fetchRoutes() {
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(payload.detail ?? '路线接口暂时不可用');
+      const detail = payload.detail;
+      if (detail?.avoided_segments) {
+        avoidedSegments.value = detail.avoided_segments;
+      }
+      throw new Error(
+        typeof detail === 'string'
+          ? detail
+          : detail?.message ?? '路线接口暂时不可用'
+      );
     }
 
     routes.value = payload.routes ?? [];
+    avoidedSegments.value = payload.avoided_segments ?? [];
     selectedRouteIndex.value = 0;
     actionStatus.value = routes.value.length
       ? `已按“${selectedProfile.value?.label}”生成路线，可切换到老人模式演示。`
@@ -459,6 +470,30 @@ function sendSos() {
             <span><i class="legend-risk"></i>含台阶路段</span>
           </div>
         </div>
+
+        <section v-if="avoidedSegments.length" class="avoidance-panel">
+          <div class="panel-heading compact">
+            <p class="section-kicker">不可通行与需注意路段</p>
+            <h2>系统识别了哪些风险？</h2>
+          </div>
+          <article
+            v-for="segment in avoidedSegments"
+            :key="segment.segment_code"
+            class="avoidance-card"
+          >
+            <div class="avoidance-card-top">
+              <strong>{{ segment.name || segment.segment_code }}</strong>
+              <span :class="['avoidance-badge', segment.avoidance_level === 'BLOCKED' ? 'blocked' : 'high-risk']">
+                {{ segment.avoidance_level === 'BLOCKED' ? '系统已避开' : '可通行但需注意' }}
+              </span>
+            </div>
+            <ul>
+              <li v-for="reason in segment.reasons" :key="`${segment.segment_code}-${reason}`">
+                {{ reason }}
+              </li>
+            </ul>
+          </article>
+        </section>
 
         <div class="panel-heading">
           <p class="section-kicker">候选路线</p>

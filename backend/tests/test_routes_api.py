@@ -10,6 +10,7 @@ from app.main import app
 client = TestClient(app)
 
 GATE_3_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u4e09\u53f7\u95e8"
+CLINIC_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u6821\u533b\u9662"
 CANTEEN_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u98df\u5802"
 UNKNOWN_GATE_NAME = "\u4e0d\u5b58\u5728\u7684\u95e8"
 
@@ -32,6 +33,7 @@ class FakeSession:
             name = params["name"] if params else ""
             mapping = {
                 GATE_3_NAME: 1,
+                CLINIC_NAME: 2,
                 CANTEEN_NAME: 3,
             }
             return FakeResult([{"id": mapping[name]}] if name in mapping else [])
@@ -97,6 +99,27 @@ class FakeSession:
                     "bench_count": 0,
                     "step_count": 0,
                 },
+                {
+                    "segment_code": "S_STAIR_SHORTCUT",
+                    "name": "\u98df\u5802\u53f0\u9636\u6377\u5f84",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3078,29.6039],[106.3092,29.6049]]}',
+                    "start_node_code": "N_GATE3",
+                    "end_node_code": "N_UNUSED_STAIR",
+                    "length_m": 90,
+                    "slope_percent": 2.4,
+                    "surface_level": 3,
+                    "safety_level": 3,
+                    "barrier_free_level": 2,
+                    "rest_facility_score": 2,
+                    "width_m": 0.9,
+                    "wheelchair_accessible": False,
+                    "has_ramp": False,
+                    "has_handrail": False,
+                    "shade_coverage_percent": 10,
+                    "bench_count": 0,
+                    "step_count": 3,
+                    "crossing_safety_level": 3,
+                },
             ]
         )
 
@@ -129,6 +152,41 @@ def test_recommend_route_api_returns_candidates() -> None:
     assert data["routes"][0]["segments"][0]["geometry_coordinates"]
     assert data["routes"][0]["segments"][0]["benefit_tags"]
     assert data["routes"][0]["segments"][0]["explanation"]
+    assert "avoided_segments" in data
+
+
+def test_recommend_route_api_returns_avoided_segment_reasons() -> None:
+    response = client.get(
+        "/api/routes/recommend",
+        params={
+            "start_name": GATE_3_NAME,
+            "end_name": CANTEEN_NAME,
+            "mobility_type": "WHEELCHAIR",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    avoided = data["avoided_segments"]
+    assert avoided[0]["segment_code"] == "S_STAIR_SHORTCUT"
+    assert avoided[0]["avoidance_level"] == "BLOCKED"
+    assert "台阶" in "，".join(avoided[0]["reasons"])
+    assert "路宽" in "，".join(avoided[0]["reasons"])
+
+
+def test_recommend_route_api_returns_reasons_when_no_route_found() -> None:
+    response = client.get(
+        "/api/routes/recommend",
+        params={
+            "start_name": GATE_3_NAME,
+            "end_name": CLINIC_NAME,
+            "mobility_type": "WHEELCHAIR",
+        },
+    )
+    assert response.status_code == 404
+    detail = response.json()["detail"]
+    assert detail["message"] == "No reachable route found"
+    assert detail["avoided_segments"][0]["segment_code"] == "S_STAIR_SHORTCUT"
+    assert detail["avoided_segments"][0]["avoidance_level"] == "BLOCKED"
 
 
 def test_recommend_route_api_rejects_unknown_poi() -> None:

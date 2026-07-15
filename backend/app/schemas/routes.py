@@ -28,8 +28,16 @@ class RouteCandidateResponse(BaseModel):
     summary: str
 
 
+class AvoidedSegmentResponse(BaseModel):
+    segment_code: str
+    name: str | None
+    avoidance_level: str
+    reasons: list[str]
+
+
 class RouteRecommendResponse(BaseModel):
     start_name: str
     end_name: str
     mobility_type: str
     routes: list[RouteCandidateResponse]
+    avoided_segments: list[AvoidedSegmentResponse]
