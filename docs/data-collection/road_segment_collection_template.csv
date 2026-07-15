@@ -1,2 +1,2 @@
 segment_code,start_node_code,end_node_code,name,collector,collect_date,lon_start,lat_start,lon_end,lat_end,length_m,slope_percent,width_m,surface_type,surface_level,safety_level,barrier_free_level,rest_facility_score,lighting_level,crossing_safety_level,wheelchair_accessible,has_handrail,has_ramp,shade_coverage_percent,bench_count,step_count,step_height_cm,photo_urls,remark
-S_SAMPLE_001,N_GATE3,N_SAMPLE_A,三号门到样例路段,采集员A,2026-07-15,106.307100,29.603800,106.307600,29.604100,65,1.5,1.6,CONCRETE,5,4,5,3,4,4,true,false,true,30,0,0,0,"[]","样例：路面较平整，适合轮椅通行"
+S_GATE3_TO_WIDE_PATH,N_GATE3,N_WIDE_PATH,三号门到宽缓步道,采集员A,2026-07-15,106.307100,29.603800,106.308400,29.604000,136,1.2,1.6,CONCRETE,5,4,5,3,4,4,true,false,true,30,0,0,0,"[]","样例：路面较平整，适合轮椅通行"

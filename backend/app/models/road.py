@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, ForeignKey, Integer, JSON, Numeric, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -68,6 +70,7 @@ class SegmentCollectRecord(Base):
     step_height_cm: Mapped[float] = mapped_column(Numeric(5, 2), default=0, nullable=False)
     remark: Mapped[str | None] = mapped_column(String(500))
     photo_urls: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    collect_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="PENDING", nullable=False)
 
 

@@ -28,9 +28,13 @@ CREATE TABLE IF NOT EXISTS app_user (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uk_app_user_username UNIQUE (username),
-    CONSTRAINT ck_app_user_role CHECK (role IN ('ELDER', 'FAMILY', 'ADMIN')),
+    CONSTRAINT ck_app_user_role CHECK (role IN ('ELDER', 'FAMILY', 'ADMIN', 'COLLECTOR')),
     CONSTRAINT ck_app_user_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
 );
+
+ALTER TABLE app_user DROP CONSTRAINT IF EXISTS ck_app_user_role;
+ALTER TABLE app_user ADD CONSTRAINT ck_app_user_role
+    CHECK (role IN ('ELDER', 'FAMILY', 'ADMIN', 'COLLECTOR'));
 
 CREATE TABLE IF NOT EXISTS elder_profile (
     id BIGSERIAL PRIMARY KEY,

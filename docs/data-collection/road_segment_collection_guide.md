@@ -13,7 +13,7 @@
 
 | 字段 | 含义 | 填写规则 |
 | --- | --- | --- |
-| `segment_code` | 路段唯一编号 | 建议使用 `S_地点A_TO_地点B` 或 `S_SAMPLE_001` |
+| `segment_code` | 路段唯一编号 | 先使用数据库已有编号，如 `S_GATE3_TO_WIDE_PATH`；新增路段再用 `S_地点A_TO_地点B` |
 | `start_node_code` | 起点节点编号 | 与 `road_node.osm_node_ref` 对应 |
 | `end_node_code` | 终点节点编号 | 与 `road_node.osm_node_ref` 对应 |
 | `name` | 路段名称 | 用自然语言描述，如“三号门到主路口A” |
@@ -88,3 +88,21 @@
 3. 写入 `segment_collect_record`。
 4. 管理员审核后更新 `road_segment`。
 5. 路线推荐算法自动使用新数据。
+
+### 导入命令
+
+先只校验、不写数据库：
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path backend).Path
+.\.conda\elder-map-py311\python.exe -m app.scripts.import_segment_collection_csv docs\data-collection\road_segment_collection_template.csv --dry-run
+```
+
+确认结果里 `valid=true` 后，再正式导入：
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path backend).Path
+.\.conda\elder-map-py311\python.exe -m app.scripts.import_segment_collection_csv docs\data-collection\road_segment_collection_template.csv
+```
+
+正式导入会把采集记录写入 `segment_collect_record`，状态为 `PENDING`，后续由管理员审核后再更新正式路段数据。
