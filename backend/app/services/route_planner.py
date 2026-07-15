@@ -220,6 +220,103 @@ def segment_cost(segment: Mapping[str, Any], mobility_type: str) -> float:
     return max(0.1, raw_cost)
 
 
+def segment_tags(segment: Mapping[str, Any], mobility_type: str) -> tuple[list[str], list[str]]:
+    profile = profile_for(mobility_type)
+    normalized_type = normalize_mobility_type(mobility_type)
+    risk_tags = []
+    benefit_tags = []
+
+    slope = numeric(segment, "slope_percent", 0)
+    step_count = integer(segment, "step_count", 0)
+    width_m = numeric(segment, "width_m", 1.5)
+    surface_level = integer(segment, "surface_level", 3)
+    safety_level = integer(segment, "safety_level", 3)
+    barrier_free_level = integer(segment, "barrier_free_level", 3)
+    rest_score = integer(segment, "rest_facility_score", 3)
+    shade = integer(segment, "shade_coverage_percent", 0)
+    bench_count = integer(segment, "bench_count", 0)
+    has_ramp = boolean(segment, "has_ramp", False)
+    has_handrail = boolean(segment, "has_handrail", False)
+    wheelchair_accessible = boolean(segment, "wheelchair_accessible", False)
+
+    if slope <= 1.5:
+        benefit_tags.append("坡度平缓")
+    elif slope >= 3:
+        risk_tags.append("坡度偏高")
+
+    if step_count > 0:
+        if has_ramp:
+            benefit_tags.append("台阶旁有坡道")
+        else:
+            risk_tags.append("存在台阶")
+
+    if width_m >= 1.5:
+        benefit_tags.append("通行宽")
+    elif width_m < float(profile["min_width_m"]) + 0.2:
+        risk_tags.append("通行较窄")
+
+    if surface_level >= 4:
+        benefit_tags.append("路面平整")
+    elif surface_level <= 3:
+        risk_tags.append("路面一般")
+
+    if safety_level >= 4:
+        benefit_tags.append("安全性较好")
+    else:
+        risk_tags.append("安全一般")
+
+    if barrier_free_level >= 4:
+        benefit_tags.append("无障碍较好")
+    else:
+        risk_tags.append("无障碍一般")
+
+    if rest_score >= 4 or bench_count > 0:
+        benefit_tags.append("可中途休息")
+
+    if shade >= 40:
+        benefit_tags.append("树荫较好")
+
+    if has_handrail:
+        benefit_tags.append("有扶手")
+
+    if has_ramp:
+        benefit_tags.append("有坡道")
+
+    if normalized_type == "WHEELCHAIR" and wheelchair_accessible:
+        benefit_tags.append("轮椅可通行")
+
+    return risk_tags, benefit_tags
+
+
+def segment_explanation(segment: Mapping[str, Any], mobility_type: str) -> str:
+    risk_tags, benefit_tags = segment_tags(segment, mobility_type)
+    if risk_tags and benefit_tags:
+        return f"优势：{'、'.join(benefit_tags[:3])}；需注意：{'、'.join(risk_tags[:2])}。"
+    if benefit_tags:
+        return f"这段路{'、'.join(benefit_tags[:4])}，适合作为推荐路段。"
+    if risk_tags:
+        return f"这段路存在{'、'.join(risk_tags[:3])}，建议慢行并注意安全。"
+    return "这段路综合风险较低。"
+
+
+def build_segment_detail(segment: Mapping[str, Any], mobility_type: str) -> dict[str, Any]:
+    risk_tags, benefit_tags = segment_tags(segment, mobility_type)
+    return {
+        "segment_code": str(segment["segment_code"]),
+        "name": segment.get("name"),
+        "length_m": round(numeric(segment, "length_m", 0), 2),
+        "slope_percent": round(numeric(segment, "slope_percent", 0), 2),
+        "width_m": round(numeric(segment, "width_m", 1.5), 2),
+        "step_count": integer(segment, "step_count", 0),
+        "has_ramp": boolean(segment, "has_ramp", False),
+        "has_handrail": boolean(segment, "has_handrail", False),
+        "wheelchair_accessible": boolean(segment, "wheelchair_accessible", False),
+        "risk_tags": risk_tags,
+        "benefit_tags": benefit_tags,
+        "explanation": segment_explanation(segment, mobility_type),
+    }
+
+
 def route_score(segments: list[Mapping[str, Any]], mobility_type: str) -> float:
     return sum(segment_cost(segment, mobility_type) for segment in segments)
 
@@ -318,6 +415,10 @@ def recommend_routes(
                 "estimated_minutes": max(1, round(distance_m / 60)),
                 "segment_codes": [str(segment["segment_code"]) for segment in path],
                 "segment_names": [segment.get("name") for segment in path],
+                "segments": [
+                    build_segment_detail(segment, normalize_mobility_type(mobility_type))
+                    for segment in path
+                ],
                 "summary": build_summary(path, normalize_mobility_type(mobility_type)),
             }
         )

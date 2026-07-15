@@ -48,6 +48,12 @@ class FakeSession:
                     "safety_level": 5,
                     "barrier_free_level": 5,
                     "rest_facility_score": 4,
+                    "width_m": 1.6,
+                    "wheelchair_accessible": True,
+                    "has_ramp": True,
+                    "has_handrail": False,
+                    "shade_coverage_percent": 35,
+                    "bench_count": 0,
                     "step_count": 0,
                 },
                 {
@@ -61,6 +67,12 @@ class FakeSession:
                     "safety_level": 5,
                     "barrier_free_level": 5,
                     "rest_facility_score": 4,
+                    "width_m": 1.5,
+                    "wheelchair_accessible": True,
+                    "has_ramp": False,
+                    "has_handrail": True,
+                    "shade_coverage_percent": 45,
+                    "bench_count": 1,
                     "step_count": 0,
                 },
                 {
@@ -74,6 +86,12 @@ class FakeSession:
                     "safety_level": 4,
                     "barrier_free_level": 4,
                     "rest_facility_score": 4,
+                    "width_m": 1.4,
+                    "wheelchair_accessible": True,
+                    "has_ramp": False,
+                    "has_handrail": False,
+                    "shade_coverage_percent": 20,
+                    "bench_count": 0,
                     "step_count": 0,
                 },
             ]
@@ -104,6 +122,9 @@ def test_recommend_route_api_returns_candidates() -> None:
     data = response.json()
     assert len(data["routes"]) == 1
     assert data["routes"][0]["rank"] == 1
+    assert data["routes"][0]["segments"][0]["segment_code"] == "S_GATE3_TO_WIDE_PATH"
+    assert data["routes"][0]["segments"][0]["benefit_tags"]
+    assert data["routes"][0]["segments"][0]["explanation"]
 
 
 def test_recommend_route_api_rejects_unknown_poi() -> None:

@@ -1,4 +1,5 @@
 from app.services.route_planner import (
+    build_segment_detail,
     enumerate_paths,
     is_segment_allowed,
     recommend_routes,
@@ -60,6 +61,31 @@ def test_wheelchair_blocks_steps_without_ramp() -> None:
     }
     assert not is_segment_allowed(segment, "WHEELCHAIR")
     assert is_segment_allowed(segment, "CANE")
+
+
+def test_build_segment_detail_returns_tags_and_explanation() -> None:
+    segment = {
+        "segment_code": "A_B",
+        "name": "A to B",
+        "length_m": 30,
+        "slope_percent": 1,
+        "surface_level": 5,
+        "safety_level": 5,
+        "barrier_free_level": 5,
+        "rest_facility_score": 4,
+        "wheelchair_accessible": True,
+        "width_m": 1.5,
+        "step_count": 0,
+        "has_ramp": True,
+        "has_handrail": True,
+        "shade_coverage_percent": 50,
+        "bench_count": 1,
+    }
+    detail = build_segment_detail(segment, "WHEELCHAIR")
+    assert detail["segment_code"] == "A_B"
+    assert "轮椅可通行" in detail["benefit_tags"]
+    assert detail["risk_tags"] == []
+    assert detail["explanation"]
 
 
 def test_wheelchair_requires_enough_width() -> None:
@@ -153,3 +179,4 @@ def test_recommend_routes_filters_inaccessible_wheelchair_path() -> None:
     routes = recommend_routes(segments, "A", "D", "WHEELCHAIR")
     assert len(routes) == 1
     assert routes[0]["segment_codes"] == ["A_C", "C_D"]
+    assert routes[0]["segments"][0]["segment_code"] == "A_C"

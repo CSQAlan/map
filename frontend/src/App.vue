@@ -32,9 +32,9 @@ const selectedProfile = computed(() =>
 const selectedEnd = computed(() => endOptions.find((item) => item.value === endName.value));
 const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
 const hasRoutes = computed(() => routes.value.length > 0);
-const selectedSegmentNames = computed(() => selectedRoute.value?.segment_names ?? []);
+const selectedSegments = computed(() => selectedRoute.value?.segments ?? []);
 const nextStepText = computed(() => {
-  const firstSegmentName = selectedSegmentNames.value[0];
+  const firstSegmentName = selectedSegments.value[0]?.name ?? selectedRoute.value?.segment_names?.[0];
   if (!firstSegmentName) return '请先在推荐模式生成一条路线。';
   return `第一步：沿“${firstSegmentName}”方向慢慢前进，注意观察地面和台阶。`;
 });
@@ -210,7 +210,33 @@ function sendSos() {
             </div>
           </dl>
           <ol class="segment-flow">
-            <li v-for="name in route.segment_names" :key="name">{{ name }}</li>
+            <li
+              v-for="segment in route.segments"
+              :key="segment.segment_code"
+              class="segment-detail"
+            >
+              <div class="segment-title">
+                <strong>{{ segment.name }}</strong>
+                <span>{{ segment.length_m }} 米</span>
+              </div>
+              <p>{{ segment.explanation }}</p>
+              <div class="tag-row">
+                <span
+                  v-for="tag in segment.benefit_tags"
+                  :key="`${segment.segment_code}-good-${tag}`"
+                  class="route-tag benefit"
+                >
+                  {{ tag }}
+                </span>
+                <span
+                  v-for="tag in segment.risk_tags"
+                  :key="`${segment.segment_code}-risk-${tag}`"
+                  class="route-tag risk"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+            </li>
           </ol>
         </article>
       </section>
@@ -226,6 +252,11 @@ function sendSos() {
       <div class="elder-next-step">
         <span>下一步</span>
         <strong>{{ nextStepText }}</strong>
+      </div>
+
+      <div v-if="selectedSegments.length" class="elder-route-note">
+        <span>本段提醒</span>
+        <strong>{{ selectedSegments[0].explanation }}</strong>
       </div>
 
       <div class="elder-metrics">
