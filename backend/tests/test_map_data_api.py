@@ -25,6 +25,32 @@ class FakeResult:
 class FakeSession:
     def execute(self, query: Any) -> FakeResult:
         sql = str(query)
+        if "ST_AsGeoJSON(geom) AS geom_geojson" in sql and "FROM poi_facility" in sql:
+            return FakeResult(
+                [
+                    {
+                        "id": 1,
+                        "name": GATE_3_NAME,
+                        "poi_type": "GATE",
+                        "is_accessible": True,
+                        "geom_geojson": '{"type":"Point","coordinates":[106.3071,29.6038]}',
+                    }
+                ]
+            )
+        if "ST_AsGeoJSON(geom) AS geom_geojson" in sql and "FROM road_segment" in sql:
+            return FakeResult(
+                [
+                    {
+                        "id": 1,
+                        "segment_code": "S_GATE3_TO_CROSS1",
+                        "name": "\u4e09\u53f7\u95e8\u5230\u4e3b\u8def\u53e3A",
+                        "slope_percent": 1.5,
+                        "wheelchair_accessible": True,
+                        "step_count": 0,
+                        "geom_geojson": '{"type":"LineString","coordinates":[[106.3071,29.6038],[106.3076,29.6041]]}',
+                    }
+                ]
+            )
         if "FROM poi_facility" in sql:
             return FakeResult(
                 [
@@ -105,3 +131,12 @@ def test_map_api_returns_seeded_names() -> None:
     assert GATE_3_NAME in names
     assert CLINIC_NAME in names
     assert CANTEEN_NAME in names
+
+
+def test_get_map_geojson() -> None:
+    response = client.get("/api/map-data/geojson")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["type"] == "FeatureCollection"
+    assert len(data["features"]) == 2
+    assert {feature["properties"]["kind"] for feature in data["features"]} == {"poi", "segment"}

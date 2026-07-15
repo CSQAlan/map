@@ -40,6 +40,7 @@ class FakeSession:
                 {
                     "segment_code": "S_GATE3_TO_WIDE_PATH",
                     "name": "\u4e09\u53f7\u95e8\u5230\u5bbd\u7f13\u6b65\u9053",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3071,29.6038],[106.3084,29.6040]]}',
                     "start_node_code": "N_GATE3",
                     "end_node_code": "N_WIDE_PATH",
                     "length_m": 136,
@@ -59,6 +60,7 @@ class FakeSession:
                 {
                     "segment_code": "S_WIDE_PATH_TO_SIDE",
                     "name": "\u5bbd\u7f13\u6b65\u9053\u5230\u98df\u5802\u4fa7\u8def",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3084,29.6040],[106.3089,29.6045]]}',
                     "start_node_code": "N_WIDE_PATH",
                     "end_node_code": "N_SIDE_PATH",
                     "length_m": 72,
@@ -78,6 +80,7 @@ class FakeSession:
                 {
                     "segment_code": "S_SIDE_TO_CANTEEN",
                     "name": "\u98df\u5802\u4fa7\u8def\u5230\u98df\u5802",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3089,29.6045],[106.3092,29.6049]]}',
                     "start_node_code": "N_SIDE_PATH",
                     "end_node_code": "N_CANTEEN",
                     "length_m": 54,
@@ -123,6 +126,7 @@ def test_recommend_route_api_returns_candidates() -> None:
     assert len(data["routes"]) == 1
     assert data["routes"][0]["rank"] == 1
     assert data["routes"][0]["segments"][0]["segment_code"] == "S_GATE3_TO_WIDE_PATH"
+    assert data["routes"][0]["segments"][0]["geometry_coordinates"]
     assert data["routes"][0]["segments"][0]["benefit_tags"]
     assert data["routes"][0]["segments"][0]["explanation"]
 

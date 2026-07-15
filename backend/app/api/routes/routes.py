@@ -70,6 +70,7 @@ def load_active_segments(db: Session) -> list[dict]:
             SELECT
                 rs.segment_code,
                 rs.name,
+                ST_AsGeoJSON(rs.geom) AS geom_geojson,
                 rn_start.osm_node_ref AS start_node_code,
                 rn_end.osm_node_ref AS end_node_code,
                 rs.length_m,

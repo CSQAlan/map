@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000';
 
@@ -23,8 +23,10 @@ const mobilityType = ref('WHEELCHAIR');
 const routes = ref([]);
 const selectedRouteIndex = ref(0);
 const loading = ref(false);
+const mapLoading = ref(false);
 const errorMessage = ref('');
 const actionStatus = ref('尚未开始导航，请先确认路线。');
+const mapFeatures = ref([]);
 
 const selectedProfile = computed(() =>
   profileOptions.find((item) => item.value === mobilityType.value)
@@ -33,11 +35,96 @@ const selectedEnd = computed(() => endOptions.find((item) => item.value === endN
 const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
 const hasRoutes = computed(() => routes.value.length > 0);
 const selectedSegments = computed(() => selectedRoute.value?.segments ?? []);
+const routeSegmentCodes = computed(() => new Set(selectedRoute.value?.segment_codes ?? []));
+const roadFeatures = computed(() =>
+  mapFeatures.value.filter((feature) => feature.properties?.kind === 'segment')
+);
+const poiFeatures = computed(() =>
+  mapFeatures.value.filter((feature) => feature.properties?.kind === 'poi')
+);
+const mapBounds = computed(() => {
+  const points = [];
+  for (const feature of mapFeatures.value) {
+    collectCoordinates(feature.geometry?.coordinates, points);
+  }
+  for (const segment of selectedSegments.value) {
+    collectCoordinates(segment.geometry_coordinates, points);
+  }
+  if (!points.length) {
+    return { minLon: 106.307, maxLon: 106.31, minLat: 29.6036, maxLat: 29.6051 };
+  }
+  const lons = points.map((point) => point[0]);
+  const lats = points.map((point) => point[1]);
+  return {
+    minLon: Math.min(...lons),
+    maxLon: Math.max(...lons),
+    minLat: Math.min(...lats),
+    maxLat: Math.max(...lats),
+  };
+});
 const nextStepText = computed(() => {
   const firstSegmentName = selectedSegments.value[0]?.name ?? selectedRoute.value?.segment_names?.[0];
   if (!firstSegmentName) return '请先在推荐模式生成一条路线。';
   return `第一步：沿“${firstSegmentName}”方向慢慢前进，注意观察地面和台阶。`;
 });
+
+onMounted(() => {
+  fetchMapData();
+});
+
+function collectCoordinates(coordinates, points) {
+  if (!Array.isArray(coordinates)) return;
+  if (typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
+    points.push(coordinates);
+    return;
+  }
+  for (const item of coordinates) {
+    collectCoordinates(item, points);
+  }
+}
+
+function projectPoint(point) {
+  const width = 760;
+  const height = 360;
+  const padding = 42;
+  const bounds = mapBounds.value;
+  const lonRange = bounds.maxLon - bounds.minLon || 0.001;
+  const latRange = bounds.maxLat - bounds.minLat || 0.001;
+  const x = padding + ((point[0] - bounds.minLon) / lonRange) * (width - padding * 2);
+  const y = height - padding - ((point[1] - bounds.minLat) / latRange) * (height - padding * 2);
+  return [x, y];
+}
+
+function pathForCoordinates(coordinates) {
+  if (!Array.isArray(coordinates) || !coordinates.length) return '';
+  return coordinates
+    .map((point, index) => {
+      const [x, y] = projectPoint(point);
+      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(' ');
+}
+
+function pointForFeature(feature) {
+  return projectPoint(feature.geometry.coordinates);
+}
+
+function isRouteFeature(feature) {
+  return routeSegmentCodes.value.has(feature.properties?.segment_code);
+}
+
+async function fetchMapData() {
+  mapLoading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/map-data/geojson`);
+    const payload = await response.json();
+    mapFeatures.value = payload.features ?? [];
+  } catch {
+    mapFeatures.value = [];
+  } finally {
+    mapLoading.value = false;
+  }
+}
 
 async function fetchRoutes() {
   loading.value = true;
@@ -171,6 +258,41 @@ function sendSos() {
       </form>
 
       <section class="routes-panel" aria-live="polite">
+        <div class="map-panel">
+          <div class="panel-heading">
+            <p class="section-kicker">校园示意图</p>
+            <h2>{{ mapLoading ? '正在加载路网' : '试点路网与推荐路线' }}</h2>
+          </div>
+          <svg class="campus-map" viewBox="0 0 760 360" role="img" aria-label="重庆师范大学试点路线示意图">
+            <defs>
+              <linearGradient id="routeGlow" x1="0" x2="1">
+                <stop offset="0%" stop-color="#2f6f5e" />
+                <stop offset="100%" stop-color="#e6a93c" />
+              </linearGradient>
+            </defs>
+            <path
+              v-for="feature in roadFeatures"
+              :key="feature.properties.segment_code"
+              :d="pathForCoordinates(feature.geometry.coordinates)"
+              :class="['map-road', { active: isRouteFeature(feature), stair: feature.properties.step_count > 0 }]"
+            />
+            <g
+              v-for="feature in poiFeatures"
+              :key="feature.properties.id"
+              class="map-poi"
+              :transform="`translate(${pointForFeature(feature)[0]}, ${pointForFeature(feature)[1]})`"
+            >
+              <circle r="10" />
+              <text x="14" y="5">{{ feature.properties.name }}</text>
+            </g>
+          </svg>
+          <div class="map-legend">
+            <span><i class="legend-route"></i>当前推荐路线</span>
+            <span><i class="legend-road"></i>试点路网</span>
+            <span><i class="legend-risk"></i>含台阶路段</span>
+          </div>
+        </div>
+
         <div class="panel-heading">
           <p class="section-kicker">候选路线</p>
           <h2>{{ hasRoutes ? `共 ${routes.length} 条推荐` : '等待生成路线' }}</h2>

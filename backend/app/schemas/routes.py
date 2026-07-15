@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class RouteSegmentDetailResponse(BaseModel):
     segment_code: str
     name: str | None
+    geometry_coordinates: list[list[float]]
     length_m: float
     slope_percent: float
     width_m: float

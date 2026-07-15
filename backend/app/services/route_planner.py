@@ -1,3 +1,4 @@
+import json
 from collections.abc import Mapping
 from typing import Any
 
@@ -301,9 +302,14 @@ def segment_explanation(segment: Mapping[str, Any], mobility_type: str) -> str:
 
 def build_segment_detail(segment: Mapping[str, Any], mobility_type: str) -> dict[str, Any]:
     risk_tags, benefit_tags = segment_tags(segment, mobility_type)
+    geometry_coordinates = []
+    geom_geojson = segment.get("geom_geojson")
+    if geom_geojson:
+        geometry_coordinates = json.loads(str(geom_geojson)).get("coordinates", [])
     return {
         "segment_code": str(segment["segment_code"]),
         "name": segment.get("name"),
+        "geometry_coordinates": geometry_coordinates,
         "length_m": round(numeric(segment, "length_m", 0), 2),
         "slope_percent": round(numeric(segment, "slope_percent", 0), 2),
         "width_m": round(numeric(segment, "width_m", 1.5), 2),

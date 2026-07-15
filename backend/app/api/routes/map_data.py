@@ -53,3 +53,78 @@ def list_segments(db: Session = Depends(get_db)) -> list[RoadSegmentResponse]:
         )
     ).mappings()
     return [RoadSegmentResponse(**row) for row in rows]
+
+
+@router.get("/geojson")
+def get_map_geojson(db: Session = Depends(get_db)) -> dict:
+    poi_rows = db.execute(
+        text(
+            """
+            SELECT
+                id,
+                name,
+                poi_type,
+                is_accessible,
+                ST_AsGeoJSON(geom) AS geom_geojson
+            FROM poi_facility
+            WHERE status = 'ACTIVE'
+            ORDER BY id
+            """
+        )
+    ).mappings()
+    segment_rows = db.execute(
+        text(
+            """
+            SELECT
+                id,
+                segment_code,
+                name,
+                slope_percent,
+                wheelchair_accessible,
+                step_count,
+                ST_AsGeoJSON(geom) AS geom_geojson
+            FROM road_segment
+            WHERE status = 'ACTIVE'
+            ORDER BY id
+            """
+        )
+    ).mappings()
+
+    features = []
+    for row in poi_rows:
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": _geojson_geometry(row["geom_geojson"]),
+                "properties": {
+                    "kind": "poi",
+                    "id": row["id"],
+                    "name": row["name"],
+                    "poi_type": row["poi_type"],
+                    "is_accessible": row["is_accessible"],
+                },
+            }
+        )
+    for row in segment_rows:
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": _geojson_geometry(row["geom_geojson"]),
+                "properties": {
+                    "kind": "segment",
+                    "id": row["id"],
+                    "segment_code": row["segment_code"],
+                    "name": row["name"],
+                    "slope_percent": float(row["slope_percent"]),
+                    "wheelchair_accessible": row["wheelchair_accessible"],
+                    "step_count": row["step_count"],
+                },
+            }
+        )
+    return {"type": "FeatureCollection", "features": features}
+
+
+def _geojson_geometry(raw_geometry: str) -> dict:
+    import json
+
+    return json.loads(raw_geometry)
