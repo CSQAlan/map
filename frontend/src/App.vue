@@ -9,15 +9,17 @@ const endOptions = [
   { label: '食堂', value: '重庆师范大学食堂' },
 ];
 const profileOptions = [
-  { label: '独立出行型', value: 'INDEPENDENT', hint: '可接受普通步行路线' },
-  { label: '轻度辅助型', value: 'ASSISTED', hint: '优先平缓、安全、有休息点' },
-  { label: '家属协同型', value: 'FAMILY_ASSISTED', hint: '兼顾陪同和安全提示' },
+  { label: '轮椅老人', value: 'WHEELCHAIR', hint: '不走台阶，优先坡道、宽路和无障碍路段' },
+  { label: '拐杖老人', value: 'CANE', hint: '台阶惩罚很高，优先扶手、平缓、安全路线' },
+  { label: '慢行老人', value: 'SLOW_WALKER', hint: '优先休息点、树荫、低坡度，减少连续步行压力' },
+  { label: '独立出行', value: 'INDEPENDENT', hint: '可接受普通步行路线，但仍避开高风险路段' },
+  { label: '家属陪同', value: 'FAMILY_ASSISTED', hint: '兼顾陪同行走、安全提示和路线稳定性' },
 ];
 
 const activeMode = ref('recommend');
 const startName = ref(startOptions[0].value);
 const endName = ref(endOptions[1].value);
-const mobilityType = ref('ASSISTED');
+const mobilityType = ref('WHEELCHAIR');
 const routes = ref([]);
 const selectedRouteIndex = ref(0);
 const loading = ref(false);
@@ -40,7 +42,7 @@ const nextStepText = computed(() => {
 async function fetchRoutes() {
   loading.value = true;
   errorMessage.value = '';
-  actionStatus.value = '正在为你重新计算适老路线。';
+  actionStatus.value = '正在根据老人画像重新计算适老路线。';
 
   try {
     const params = new URLSearchParams({
@@ -58,8 +60,8 @@ async function fetchRoutes() {
     routes.value = payload.routes ?? [];
     selectedRouteIndex.value = 0;
     actionStatus.value = routes.value.length
-      ? '已生成路线，可切换到老人模式开始演示。'
-      : '没有找到可用路线，请更换目的地。';
+      ? `已按“${selectedProfile.value?.label}”生成路线，可切换到老人模式演示。`
+      : '没有找到可用路线，请更换目的地或老人画像。';
   } catch (error) {
     routes.value = [];
     selectedRouteIndex.value = 0;
@@ -103,7 +105,7 @@ function sendSos() {
       <p class="eyebrow">重庆师范大学试点</p>
       <div class="hero-copy">
         <h1>助老地图 H5 演示</h1>
-        <p>先让老人看得懂、点得准、走得安心；地图底图后续再接。</p>
+        <p>不是普通最短路，而是根据老人身体能力动态筛路、算路、解释路线。</p>
       </div>
       <div class="mode-tabs" aria-label="页面模式切换">
         <button
@@ -175,8 +177,8 @@ function sendSos() {
         </div>
 
         <div v-if="!hasRoutes" class="empty-state">
-          <span>从三号门出发，先选校医院或食堂。</span>
-          <strong>点击“生成适老路线”后，这里会出现 TOP 路线。</strong>
+          <span>从三号门出发，选择画像后生成路线。</span>
+          <strong>轮椅、拐杖、慢行老人会得到不同路线排序。</strong>
         </div>
 
         <article

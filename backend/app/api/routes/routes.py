@@ -74,10 +74,20 @@ def load_active_segments(db: Session) -> list[dict]:
                 rn_end.osm_node_ref AS end_node_code,
                 rs.length_m,
                 rs.slope_percent,
+                rs.surface_type,
+                rs.width_m,
                 rs.surface_level,
                 rs.safety_level,
                 rs.barrier_free_level,
                 rs.rest_facility_score,
+                rs.lighting_level,
+                rs.crossing_safety_level,
+                rs.wheelchair_accessible,
+                rs.has_handrail,
+                rs.has_ramp,
+                rs.shade_coverage_percent,
+                rs.bench_count,
+                rs.step_height_cm,
                 rs.step_count
             FROM road_segment rs
             JOIN road_node rn_start ON rn_start.id = rs.start_node_id

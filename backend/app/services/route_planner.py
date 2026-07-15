@@ -2,57 +2,222 @@ from collections.abc import Mapping
 from typing import Any
 
 
-SUPPORTED_MOBILITY_TYPES = {"INDEPENDENT", "ASSISTED", "FAMILY_ASSISTED"}
+SUPPORTED_MOBILITY_TYPES = {
+    "INDEPENDENT",
+    "SLOW_WALKER",
+    "CANE",
+    "WHEELCHAIR",
+    "ASSISTED",
+    "FAMILY_ASSISTED",
+}
 
-MOBILITY_WEIGHTS = {
+PROFILE_ALIASES = {
+    "ASSISTED": "CANE",
+}
+
+SURFACE_DIFFICULTY = {
+    "ASPHALT": 1.0,
+    "CONCRETE": 1.0,
+    "BRICK": 1.2,
+    "GRAVEL": 1.6,
+    "GRASS": 1.8,
+    "WOOD": 1.1,
+    "TILE": 1.0,
+    "COBBLESTONE": 2.0,
+}
+
+DEFAULT_SURFACE_TYPE = "CONCRETE"
+
+MOBILITY_PROFILES = {
     "INDEPENDENT": {
-        "distance": 1.2,
-        "slope": 1.0,
-        "surface": 0.8,
-        "safety": 0.9,
-        "barrier_free": 0.5,
-        "rest": 0.4,
-        "step": 0.8,
+        "max_slope_percent": 12.0,
+        "max_steps_without_ramp": 12,
+        "min_width_m": 0.8,
+        "min_barrier_free_level": 2,
+        "require_wheelchair_accessible": False,
+        "weights": {
+            "distance": 1.2,
+            "slope": 1.0,
+            "surface": 0.8,
+            "safety": 0.9,
+            "barrier_free": 0.5,
+            "rest": 0.4,
+            "step": 0.8,
+            "width": 0.4,
+            "shade": -0.2,
+            "bench": -0.2,
+            "handrail": -0.2,
+            "ramp": -0.2,
+        },
     },
-    "ASSISTED": {
-        "distance": 0.8,
-        "slope": 1.4,
-        "surface": 1.3,
-        "safety": 1.3,
-        "barrier_free": 1.2,
-        "rest": 0.9,
-        "step": 1.5,
+    "SLOW_WALKER": {
+        "max_slope_percent": 6.5,
+        "max_steps_without_ramp": 6,
+        "min_width_m": 0.9,
+        "min_barrier_free_level": 3,
+        "require_wheelchair_accessible": False,
+        "weights": {
+            "distance": 0.9,
+            "slope": 1.6,
+            "surface": 1.3,
+            "safety": 1.2,
+            "barrier_free": 1.0,
+            "rest": 1.5,
+            "step": 1.8,
+            "width": 0.8,
+            "shade": -0.8,
+            "bench": -0.9,
+            "handrail": -0.5,
+            "ramp": -0.3,
+        },
+    },
+    "CANE": {
+        "max_slope_percent": 8.0,
+        "max_steps_without_ramp": 8,
+        "min_width_m": 0.9,
+        "min_barrier_free_level": 3,
+        "require_wheelchair_accessible": False,
+        "weights": {
+            "distance": 0.85,
+            "slope": 1.8,
+            "surface": 1.4,
+            "safety": 1.4,
+            "barrier_free": 1.3,
+            "rest": 1.0,
+            "step": 3.2,
+            "width": 1.0,
+            "shade": -0.5,
+            "bench": -0.5,
+            "handrail": -1.0,
+            "ramp": -0.8,
+        },
+    },
+    "WHEELCHAIR": {
+        "max_slope_percent": 5.0,
+        "max_steps_without_ramp": 0,
+        "min_width_m": 1.2,
+        "min_barrier_free_level": 4,
+        "require_wheelchair_accessible": True,
+        "weights": {
+            "distance": 0.75,
+            "slope": 2.4,
+            "surface": 1.8,
+            "safety": 1.3,
+            "barrier_free": 2.4,
+            "rest": 0.8,
+            "step": 100.0,
+            "width": 2.6,
+            "shade": -0.3,
+            "bench": -0.2,
+            "handrail": -0.2,
+            "ramp": -1.8,
+        },
     },
     "FAMILY_ASSISTED": {
-        "distance": 0.9,
-        "slope": 1.1,
-        "surface": 1.0,
-        "safety": 1.5,
-        "barrier_free": 1.0,
-        "rest": 1.1,
-        "step": 1.2,
+        "max_slope_percent": 9.0,
+        "max_steps_without_ramp": 10,
+        "min_width_m": 0.9,
+        "min_barrier_free_level": 3,
+        "require_wheelchair_accessible": False,
+        "weights": {
+            "distance": 0.9,
+            "slope": 1.2,
+            "surface": 1.0,
+            "safety": 1.6,
+            "barrier_free": 1.0,
+            "rest": 1.1,
+            "step": 1.5,
+            "width": 0.7,
+            "shade": -0.5,
+            "bench": -0.6,
+            "handrail": -0.5,
+            "ramp": -0.4,
+        },
     },
 }
 
 
+def normalize_mobility_type(mobility_type: str) -> str:
+    return PROFILE_ALIASES.get(mobility_type, mobility_type)
+
+
+def numeric(segment: Mapping[str, Any], key: str, default: float) -> float:
+    value = segment.get(key, default)
+    return default if value is None else float(value)
+
+
+def integer(segment: Mapping[str, Any], key: str, default: int) -> int:
+    value = segment.get(key, default)
+    return default if value is None else int(value)
+
+
+def boolean(segment: Mapping[str, Any], key: str, default: bool) -> bool:
+    value = segment.get(key, default)
+    return default if value is None else bool(value)
+
+
+def profile_for(mobility_type: str) -> dict[str, Any]:
+    return MOBILITY_PROFILES[normalize_mobility_type(mobility_type)]
+
+
+def is_segment_allowed(segment: Mapping[str, Any], mobility_type: str) -> bool:
+    profile = profile_for(mobility_type)
+    slope = numeric(segment, "slope_percent", 0)
+    step_count = integer(segment, "step_count", 0)
+    width_m = numeric(segment, "width_m", 1.5)
+    barrier_free_level = integer(segment, "barrier_free_level", 3)
+    has_ramp = boolean(segment, "has_ramp", False)
+
+    if slope > float(profile["max_slope_percent"]):
+        return False
+    if width_m < float(profile["min_width_m"]):
+        return False
+    if barrier_free_level < int(profile["min_barrier_free_level"]):
+        return False
+    if step_count > int(profile["max_steps_without_ramp"]) and not has_ramp:
+        return False
+    if profile["require_wheelchair_accessible"]:
+        if not boolean(segment, "wheelchair_accessible", False):
+            return False
+        if step_count > 0 and not has_ramp:
+            return False
+    return True
+
+
 def segment_cost(segment: Mapping[str, Any], mobility_type: str) -> float:
-    weights = MOBILITY_WEIGHTS[mobility_type]
-    distance_cost = float(segment["length_m"]) / 100
-    slope_risk = float(segment["slope_percent"])
-    surface_risk = 6 - int(segment["surface_level"])
-    safety_risk = 6 - int(segment["safety_level"])
-    barrier_free_risk = 6 - int(segment["barrier_free_level"])
-    rest_risk = 6 - int(segment["rest_facility_score"])
-    step_risk = int(segment["step_count"]) * 2
-    return (
+    profile = profile_for(mobility_type)
+    weights = profile["weights"]
+    distance_cost = numeric(segment, "length_m", 0) / 100
+    slope_risk = numeric(segment, "slope_percent", 0)
+    surface_level_risk = 6 - integer(segment, "surface_level", 3)
+    safety_risk = 6 - integer(segment, "safety_level", 3)
+    barrier_free_risk = 6 - integer(segment, "barrier_free_level", 3)
+    rest_risk = 6 - integer(segment, "rest_facility_score", 3)
+    step_risk = integer(segment, "step_count", 0) * 2
+    width_risk = max(0, float(profile["min_width_m"]) - numeric(segment, "width_m", 1.5)) * 4
+    surface_type = str(segment.get("surface_type") or DEFAULT_SURFACE_TYPE).upper()
+    surface_type_risk = SURFACE_DIFFICULTY.get(surface_type, 1.4) - 1
+
+    shade_benefit = numeric(segment, "shade_coverage_percent", 0) / 25
+    bench_benefit = min(integer(segment, "bench_count", 0), 3)
+    handrail_benefit = 1 if boolean(segment, "has_handrail", False) else 0
+    ramp_benefit = 1 if boolean(segment, "has_ramp", False) else 0
+
+    raw_cost = (
         weights["distance"] * distance_cost
         + weights["slope"] * slope_risk
-        + weights["surface"] * surface_risk
+        + weights["surface"] * (surface_level_risk + surface_type_risk)
         + weights["safety"] * safety_risk
         + weights["barrier_free"] * barrier_free_risk
         + weights["rest"] * rest_risk
         + weights["step"] * step_risk
+        + weights["width"] * width_risk
+        + weights["shade"] * shade_benefit
+        + weights["bench"] * bench_benefit
+        + weights["handrail"] * handrail_benefit
+        + weights["ramp"] * ramp_benefit
     )
+    return max(0.1, raw_cost)
 
 
 def route_score(segments: list[Mapping[str, Any]], mobility_type: str) -> float:
@@ -63,11 +228,13 @@ def enumerate_paths(
     segments: list[Mapping[str, Any]],
     start_node_code: str,
     end_node_code: str,
+    mobility_type: str = "INDEPENDENT",
     max_depth: int = 8,
 ) -> list[list[Mapping[str, Any]]]:
     graph: dict[str, list[Mapping[str, Any]]] = {}
     for segment in segments:
-        graph.setdefault(str(segment["start_node_code"]), []).append(segment)
+        if is_segment_allowed(segment, mobility_type):
+            graph.setdefault(str(segment["start_node_code"]), []).append(segment)
 
     paths: list[list[Mapping[str, Any]]] = []
 
@@ -91,14 +258,20 @@ def enumerate_paths(
     return paths
 
 
-def build_summary(path: list[Mapping[str, Any]]) -> str:
-    avg_slope = sum(float(segment["slope_percent"]) for segment in path) / len(path)
-    avg_surface = sum(int(segment["surface_level"]) for segment in path) / len(path)
-    avg_safety = sum(int(segment["safety_level"]) for segment in path) / len(path)
-    avg_rest = sum(int(segment["rest_facility_score"]) for segment in path) / len(path)
-    total_steps = sum(int(segment["step_count"]) for segment in path)
+def build_summary(path: list[Mapping[str, Any]], mobility_type: str) -> str:
+    avg_slope = sum(numeric(segment, "slope_percent", 0) for segment in path) / len(path)
+    avg_surface = sum(integer(segment, "surface_level", 3) for segment in path) / len(path)
+    avg_safety = sum(integer(segment, "safety_level", 3) for segment in path) / len(path)
+    avg_rest = sum(integer(segment, "rest_facility_score", 3) for segment in path) / len(path)
+    total_steps = sum(integer(segment, "step_count", 0) for segment in path)
+    min_width = min(numeric(segment, "width_m", 1.5) for segment in path)
+    has_ramps = any(boolean(segment, "has_ramp", False) for segment in path)
+    has_handrails = any(boolean(segment, "has_handrail", False) for segment in path)
+    avg_shade = sum(numeric(segment, "shade_coverage_percent", 0) for segment in path) / len(path)
 
     reasons = []
+    if mobility_type == "WHEELCHAIR":
+        reasons.append("轮椅可通行")
     if avg_slope <= 1.5:
         reasons.append("坡度较缓")
     if avg_surface >= 4:
@@ -107,9 +280,17 @@ def build_summary(path: list[Mapping[str, Any]]) -> str:
         reasons.append("安全性较好")
     if avg_rest >= 4:
         reasons.append("沿途休息点更友好")
+    if min_width >= 1.2:
+        reasons.append("通行宽度较充足")
+    if has_ramps:
+        reasons.append("包含坡道")
+    if has_handrails:
+        reasons.append("有扶手辅助")
+    if avg_shade >= 40:
+        reasons.append("树荫覆盖较好")
     if total_steps > 0:
-        reasons.append("存在台阶，需要注意")
-    return "，".join(reasons) if reasons else "综合成本较低"
+        reasons.append("存在台阶，需注意")
+    return "，".join(reasons) if reasons else "综合适老成本较低"
 
 
 def recommend_routes(
@@ -119,7 +300,7 @@ def recommend_routes(
     mobility_type: str,
     limit: int = 3,
 ) -> list[dict[str, Any]]:
-    paths = enumerate_paths(segments, start_node_code, end_node_code)
+    paths = enumerate_paths(segments, start_node_code, end_node_code, mobility_type)
     ranked = []
     for path in paths:
         score = route_score(path, mobility_type)
@@ -128,7 +309,7 @@ def recommend_routes(
 
     routes = []
     for index, (score, path) in enumerate(ranked[:limit], start=1):
-        distance_m = sum(float(segment["length_m"]) for segment in path)
+        distance_m = sum(numeric(segment, "length_m", 0) for segment in path)
         routes.append(
             {
                 "rank": index,
@@ -137,7 +318,7 @@ def recommend_routes(
                 "estimated_minutes": max(1, round(distance_m / 60)),
                 "segment_codes": [str(segment["segment_code"]) for segment in path],
                 "segment_names": [segment.get("name") for segment in path],
-                "summary": build_summary(path),
+                "summary": build_summary(path, normalize_mobility_type(mobility_type)),
             }
         )
     return routes

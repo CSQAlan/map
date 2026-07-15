@@ -29,7 +29,23 @@ def list_segments(db: Session = Depends(get_db)) -> list[RoadSegmentResponse]:
     rows = db.execute(
         text(
             """
-            SELECT id, segment_code, name, length_m, slope_percent, surface_level, safety_level
+            SELECT
+                id,
+                segment_code,
+                name,
+                length_m,
+                slope_percent,
+                surface_type,
+                width_m,
+                surface_level,
+                safety_level,
+                barrier_free_level,
+                wheelchair_accessible,
+                has_handrail,
+                has_ramp,
+                shade_coverage_percent,
+                bench_count,
+                step_count
             FROM road_segment
             WHERE status = 'ACTIVE'
             ORDER BY id

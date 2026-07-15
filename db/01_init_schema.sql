@@ -131,6 +131,8 @@ CREATE TABLE IF NOT EXISTS road_segment (
     geom GEOMETRY(LineString, 4326) NOT NULL,
     length_m NUMERIC(10,2) NOT NULL,
     slope_percent NUMERIC(5,2) DEFAULT 0,
+    surface_type VARCHAR(30) NOT NULL DEFAULT 'CONCRETE',
+    width_m NUMERIC(5,2) NOT NULL DEFAULT 1.50,
     surface_level SMALLINT NOT NULL DEFAULT 3,
     safety_level SMALLINT NOT NULL DEFAULT 3,
     barrier_free_level SMALLINT NOT NULL DEFAULT 3,
@@ -138,7 +140,12 @@ CREATE TABLE IF NOT EXISTS road_segment (
     lighting_level SMALLINT NOT NULL DEFAULT 3,
     crossing_safety_level SMALLINT NOT NULL DEFAULT 3,
     wheelchair_accessible BOOLEAN NOT NULL DEFAULT FALSE,
+    has_handrail BOOLEAN NOT NULL DEFAULT FALSE,
+    has_ramp BOOLEAN NOT NULL DEFAULT FALSE,
+    shade_coverage_percent SMALLINT NOT NULL DEFAULT 0,
+    bench_count INTEGER NOT NULL DEFAULT 0,
     step_count INTEGER NOT NULL DEFAULT 0,
+    step_height_cm NUMERIC(5,2) NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     data_source VARCHAR(20) NOT NULL DEFAULT 'MANUAL',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -148,13 +155,20 @@ CREATE TABLE IF NOT EXISTS road_segment (
     CONSTRAINT fk_road_segment_end_node_id FOREIGN KEY (end_node_id) REFERENCES road_node(id),
     CONSTRAINT ck_road_segment_length_m CHECK (length_m >= 0),
     CONSTRAINT ck_road_segment_slope_percent CHECK (slope_percent >= 0),
+    CONSTRAINT ck_road_segment_surface_type CHECK (
+        surface_type IN ('ASPHALT', 'CONCRETE', 'BRICK', 'GRAVEL', 'GRASS', 'WOOD', 'TILE', 'COBBLESTONE')
+    ),
+    CONSTRAINT ck_road_segment_width_m CHECK (width_m >= 0),
     CONSTRAINT ck_road_segment_surface_level CHECK (surface_level BETWEEN 1 AND 5),
     CONSTRAINT ck_road_segment_safety_level CHECK (safety_level BETWEEN 1 AND 5),
     CONSTRAINT ck_road_segment_barrier_free_level CHECK (barrier_free_level BETWEEN 1 AND 5),
     CONSTRAINT ck_road_segment_rest_facility_score CHECK (rest_facility_score BETWEEN 1 AND 5),
     CONSTRAINT ck_road_segment_lighting_level CHECK (lighting_level BETWEEN 1 AND 5),
     CONSTRAINT ck_road_segment_crossing_safety_level CHECK (crossing_safety_level BETWEEN 1 AND 5),
+    CONSTRAINT ck_road_segment_shade_coverage_percent CHECK (shade_coverage_percent BETWEEN 0 AND 100),
+    CONSTRAINT ck_road_segment_bench_count CHECK (bench_count >= 0),
     CONSTRAINT ck_road_segment_step_count CHECK (step_count >= 0),
+    CONSTRAINT ck_road_segment_step_height_cm CHECK (step_height_cm >= 0),
     CONSTRAINT ck_road_segment_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
     CONSTRAINT ck_road_segment_data_source CHECK (data_source IN ('OSM', 'DEM', 'MANUAL', 'OSM_DEM_MANUAL')),
     CONSTRAINT ck_road_segment_not_self_loop CHECK (start_node_id <> end_node_id)
@@ -163,6 +177,14 @@ CREATE TABLE IF NOT EXISTS road_segment (
 CREATE INDEX IF NOT EXISTS idx_road_segment_start_node_id ON road_segment(start_node_id);
 CREATE INDEX IF NOT EXISTS idx_road_segment_end_node_id ON road_segment(end_node_id);
 CREATE INDEX IF NOT EXISTS gist_road_segment_geom ON road_segment USING GIST (geom);
+
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS surface_type VARCHAR(30) NOT NULL DEFAULT 'CONCRETE';
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS width_m NUMERIC(5,2) NOT NULL DEFAULT 1.50;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS has_handrail BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS has_ramp BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS shade_coverage_percent SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS bench_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS step_height_cm NUMERIC(5,2) NOT NULL DEFAULT 0;
 
 -- =========================
 -- 3. 数据采集与审核
@@ -173,13 +195,20 @@ CREATE TABLE IF NOT EXISTS segment_collect_record (
     road_segment_id BIGINT NOT NULL,
     collector_user_id BIGINT NOT NULL,
     surface_level SMALLINT NOT NULL,
+    surface_type VARCHAR(30) NOT NULL DEFAULT 'CONCRETE',
+    width_m NUMERIC(5,2) NOT NULL DEFAULT 1.50,
     safety_level SMALLINT NOT NULL,
     barrier_free_level SMALLINT NOT NULL,
     rest_facility_score SMALLINT NOT NULL,
     lighting_level SMALLINT NOT NULL,
     crossing_safety_level SMALLINT NOT NULL,
     wheelchair_accessible BOOLEAN NOT NULL DEFAULT FALSE,
+    has_handrail BOOLEAN NOT NULL DEFAULT FALSE,
+    has_ramp BOOLEAN NOT NULL DEFAULT FALSE,
+    shade_coverage_percent SMALLINT NOT NULL DEFAULT 0,
+    bench_count INTEGER NOT NULL DEFAULT 0,
     step_count INTEGER NOT NULL DEFAULT 0,
+    step_height_cm NUMERIC(5,2) NOT NULL DEFAULT 0,
     remark VARCHAR(500),
     photo_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
     collect_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -188,12 +217,16 @@ CREATE TABLE IF NOT EXISTS segment_collect_record (
     CONSTRAINT fk_segment_collect_record_road_segment_id FOREIGN KEY (road_segment_id) REFERENCES road_segment(id),
     CONSTRAINT fk_segment_collect_record_collector_user_id FOREIGN KEY (collector_user_id) REFERENCES app_user(id),
     CONSTRAINT ck_segment_collect_record_surface_level CHECK (surface_level BETWEEN 1 AND 5),
+    CONSTRAINT ck_segment_collect_record_width_m CHECK (width_m >= 0),
     CONSTRAINT ck_segment_collect_record_safety_level CHECK (safety_level BETWEEN 1 AND 5),
     CONSTRAINT ck_segment_collect_record_barrier_free_level CHECK (barrier_free_level BETWEEN 1 AND 5),
     CONSTRAINT ck_segment_collect_record_rest_facility_score CHECK (rest_facility_score BETWEEN 1 AND 5),
     CONSTRAINT ck_segment_collect_record_lighting_level CHECK (lighting_level BETWEEN 1 AND 5),
     CONSTRAINT ck_segment_collect_record_crossing_safety_level CHECK (crossing_safety_level BETWEEN 1 AND 5),
+    CONSTRAINT ck_segment_collect_record_shade_coverage_percent CHECK (shade_coverage_percent BETWEEN 0 AND 100),
+    CONSTRAINT ck_segment_collect_record_bench_count CHECK (bench_count >= 0),
     CONSTRAINT ck_segment_collect_record_step_count CHECK (step_count >= 0),
+    CONSTRAINT ck_segment_collect_record_step_height_cm CHECK (step_height_cm >= 0),
     CONSTRAINT ck_segment_collect_record_status CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))
 );
 
@@ -201,6 +234,14 @@ CREATE INDEX IF NOT EXISTS idx_segment_collect_record_road_segment_id
     ON segment_collect_record(road_segment_id);
 CREATE INDEX IF NOT EXISTS idx_segment_collect_record_collector_user_id
     ON segment_collect_record(collector_user_id);
+
+ALTER TABLE segment_collect_record ADD COLUMN IF NOT EXISTS surface_type VARCHAR(30) NOT NULL DEFAULT 'CONCRETE';
+ALTER TABLE segment_collect_record ADD COLUMN IF NOT EXISTS width_m NUMERIC(5,2) NOT NULL DEFAULT 1.50;
+ALTER TABLE segment_collect_record ADD COLUMN IF NOT EXISTS has_handrail BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE segment_collect_record ADD COLUMN IF NOT EXISTS has_ramp BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE segment_collect_record ADD COLUMN IF NOT EXISTS shade_coverage_percent SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE segment_collect_record ADD COLUMN IF NOT EXISTS bench_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE segment_collect_record ADD COLUMN IF NOT EXISTS step_height_cm NUMERIC(5,2) NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS segment_audit_record (
     id BIGSERIAL PRIMARY KEY,
@@ -351,4 +392,3 @@ CREATE TRIGGER trg_road_segment_set_updated_at
 BEFORE UPDATE ON road_segment
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
-

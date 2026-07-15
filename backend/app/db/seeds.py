@@ -8,6 +8,16 @@ from app.core.database import engine
 
 SEED_DIR = Path(__file__).resolve().parent / "seed_data"
 
+SEGMENT_DEFAULTS = {
+    "surface_type": "CONCRETE",
+    "width_m": 1.5,
+    "has_handrail": False,
+    "has_ramp": False,
+    "shade_coverage_percent": 20,
+    "bench_count": 0,
+    "step_height_cm": 0,
+}
+
 
 def load_seed_json(filename: str) -> list[dict]:
     return json.loads((SEED_DIR / filename).read_text(encoding="utf-8"))
@@ -73,8 +83,35 @@ def seed_core_nodes() -> int:
 
 def seed_core_segments() -> int:
     rows = load_seed_json("core_segments.json")
+    update_sql = text(
+        """
+        UPDATE road_segment
+        SET
+            name = :name,
+            length_m = :length_m,
+            slope_percent = :slope_percent,
+            surface_type = :surface_type,
+            width_m = :width_m,
+            surface_level = :surface_level,
+            safety_level = :safety_level,
+            barrier_free_level = :barrier_free_level,
+            rest_facility_score = :rest_facility_score,
+            lighting_level = :lighting_level,
+            crossing_safety_level = :crossing_safety_level,
+            wheelchair_accessible = :wheelchair_accessible,
+            has_handrail = :has_handrail,
+            has_ramp = :has_ramp,
+            shade_coverage_percent = :shade_coverage_percent,
+            bench_count = :bench_count,
+            step_count = :step_count,
+            step_height_cm = :step_height_cm,
+            data_source = 'MANUAL'
+        WHERE segment_code = :segment_code
+        """
+    )
     with engine.begin() as connection:
         for row in rows:
+            payload = {**SEGMENT_DEFAULTS, **row}
             existing_id = connection.execute(
                 text(
                     """
@@ -86,6 +123,7 @@ def seed_core_segments() -> int:
                 {"segment_code": row["segment_code"]},
             ).scalar_one_or_none()
             if existing_id is not None:
+                connection.execute(update_sql, payload)
                 continue
 
             start_node_id = connection.execute(
@@ -119,6 +157,8 @@ def seed_core_segments() -> int:
                         geom,
                         length_m,
                         slope_percent,
+                        surface_type,
+                        width_m,
                         surface_level,
                         safety_level,
                         barrier_free_level,
@@ -126,7 +166,12 @@ def seed_core_segments() -> int:
                         lighting_level,
                         crossing_safety_level,
                         wheelchair_accessible,
+                        has_handrail,
+                        has_ramp,
+                        shade_coverage_percent,
+                        bench_count,
                         step_count,
+                        step_height_cm,
                         data_source
                     )
                     VALUES (
@@ -137,6 +182,8 @@ def seed_core_segments() -> int:
                         ST_SetSRID(ST_GeomFromText(:wkt), 4326),
                         :length_m,
                         :slope_percent,
+                        :surface_type,
+                        :width_m,
                         :surface_level,
                         :safety_level,
                         :barrier_free_level,
@@ -144,13 +191,18 @@ def seed_core_segments() -> int:
                         :lighting_level,
                         :crossing_safety_level,
                         :wheelchair_accessible,
+                        :has_handrail,
+                        :has_ramp,
+                        :shade_coverage_percent,
+                        :bench_count,
                         :step_count,
+                        :step_height_cm,
                         'MANUAL'
                     )
                     """
                 ),
                 {
-                    **row,
+                    **payload,
                     "start_node_id": start_node_id,
                     "end_node_id": end_node_id,
                 },
