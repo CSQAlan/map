@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
 
 const startOptions = [{ label: '重庆师范大学三号门', value: '重庆师范大学三号门' }];
 const endOptions = [
@@ -27,12 +28,44 @@ const mapLoading = ref(false);
 const errorMessage = ref('');
 const actionStatus = ref('尚未开始导航，请先确认路线。');
 const mapFeatures = ref([]);
+const collectionSegments = ref([]);
+const pendingCollectionRecords = ref([]);
+const collectionLoading = ref(false);
+const collectionSubmitting = ref(false);
+const collectionMessage = ref('手机端采集表已准备好，选择路段后即可提交待审核数据。');
+const collectionError = ref('');
+const collectionForm = ref({
+  segment_code: '',
+  collector: '采集员A',
+  surface_type: 'CONCRETE',
+  surface_level: 4,
+  safety_level: 4,
+  barrier_free_level: 4,
+  rest_facility_score: 3,
+  lighting_level: 4,
+  crossing_safety_level: 4,
+  width_m: 1.5,
+  wheelchair_accessible: true,
+  has_handrail: false,
+  has_ramp: true,
+  shade_coverage_percent: 30,
+  bench_count: 0,
+  step_count: 0,
+  step_height_cm: 0,
+  location_lat: null,
+  location_lon: null,
+  photo_urls: [],
+  remark: '',
+});
 
 const selectedProfile = computed(() =>
   profileOptions.find((item) => item.value === mobilityType.value)
 );
 const selectedEnd = computed(() => endOptions.find((item) => item.value === endName.value));
 const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
+const selectedCollectionSegment = computed(() =>
+  collectionSegments.value.find((segment) => segment.segment_code === collectionForm.value.segment_code)
+);
 const hasRoutes = computed(() => routes.value.length > 0);
 const selectedSegments = computed(() => selectedRoute.value?.segments ?? []);
 const routeSegmentCodes = computed(() => new Set(selectedRoute.value?.segment_codes ?? []));
@@ -70,6 +103,8 @@ const nextStepText = computed(() => {
 
 onMounted(() => {
   fetchMapData();
+  fetchCollectionSegments();
+  fetchPendingCollectionRecords();
 });
 
 function collectCoordinates(coordinates, points) {
@@ -124,6 +159,98 @@ async function fetchMapData() {
   } finally {
     mapLoading.value = false;
   }
+}
+
+async function fetchCollectionSegments() {
+  collectionLoading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/collect/segments`);
+    if (!response.ok) {
+      throw new Error('路段列表接口暂时不可用。');
+    }
+    const payload = await response.json();
+    collectionSegments.value = Array.isArray(payload) ? payload : [];
+    if (!collectionForm.value.segment_code && collectionSegments.value.length) {
+      useCollectionSegment(collectionSegments.value[0].segment_code);
+    }
+  } catch {
+    collectionError.value = '无法加载可采集路段，请确认后端服务已启动。';
+  } finally {
+    collectionLoading.value = false;
+  }
+}
+
+async function fetchPendingCollectionRecords() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/collect/pending`);
+    pendingCollectionRecords.value = response.ok ? await response.json() : [];
+  } catch {
+    pendingCollectionRecords.value = [];
+    collectionError.value = '待审核列表暂时无法加载，但不影响提交采集记录。';
+  }
+}
+
+function useCollectionSegment(segmentCode) {
+  collectionForm.value.segment_code = segmentCode;
+  const segment = collectionSegments.value.find((item) => item.segment_code === segmentCode);
+  if (!segment) return;
+  collectionForm.value.width_m = Number(segment.width_m ?? collectionForm.value.width_m);
+  collectionForm.value.surface_type = segment.surface_type ?? 'CONCRETE';
+}
+
+function captureCurrentLocation() {
+  collectionError.value = '';
+  if (!navigator.geolocation) {
+    collectionError.value = '当前浏览器不支持定位，可以先手动提交采集数据。';
+    return;
+  }
+  collectionMessage.value = '正在读取手机定位，请稍等。';
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      collectionForm.value.location_lat = Number(position.coords.latitude.toFixed(6));
+      collectionForm.value.location_lon = Number(position.coords.longitude.toFixed(6));
+      collectionMessage.value = '已记录当前位置，会随采集备注一起提交。';
+    },
+    () => {
+      collectionError.value = '定位失败，可以检查浏览器权限，或先不带定位提交。';
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+async function submitCollection() {
+  collectionSubmitting.value = true;
+  collectionError.value = '';
+  collectionMessage.value = '正在提交采集记录...';
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/collect/segments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectionForm.value),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(formatApiError(payload.detail));
+    }
+    collectionMessage.value = `已提交记录 #${payload.id}，状态：${payload.status}，等待管理员审核。`;
+    collectionForm.value.remark = '';
+    collectionForm.value.location_lat = null;
+    collectionForm.value.location_lon = null;
+    await fetchPendingCollectionRecords();
+  } catch (error) {
+    collectionError.value = error instanceof Error ? error.message : '采集记录提交失败。';
+    collectionMessage.value = '提交没有成功，请检查字段后再试一次。';
+  } finally {
+    collectionSubmitting.value = false;
+  }
+}
+
+function formatApiError(detail) {
+  if (Array.isArray(detail)) {
+    return detail.map((item) => item.msg ?? JSON.stringify(item)).join('；');
+  }
+  if (typeof detail === 'string') return detail;
+  return '采集记录提交失败。';
 }
 
 async function fetchRoutes() {
@@ -208,6 +335,13 @@ function sendSos() {
           @click="activeMode = 'elder'"
         >
           老人模式
+        </button>
+        <button
+          :class="{ active: activeMode === 'collect' }"
+          type="button"
+          @click="activeMode = 'collect'"
+        >
+          采集模式
         </button>
       </div>
     </section>
@@ -364,7 +498,7 @@ function sendSos() {
       </section>
     </section>
 
-    <section v-else class="elder-panel">
+    <section v-else-if="activeMode === 'elder'" class="elder-panel">
       <div class="elder-summary">
         <p class="section-kicker">当前路线</p>
         <h2>{{ selectedEnd?.label ?? '目的地' }}</h2>
@@ -403,6 +537,170 @@ function sendSos() {
       </div>
 
       <p class="elder-status">{{ actionStatus }}</p>
+    </section>
+
+    <section v-else class="collection-panel">
+      <div class="collection-hero">
+        <div>
+          <p class="section-kicker">手机现场采集</p>
+          <h2>路段适老数据录入</h2>
+          <p>队友到现场后选择路段，记录坡度感受、路宽、台阶、坡道、扶手、照明和备注。提交后进入待审核队列，不会直接覆盖正式路线数据。</p>
+        </div>
+        <button class="secondary-action" type="button" @click="captureCurrentLocation">
+          记录手机定位
+        </button>
+      </div>
+
+      <form class="collection-form" @submit.prevent="submitCollection">
+        <label class="field-block full-span">
+          <span>选择采集路段</span>
+          <select
+            v-model="collectionForm.segment_code"
+            :disabled="collectionLoading"
+            @change="useCollectionSegment(collectionForm.segment_code)"
+          >
+            <option
+              v-for="segment in collectionSegments"
+              :key="segment.segment_code"
+              :value="segment.segment_code"
+            >
+              {{ segment.name || segment.segment_code }}
+            </option>
+          </select>
+        </label>
+
+        <div v-if="selectedCollectionSegment" class="selected-segment-card full-span">
+          <strong>{{ selectedCollectionSegment.name }}</strong>
+          <span>{{ selectedCollectionSegment.segment_code }} · {{ selectedCollectionSegment.length_m }} 米 · 坡度 {{ selectedCollectionSegment.slope_percent }}%</span>
+        </div>
+
+        <label class="field-block">
+          <span>采集人</span>
+          <input v-model.trim="collectionForm.collector" maxlength="50" required />
+        </label>
+
+        <label class="field-block">
+          <span>路面类型</span>
+          <select v-model="collectionForm.surface_type">
+            <option value="CONCRETE">水泥 / 混凝土</option>
+            <option value="ASPHALT">沥青</option>
+            <option value="BRICK">砖石</option>
+            <option value="TILE">地砖</option>
+            <option value="GRAVEL">碎石</option>
+            <option value="COBBLESTONE">鹅卵石</option>
+          </select>
+        </label>
+
+        <label class="field-block">
+          <span>路宽（米）</span>
+          <input v-model.number="collectionForm.width_m" min="0" max="20" step="0.1" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>路面平整度 1-5</span>
+          <input v-model.number="collectionForm.surface_level" min="1" max="5" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>安全等级 1-5</span>
+          <input v-model.number="collectionForm.safety_level" min="1" max="5" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>无障碍等级 1-5</span>
+          <input v-model.number="collectionForm.barrier_free_level" min="1" max="5" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>休息设施评分 1-5</span>
+          <input v-model.number="collectionForm.rest_facility_score" min="1" max="5" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>照明等级 1-5</span>
+          <input v-model.number="collectionForm.lighting_level" min="1" max="5" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>过街安全 1-5</span>
+          <input v-model.number="collectionForm.crossing_safety_level" min="1" max="5" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>树荫覆盖率 %</span>
+          <input v-model.number="collectionForm.shade_coverage_percent" min="0" max="100" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>座椅数量</span>
+          <input v-model.number="collectionForm.bench_count" min="0" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>台阶数量</span>
+          <input v-model.number="collectionForm.step_count" min="0" type="number" required />
+        </label>
+
+        <label class="field-block">
+          <span>台阶高度（厘米）</span>
+          <input v-model.number="collectionForm.step_height_cm" min="0" max="100" step="0.5" type="number" required />
+        </label>
+
+        <div class="toggle-grid full-span">
+          <label>
+            <input v-model="collectionForm.wheelchair_accessible" type="checkbox" />
+            轮椅可通行
+          </label>
+          <label>
+            <input v-model="collectionForm.has_ramp" type="checkbox" />
+            有坡道
+          </label>
+          <label>
+            <input v-model="collectionForm.has_handrail" type="checkbox" />
+            有扶手
+          </label>
+        </div>
+
+        <label class="field-block full-span">
+          <span>现场备注</span>
+          <textarea
+            v-model.trim="collectionForm.remark"
+            maxlength="400"
+            placeholder="例如：路面平整但下午人流较多；入口有 1 级小台阶。"
+          ></textarea>
+        </label>
+
+        <div class="location-preview full-span">
+          <span>定位</span>
+          <strong v-if="collectionForm.location_lat !== null && collectionForm.location_lon !== null">
+            {{ collectionForm.location_lon }}, {{ collectionForm.location_lat }}
+          </strong>
+          <strong v-else>暂未记录，可直接提交</strong>
+        </div>
+
+        <button class="primary-action full-span" type="submit" :disabled="collectionSubmitting || !collectionForm.segment_code">
+          {{ collectionSubmitting ? '正在提交...' : '提交为待审核记录' }}
+        </button>
+      </form>
+
+      <p class="status-line">{{ collectionMessage }}</p>
+      <p v-if="collectionError" class="error-line">{{ collectionError }}</p>
+
+      <section class="pending-panel">
+        <div class="panel-heading">
+          <p class="section-kicker">待审核数据</p>
+          <h2>最近 {{ pendingCollectionRecords.length }} 条采集记录</h2>
+        </div>
+        <article
+          v-for="record in pendingCollectionRecords"
+          :key="record.id"
+          class="pending-card"
+        >
+          <strong>{{ record.segment_name || record.segment_code }}</strong>
+          <span>{{ record.collector_name }} · 平整 {{ record.surface_level }} · 安全 {{ record.safety_level }} · 台阶 {{ record.step_count }}</span>
+          <p>{{ record.remark || '暂无备注' }}</p>
+        </article>
+      </section>
     </section>
   </main>
 </template>
