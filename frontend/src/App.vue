@@ -31,6 +31,7 @@ const actionStatus = ref('尚未开始导航，请先确认路线。');
 const mapFeatures = ref([]);
 const diagnosticSuggestions = ref([]);
 const diagnosticsLoading = ref(false);
+const sosSubmitting = ref(false);
 const collectionSegments = ref([]);
 const pendingCollectionRecords = ref([]);
 const collectionLoading = ref(false);
@@ -301,12 +302,12 @@ async function auditCollection(record, auditResult) {
   }
 }
 
-function formatApiError(detail) {
+function formatApiError(detail, fallback = '采集记录提交失败。') {
   if (Array.isArray(detail)) {
     return detail.map((item) => item.msg ?? JSON.stringify(item)).join('；');
   }
   if (typeof detail === 'string') return detail;
-  return '采集记录提交失败。';
+  return fallback;
 }
 
 async function fetchRoutes() {
@@ -374,8 +375,35 @@ function reroute() {
   fetchRoutes();
 }
 
-function sendSos() {
-  actionStatus.value = '已模拟发送求助信息，演示版暂不连接真实告警。';
+async function sendSos() {
+  sosSubmitting.value = true;
+  actionStatus.value = '正在记录紧急求助事件...';
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/emergency/sos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        elder_name: '演示老人',
+        mobility_type: mobilityType.value,
+        route_summary: selectedRoute.value?.summary ?? null,
+        current_step: nextStepText.value,
+        destination_name: selectedEnd.value?.label ?? null,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(formatApiError(payload.detail, 'SOS 记录接口暂时不可用。'));
+    }
+    actionStatus.value =
+      payload.message ?? `SOS 已记录为事件 #${payload.id}，已模拟通知联系人。`;
+  } catch (error) {
+    actionStatus.value =
+      error instanceof Error
+        ? `SOS 记录失败：${error.message}`
+        : 'SOS 记录失败，请确认后端服务已启动。';
+  } finally {
+    sosSubmitting.value = false;
+  }
 }
 </script>
 
@@ -658,7 +686,9 @@ function sendSos() {
       <div class="elder-actions">
         <button class="big-action start" type="button" @click="startNavigation">开始导航</button>
         <button class="big-action refresh" type="button" @click="reroute">重新推荐</button>
-        <button class="big-action sos" type="button" @click="sendSos">紧急求助</button>
+        <button class="big-action sos" type="button" :disabled="sosSubmitting" @click="sendSos">
+          {{ sosSubmitting ? '记录中...' : '紧急求助' }}
+        </button>
       </div>
 
       <p class="elder-status">{{ actionStatus }}</p>
