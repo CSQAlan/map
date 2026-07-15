@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from typing import Any
 
 import pytest
@@ -35,6 +36,13 @@ class FakeSession:
         self.inserted_collection = False
         self.insert_params: dict[str, Any] | None = None
         self.existing_pending_id: int | None = None
+        self.audit_record_status = "PENDING"
+        self.updated_road_segment = False
+        self.road_update_params: dict[str, Any] | None = None
+        self.updated_collect_status: str | None = None
+        self.inserted_audit = False
+        self.audit_params: dict[str, Any] | None = None
+        self.fail_on_audit_insert = False
         self.committed = False
         self.rolled_back = False
 
@@ -69,6 +77,45 @@ class FakeSession:
             self.inserted_collection = True
             self.insert_params = params
             return FakeResult(scalar=42)
+        if "WHERE scr.id = :record_id" in sql:
+            if params and params.get("record_id") == 404:
+                return FakeResult()
+            return FakeResult([audit_record_row(self.audit_record_status)])
+        if "UPDATE road_segment" in sql:
+            self.updated_road_segment = True
+            self.road_update_params = params
+            return FakeResult()
+        if "FROM road_segment" in sql and "WHERE id = :road_segment_id" in sql:
+            return FakeResult(
+                [
+                    {
+                        "surface_level": 5,
+                        "surface_type": "CONCRETE",
+                        "width_m": 1.8,
+                        "safety_level": 5,
+                        "barrier_free_level": 5,
+                        "rest_facility_score": 4,
+                        "lighting_level": 4,
+                        "crossing_safety_level": 5,
+                        "wheelchair_accessible": True,
+                        "has_handrail": True,
+                        "has_ramp": True,
+                        "shade_coverage_percent": 40,
+                        "bench_count": 1,
+                        "step_count": 0,
+                        "step_height_cm": 0.0,
+                    }
+                ]
+            )
+        if "UPDATE segment_collect_record" in sql:
+            self.updated_collect_status = params["status"] if params else None
+            return FakeResult()
+        if "INSERT INTO segment_audit_record" in sql:
+            if self.fail_on_audit_insert:
+                raise RuntimeError("audit insert failed")
+            self.inserted_audit = True
+            self.audit_params = params
+            return FakeResult(scalar=88)
         if "FROM segment_collect_record scr" in sql:
             return FakeResult(
                 [
@@ -77,11 +124,21 @@ class FakeSession:
                         "segment_code": "S_GATE3_TO_WIDE_PATH",
                         "segment_name": "\u4e09\u53f7\u95e8\u5230\u5bbd\u7f13\u6b65\u9053",
                         "collector_name": "\u91c7\u96c6\u5458A",
+                        "surface_type": "CONCRETE",
+                        "width_m": 1.6,
                         "surface_level": 4,
                         "safety_level": 5,
                         "barrier_free_level": 5,
+                        "rest_facility_score": 4,
+                        "lighting_level": 4,
+                        "crossing_safety_level": 4,
                         "wheelchair_accessible": True,
+                        "has_handrail": False,
+                        "has_ramp": True,
+                        "shade_coverage_percent": 35,
+                        "bench_count": 1,
                         "step_count": 0,
+                        "step_height_cm": 0.0,
                         "remark": "\u8def\u9762\u5e73\u6574",
                         "collect_time": datetime(2026, 7, 15, 10, 0, 0),
                         "status": "PENDING",
@@ -95,6 +152,46 @@ class FakeSession:
 
     def rollback(self) -> None:
         self.rolled_back = True
+
+
+def audit_record_row(status: str = "PENDING") -> dict[str, Any]:
+    return {
+        "collect_record_id": 42,
+        "road_segment_id": 1,
+        "segment_code": "S_GATE3_TO_WIDE_PATH",
+        "segment_name": "\u4e09\u53f7\u95e8\u5230\u5bbd\u7f13\u6b65\u9053",
+        "collect_status": status,
+        "collected_surface_level": 5,
+        "collected_surface_type": "CONCRETE",
+        "collected_width_m": 1.8,
+        "collected_safety_level": 5,
+        "collected_barrier_free_level": 5,
+        "collected_rest_facility_score": 4,
+        "collected_lighting_level": 4,
+        "collected_crossing_safety_level": 5,
+        "collected_wheelchair_accessible": True,
+        "collected_has_handrail": True,
+        "collected_has_ramp": True,
+        "collected_shade_coverage_percent": 40,
+        "collected_bench_count": 1,
+        "collected_step_count": 0,
+        "collected_step_height_cm": 0.0,
+        "road_surface_level": 3,
+        "road_surface_type": "CONCRETE",
+        "road_width_m": 1.4,
+        "road_safety_level": 4,
+        "road_barrier_free_level": 4,
+        "road_rest_facility_score": 3,
+        "road_lighting_level": 3,
+        "road_crossing_safety_level": 4,
+        "road_wheelchair_accessible": True,
+        "road_has_handrail": False,
+        "road_has_ramp": False,
+        "road_shade_coverage_percent": 20,
+        "road_bench_count": 0,
+        "road_step_count": 0,
+        "road_step_height_cm": 0.0,
+    }
 
 
 @pytest.fixture
@@ -186,3 +283,69 @@ def test_list_pending_collection_records() -> None:
     data = response.json()
     assert data[0]["id"] == 42
     assert data[0]["status"] == "PENDING"
+    assert data[0]["width_m"] == 1.6
+
+
+def test_approve_collection_record_updates_road_segment(fake_session: FakeSession) -> None:
+    response = client.post(
+        "/api/collect/segments/42/audit",
+        json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": "\u901a\u8fc7"},
+    )
+    assert response.status_code == 200
+    assert response.json()["audit_result"] == "APPROVED"
+    assert fake_session.updated_road_segment is True
+    assert fake_session.road_update_params is not None
+    assert fake_session.road_update_params["width_m"] == 1.8
+    assert fake_session.updated_collect_status == "APPROVED"
+    assert fake_session.inserted_audit is True
+    assert fake_session.audit_params is not None
+    before_snapshot = json.loads(fake_session.audit_params["before_snapshot"])
+    after_snapshot = json.loads(fake_session.audit_params["after_snapshot"])
+    assert before_snapshot["width_m"] == 1.4
+    assert after_snapshot["width_m"] == 1.8
+    assert fake_session.audit_params["audit_result"] == "APPROVED"
+    assert fake_session.committed is True
+
+
+def test_reject_collection_record_does_not_update_road_segment(fake_session: FakeSession) -> None:
+    response = client.post(
+        "/api/collect/segments/42/audit",
+        json={"audit_result": "REJECTED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": "\u9700\u91cd\u65b0\u91c7\u96c6"},
+    )
+    assert response.status_code == 200
+    assert response.json()["audit_result"] == "REJECTED"
+    assert fake_session.updated_road_segment is False
+    assert fake_session.updated_collect_status == "REJECTED"
+    assert fake_session.inserted_audit is True
+    before_snapshot = json.loads(fake_session.audit_params["before_snapshot"])
+    after_snapshot = json.loads(fake_session.audit_params["after_snapshot"])
+    assert before_snapshot == after_snapshot
+
+
+def test_audit_collection_record_rejects_non_pending_record(fake_session: FakeSession) -> None:
+    fake_session.audit_record_status = "APPROVED"
+    response = client.post(
+        "/api/collect/segments/42/audit",
+        json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": ""},
+    )
+    assert response.status_code == 409
+    assert fake_session.updated_road_segment is False
+    assert fake_session.inserted_audit is False
+
+
+def test_audit_collection_record_rolls_back_on_database_error(fake_session: FakeSession) -> None:
+    fake_session.fail_on_audit_insert = True
+    with pytest.raises(RuntimeError, match="audit insert failed"):
+        client.post(
+            "/api/collect/segments/42/audit",
+            json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": ""},
+        )
+    assert fake_session.rolled_back is True
+
+
+def test_audit_collection_record_returns_404_for_missing_record() -> None:
+    response = client.post(
+        "/api/collect/segments/404/audit",
+        json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": ""},
+    )
+    assert response.status_code == 404

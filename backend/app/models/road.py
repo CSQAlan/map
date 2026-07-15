@@ -88,3 +88,4 @@ class SegmentAuditRecord(Base):
     audit_comment: Mapped[str | None] = mapped_column(String(500))
     before_snapshot: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     after_snapshot: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

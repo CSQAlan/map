@@ -670,6 +670,29 @@ dd,
   margin: 0;
 }
 
+.pending-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.audit-action {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  color: #fff;
+  font-weight: 900;
+}
+
+.audit-action.approve {
+  background: var(--leaf-dark);
+}
+
+.audit-action.reject {
+  background: var(--danger);
+}
+
 @media (max-width: 860px) {
   .workspace-grid,
   .elder-actions,
@@ -699,6 +722,10 @@ dd,
 
   .secondary-action {
     width: 100%;
+  }
+
+  .pending-actions {
+    display: grid;
   }
 
   .route-card-top {

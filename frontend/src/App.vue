@@ -32,6 +32,7 @@ const collectionSegments = ref([]);
 const pendingCollectionRecords = ref([]);
 const collectionLoading = ref(false);
 const collectionSubmitting = ref(false);
+const auditLoadingIds = ref(new Set());
 const collectionMessage = ref('手机端采集表已准备好，选择路段后即可提交待审核数据。');
 const collectionError = ref('');
 const collectionForm = ref({
@@ -242,6 +243,38 @@ async function submitCollection() {
     collectionMessage.value = '提交没有成功，请检查字段后再试一次。';
   } finally {
     collectionSubmitting.value = false;
+  }
+}
+
+async function auditCollection(record, auditResult) {
+  const nextLoadingIds = new Set(auditLoadingIds.value);
+  nextLoadingIds.add(record.id);
+  auditLoadingIds.value = nextLoadingIds;
+  collectionError.value = '';
+  collectionMessage.value = auditResult === 'APPROVED' ? '正在通过采集记录...' : '正在驳回采集记录...';
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/collect/segments/${record.id}/audit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audit_result: auditResult,
+        auditor: '系统管理员',
+        audit_comment: auditResult === 'APPROVED' ? '现场采集数据通过审核' : '演示驳回，需重新采集',
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(formatApiError(payload.detail));
+    }
+    collectionMessage.value = payload.message ?? '审核操作已完成。';
+    await Promise.all([fetchPendingCollectionRecords(), fetchMapData()]);
+  } catch (error) {
+    collectionError.value = error instanceof Error ? error.message : '审核操作失败。';
+    collectionMessage.value = '审核没有成功，请稍后再试。';
+  } finally {
+    const updatedLoadingIds = new Set(auditLoadingIds.value);
+    updatedLoadingIds.delete(record.id);
+    auditLoadingIds.value = updatedLoadingIds;
   }
 }
 
@@ -697,8 +730,27 @@ function sendSos() {
           class="pending-card"
         >
           <strong>{{ record.segment_name || record.segment_code }}</strong>
-          <span>{{ record.collector_name }} · 平整 {{ record.surface_level }} · 安全 {{ record.safety_level }} · 台阶 {{ record.step_count }}</span>
+          <span>{{ record.collector_name }} · 平整 {{ record.surface_level }} · 安全 {{ record.safety_level }} · 无障碍 {{ record.barrier_free_level }}</span>
+          <span>路宽 {{ record.width_m }} 米 · 坡道 {{ record.has_ramp ? '有' : '无' }} · 扶手 {{ record.has_handrail ? '有' : '无' }} · 台阶 {{ record.step_count }}</span>
           <p>{{ record.remark || '暂无备注' }}</p>
+          <div class="pending-actions">
+            <button
+              class="audit-action approve"
+              type="button"
+              :disabled="auditLoadingIds.has(record.id)"
+              @click="auditCollection(record, 'APPROVED')"
+            >
+              通过并更新路段
+            </button>
+            <button
+              class="audit-action reject"
+              type="button"
+              :disabled="auditLoadingIds.has(record.id)"
+              @click="auditCollection(record, 'REJECTED')"
+            >
+              驳回
+            </button>
+          </div>
         </article>
       </section>
     </section>

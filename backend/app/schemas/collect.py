@@ -65,11 +65,41 @@ class PendingCollectionRecordResponse(BaseModel):
     segment_code: str
     segment_name: str | None
     collector_name: str
+    surface_type: str
+    width_m: float
     surface_level: int
     safety_level: int
     barrier_free_level: int
+    rest_facility_score: int
+    lighting_level: int
+    crossing_safety_level: int
     wheelchair_accessible: bool
+    has_handrail: bool
+    has_ramp: bool
+    shade_coverage_percent: int
+    bench_count: int
     step_count: int
+    step_height_cm: float
     remark: str | None
     collect_time: datetime
     status: str
+
+
+class SegmentAuditRequest(BaseModel):
+    audit_result: Literal["APPROVED", "REJECTED"]
+    auditor: str = Field(default="系统管理员", min_length=1, max_length=50)
+    audit_comment: str = Field(default="", max_length=500)
+
+    @field_validator("auditor", mode="before")
+    @classmethod
+    def strip_auditor(cls, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
+
+
+class SegmentAuditResponse(BaseModel):
+    id: int
+    collect_record_id: int
+    segment_code: str
+    audit_result: str
+    collect_record_status: str
+    message: str
