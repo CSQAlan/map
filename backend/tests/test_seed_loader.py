@@ -17,6 +17,9 @@ def test_schema_creates_pilot_area_before_map_entities() -> None:
         "CREATE TABLE IF NOT EXISTS poi_facility"
     )
     assert sql.count("pilot_area_id BIGINT") >= 3
+    assert sql.index("ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS pilot_area_id") < sql.index(
+        "CREATE INDEX IF NOT EXISTS idx_poi_facility_pilot_area_id"
+    )
 
 
 def test_load_seed_json_reads_shidayuan_pilot_area() -> None:
