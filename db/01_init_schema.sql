@@ -89,8 +89,27 @@ CREATE INDEX IF NOT EXISTS idx_family_binding_family_user_id ON family_binding(f
 -- 2. POI 与路网
 -- =========================
 
+CREATE TABLE IF NOT EXISTS pilot_area (
+    id BIGSERIAL PRIMARY KEY,
+    area_code VARCHAR(50) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    boundary_geom GEOMETRY(Polygon, 4326) NOT NULL,
+    center_geom GEOMETRY(Point, 4326) NOT NULL,
+    min_zoom SMALLINT NOT NULL DEFAULT 16,
+    max_zoom SMALLINT NOT NULL DEFAULT 20,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uk_pilot_area_area_code UNIQUE (area_code),
+    CONSTRAINT ck_pilot_area_zoom CHECK (min_zoom BETWEEN 2 AND 20 AND max_zoom BETWEEN min_zoom AND 20),
+    CONSTRAINT ck_pilot_area_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+);
+
+CREATE INDEX IF NOT EXISTS gist_pilot_area_boundary_geom ON pilot_area USING GIST (boundary_geom);
+
 CREATE TABLE IF NOT EXISTS poi_facility (
     id BIGSERIAL PRIMARY KEY,
+    pilot_area_id BIGINT,
     name VARCHAR(100) NOT NULL,
     poi_type VARCHAR(30) NOT NULL,
     description VARCHAR(255),
@@ -123,6 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_poi_facility_poi_type ON poi_facility(poi_type);
 
 CREATE TABLE IF NOT EXISTS road_node (
     id BIGSERIAL PRIMARY KEY,
+    pilot_area_id BIGINT,
     osm_node_ref VARCHAR(50),
     name VARCHAR(100),
     geom GEOMETRY(Point, 4326) NOT NULL,
@@ -143,6 +163,7 @@ CREATE INDEX IF NOT EXISTS idx_road_node_osm_node_ref ON road_node(osm_node_ref)
 
 CREATE TABLE IF NOT EXISTS road_segment (
     id BIGSERIAL PRIMARY KEY,
+    pilot_area_id BIGINT,
     segment_code VARCHAR(50) NOT NULL,
     start_node_id BIGINT NOT NULL,
     end_node_id BIGINT NOT NULL,
@@ -206,6 +227,9 @@ CREATE INDEX IF NOT EXISTS idx_road_segment_end_node_id ON road_segment(end_node
 CREATE INDEX IF NOT EXISTS gist_road_segment_geom ON road_segment USING GIST (geom);
 
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS surface_type VARCHAR(30) NOT NULL DEFAULT 'CONCRETE';
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS pilot_area_id BIGINT;
+ALTER TABLE road_node ADD COLUMN IF NOT EXISTS pilot_area_id BIGINT;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS pilot_area_id BIGINT;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS width_m NUMERIC(5,2) NOT NULL DEFAULT 1.50;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS has_handrail BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS has_ramp BOOLEAN NOT NULL DEFAULT FALSE;
@@ -229,6 +253,22 @@ ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS evidence_photo_refs JSONB NOT 
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS data_confidence SMALLINT NOT NULL DEFAULT 3;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS last_verified_at TIMESTAMPTZ;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS verified_by VARCHAR(100);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_poi_facility_pilot_area_id') THEN
+        ALTER TABLE poi_facility ADD CONSTRAINT fk_poi_facility_pilot_area_id
+            FOREIGN KEY (pilot_area_id) REFERENCES pilot_area(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_road_node_pilot_area_id') THEN
+        ALTER TABLE road_node ADD CONSTRAINT fk_road_node_pilot_area_id
+            FOREIGN KEY (pilot_area_id) REFERENCES pilot_area(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_road_segment_pilot_area_id') THEN
+        ALTER TABLE road_segment ADD CONSTRAINT fk_road_segment_pilot_area_id
+            FOREIGN KEY (pilot_area_id) REFERENCES pilot_area(id);
+    END IF;
+END $$;
 
 ALTER TABLE poi_facility DROP CONSTRAINT IF EXISTS ck_poi_facility_poi_type;
 ALTER TABLE poi_facility ADD CONSTRAINT ck_poi_facility_poi_type CHECK (

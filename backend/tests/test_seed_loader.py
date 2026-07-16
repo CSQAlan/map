@@ -10,6 +10,33 @@ def test_load_schema_sql_reads_init_schema() -> None:
     assert "CREATE TABLE IF NOT EXISTS poi_facility" in sql
 
 
+def test_schema_creates_pilot_area_before_map_entities() -> None:
+    schema_path = project_root() / "db" / "01_init_schema.sql"
+    sql = load_schema_sql(schema_path)
+    assert sql.index("CREATE TABLE IF NOT EXISTS pilot_area") < sql.index(
+        "CREATE TABLE IF NOT EXISTS poi_facility"
+    )
+    assert sql.count("pilot_area_id BIGINT") >= 3
+
+
+def test_load_seed_json_reads_shidayuan_pilot_area() -> None:
+    rows = load_seed_json("pilot_areas.json")
+    assert rows == [
+        {
+            "area_code": "SHIDAYUAN",
+            "name": "师大苑",
+            "boundary_wkt": (
+                "POLYGON((106.307 29.6035,106.3102 29.6035,"
+                "106.3102 29.6052,106.307 29.6052,106.307 29.6035))"
+            ),
+            "center_wkt": "POINT(106.3086 29.60435)",
+            "min_zoom": 16,
+            "max_zoom": 20,
+            "status": "ACTIVE",
+        }
+    ]
+
+
 def test_load_seed_json_reads_core_pois() -> None:
     rows = load_seed_json("core_pois.json")
     names = {row["name"] for row in rows}

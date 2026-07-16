@@ -1,0 +1,11 @@
+[
+  {
+    "area_code": "SHIDAYUAN",
+    "name": "师大苑",
+    "boundary_wkt": "POLYGON((106.307 29.6035,106.3102 29.6035,106.3102 29.6052,106.307 29.6052,106.307 29.6035))",
+    "center_wkt": "POINT(106.3086 29.60435)",
+    "min_zoom": 16,
+    "max_zoom": 20,
+    "status": "ACTIVE"
+  }
+]

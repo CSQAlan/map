@@ -11,6 +11,7 @@ class RoadNode(Base):
     __tablename__ = "road_node"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    pilot_area_id: Mapped[int | None] = mapped_column(ForeignKey("pilot_area.id"))
     osm_node_ref: Mapped[str | None] = mapped_column(String(50))
     name: Mapped[str | None] = mapped_column(String(100))
     geom: Mapped[str] = mapped_column(nullable=False)
@@ -25,6 +26,7 @@ class RoadSegment(TimestampMixin, Base):
     __tablename__ = "road_segment"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    pilot_area_id: Mapped[int | None] = mapped_column(ForeignKey("pilot_area.id"))
     segment_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     start_node_id: Mapped[int] = mapped_column(ForeignKey("road_node.id"), nullable=False)
     end_node_id: Mapped[int] = mapped_column(ForeignKey("road_node.id"), nullable=False)

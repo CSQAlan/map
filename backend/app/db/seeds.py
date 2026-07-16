@@ -86,7 +86,41 @@ def deactivate_legacy_campus_seed_data() -> None:
             )
 
 
-def seed_core_pois() -> int:
+def seed_pilot_areas() -> dict[str, int]:
+    rows = load_seed_json("pilot_areas.json")
+    area_ids = {}
+    upsert_sql = text(
+        """
+        INSERT INTO pilot_area (
+            area_code, name, boundary_geom, center_geom, min_zoom, max_zoom, status
+        )
+        VALUES (
+            :area_code,
+            :name,
+            ST_SetSRID(ST_GeomFromText(:boundary_wkt), 4326),
+            ST_SetSRID(ST_GeomFromText(:center_wkt), 4326),
+            :min_zoom,
+            :max_zoom,
+            :status
+        )
+        ON CONFLICT (area_code) DO UPDATE SET
+            name = EXCLUDED.name,
+            boundary_geom = EXCLUDED.boundary_geom,
+            center_geom = EXCLUDED.center_geom,
+            min_zoom = EXCLUDED.min_zoom,
+            max_zoom = EXCLUDED.max_zoom,
+            status = EXCLUDED.status,
+            updated_at = NOW()
+        RETURNING id
+        """
+    )
+    with engine.begin() as connection:
+        for row in rows:
+            area_ids[row["area_code"]] = connection.execute(upsert_sql, row).scalar_one()
+    return area_ids
+
+
+def seed_core_pois(pilot_area_id: int) -> int:
     rows = load_seed_json("core_pois.json")
     select_sql = text(
         """
@@ -98,6 +132,7 @@ def seed_core_pois() -> int:
     insert_sql = text(
         """
         INSERT INTO poi_facility (
+            pilot_area_id,
             name,
             poi_type,
             description,
@@ -113,6 +148,7 @@ def seed_core_pois() -> int:
             data_confidence
         )
         VALUES (
+            :pilot_area_id,
             :name,
             :poi_type,
             :description,
@@ -133,6 +169,7 @@ def seed_core_pois() -> int:
         """
         UPDATE poi_facility
         SET
+            pilot_area_id = :pilot_area_id,
             description = :description,
             geom = ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
             address_text = :address_text,
@@ -153,6 +190,7 @@ def seed_core_pois() -> int:
             payload = {
                 **POI_DEFAULTS,
                 **row,
+                "pilot_area_id": pilot_area_id,
                 "evidence_photo_refs": json.dumps(
                     row.get("evidence_photo_refs", POI_DEFAULTS["evidence_photo_refs"]),
                     ensure_ascii=False,
@@ -166,7 +204,7 @@ def seed_core_pois() -> int:
     return len(rows)
 
 
-def seed_core_nodes() -> int:
+def seed_core_nodes(pilot_area_id: int) -> int:
     rows = load_seed_json("core_nodes.json")
     select_sql = text(
         """
@@ -178,6 +216,7 @@ def seed_core_nodes() -> int:
     insert_sql = text(
         """
         INSERT INTO road_node (
+            pilot_area_id,
             osm_node_ref,
             name,
             geom,
@@ -188,6 +227,7 @@ def seed_core_nodes() -> int:
             data_confidence
         )
         VALUES (
+            :pilot_area_id,
             :node_code,
             :name,
             ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
@@ -203,6 +243,7 @@ def seed_core_nodes() -> int:
         """
         UPDATE road_node
         SET
+            pilot_area_id = :pilot_area_id,
             name = :name,
             geom = ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
             node_type = :node_type,
@@ -215,7 +256,7 @@ def seed_core_nodes() -> int:
     )
     with engine.begin() as connection:
         for row in rows:
-            payload = {**NODE_DEFAULTS, **row}
+            payload = {**NODE_DEFAULTS, **row, "pilot_area_id": pilot_area_id}
             existing_id = connection.execute(select_sql, payload).scalar_one_or_none()
             if existing_id is None:
                 connection.execute(insert_sql, payload)
@@ -224,12 +265,13 @@ def seed_core_nodes() -> int:
     return len(rows)
 
 
-def seed_core_segments() -> int:
+def seed_core_segments(pilot_area_id: int) -> int:
     rows = load_seed_json("core_segments.json")
     update_sql = text(
         """
         UPDATE road_segment
         SET
+            pilot_area_id = :pilot_area_id,
             start_node_id = (
                 SELECT id FROM road_node WHERE osm_node_ref = :start_node_code
             ),
@@ -268,7 +310,7 @@ def seed_core_segments() -> int:
     )
     with engine.begin() as connection:
         for row in rows:
-            payload = {**SEGMENT_DEFAULTS, **row}
+            payload = {**SEGMENT_DEFAULTS, **row, "pilot_area_id": pilot_area_id}
             payload["evidence_photo_refs"] = json.dumps(
                 payload["evidence_photo_refs"],
                 ensure_ascii=False,
@@ -311,6 +353,7 @@ def seed_core_segments() -> int:
                 text(
                     """
                     INSERT INTO road_segment (
+                        pilot_area_id,
                         segment_code,
                         start_node_id,
                         end_node_id,
@@ -342,6 +385,7 @@ def seed_core_segments() -> int:
                         verified_by
                     )
                     VALUES (
+                        :pilot_area_id,
                         :segment_code,
                         :start_node_id,
                         :end_node_id,
@@ -385,8 +429,11 @@ def seed_core_segments() -> int:
 
 def seed_map_data() -> dict[str, int]:
     deactivate_legacy_campus_seed_data()
+    area_ids = seed_pilot_areas()
+    shidayuan_area_id = area_ids["SHIDAYUAN"]
     return {
-        "pois": seed_core_pois(),
-        "nodes": seed_core_nodes(),
-        "segments": seed_core_segments(),
+        "areas": len(area_ids),
+        "pois": seed_core_pois(shidayuan_area_id),
+        "nodes": seed_core_nodes(shidayuan_area_id),
+        "segments": seed_core_segments(shidayuan_area_id),
     }

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, JSON, String
+from sqlalchemy import Boolean, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -9,6 +9,7 @@ class PoiFacility(TimestampMixin, Base):
     __tablename__ = "poi_facility"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    pilot_area_id: Mapped[int | None] = mapped_column(ForeignKey("pilot_area.id"))
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     poi_type: Mapped[str] = mapped_column(String(30), nullable=False)
     description: Mapped[str | None] = mapped_column(String(255))
