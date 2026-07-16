@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import AmapRouteMap from './components/AmapRouteMap.vue';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
@@ -40,6 +41,9 @@ const mapLoading = ref(false);
 const errorMessage = ref('');
 const actionStatus = ref('尚未开始导航，请先确认路线。');
 const mapFeatures = ref([]);
+const pilotArea = ref(null);
+const mapFailure = ref('');
+const selectedSegmentCode = ref(null);
 const diagnosticSuggestions = ref([]);
 const diagnosticsLoading = ref(false);
 const sosSubmitting = ref(false);
@@ -121,11 +125,24 @@ const nextStepText = computed(() => {
 });
 
 onMounted(() => {
+  fetchPilotArea();
   fetchMapData();
   fetchDiagnostics();
   fetchCollectionSegments();
   fetchPendingCollectionRecords();
 });
+
+async function fetchPilotArea() {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/pilot-areas/SHIDAYUAN?coordinate_system=GCJ02`
+    );
+    if (!response.ok) throw new Error('无法读取师大苑试点边界');
+    pilotArea.value = await response.json();
+  } catch (error) {
+    mapFailure.value = error instanceof Error ? error.message : '试点边界加载失败';
+  }
+}
 
 function collectCoordinates(coordinates, points) {
   if (!Array.isArray(coordinates)) return;
@@ -177,7 +194,9 @@ function priorityLabel(priority) {
 async function fetchMapData() {
   mapLoading.value = true;
   try {
-    const response = await fetch(`${API_BASE_URL}/api/map-data/geojson`);
+    const response = await fetch(
+      `${API_BASE_URL}/api/map-data/geojson?area_code=SHIDAYUAN&coordinate_system=GCJ02`
+    );
     const payload = await response.json();
     mapFeatures.value = payload.features ?? [];
   } catch {
@@ -185,6 +204,14 @@ async function fetchMapData() {
   } finally {
     mapLoading.value = false;
   }
+}
+
+function selectMapSegment(segmentCode) {
+  selectedSegmentCode.value = segmentCode;
+  const feature = roadFeatures.value.find(
+    (item) => item.properties.segment_code === segmentCode
+  );
+  if (feature) actionStatus.value = `正在查看“${feature.properties.name}”的现场信息。`;
 }
 
 async function fetchDiagnostics() {
@@ -536,7 +563,19 @@ async function sendSos() {
             <p class="section-kicker">小区示意图</p>
             <h2>{{ mapLoading ? '正在加载路网' : '试点路网与推荐路线' }}</h2>
           </div>
-          <svg class="campus-map" viewBox="0 0 760 360" role="img" aria-label="师大苑试点路线示意图">
+          <AmapRouteMap
+            v-if="pilotArea && !mapFailure"
+            :area="pilotArea"
+            :features="mapFeatures"
+            :route-segment-codes="routeSegmentCodes"
+            :selected-segment-code="selectedSegmentCode"
+            @select-segment="selectMapSegment"
+            @map-error="mapFailure = $event"
+          />
+          <p v-if="mapFailure" class="map-fallback-notice">
+            {{ mapFailure }}，已显示师大苑离线路网。
+          </p>
+          <svg v-if="!pilotArea || mapFailure" class="campus-map" viewBox="0 0 760 360" role="img" aria-label="师大苑试点路线示意图">
             <defs>
               <linearGradient id="routeGlow" x1="0" x2="1">
                 <stop offset="0%" stop-color="#2f6f5e" />

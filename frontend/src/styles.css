@@ -914,3 +914,33 @@ dd,
     display: grid;
   }
 }
+.amap-route-map {
+  width: 100%;
+  min-height: 430px;
+  overflow: hidden;
+  border: 1px solid rgba(32, 80, 68, 0.18);
+  border-radius: 22px;
+  background: #e9efe9;
+}
+
+.amap-poi-label {
+  max-width: 150px;
+  padding: 8px 12px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #245f51;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(24, 65, 54, 0.25);
+  font: 700 13px/1.2 "Microsoft YaHei", sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.map-fallback-notice {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff1d8;
+  color: #714914;
+  font-weight: 700;
+}
