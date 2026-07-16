@@ -26,10 +26,10 @@ def test_load_seed_json_reads_shidayuan_pilot_area() -> None:
             "area_code": "SHIDAYUAN",
             "name": "师大苑",
             "boundary_wkt": (
-                "POLYGON((106.307 29.6035,106.3102 29.6035,"
-                "106.3102 29.6052,106.307 29.6052,106.307 29.6035))"
+                "POLYGON((106.2868 29.6132,106.2909 29.6132,"
+                "106.2909 29.6167,106.2868 29.6167,106.2868 29.6132))"
             ),
-            "center_wkt": "POINT(106.3086 29.60435)",
+            "center_wkt": "POINT(106.28885 29.61495)",
             "min_zoom": 16,
             "max_zoom": 20,
             "status": "ACTIVE",
@@ -46,6 +46,14 @@ def test_load_seed_json_reads_core_pois() -> None:
         "师大苑外部商业街人行道",
     } <= names
     assert all("linked_node_code" in row for row in rows)
+
+
+def test_core_nodes_use_photo_gps_coordinates() -> None:
+    rows = {row["node_code"]: row for row in load_seed_json("core_nodes.json")}
+    assert rows["N_SY_GATE_WEST"]["lon"] == 106.288375
+    assert rows["N_SY_GATE_WEST"]["lat"] == 29.6136694
+    assert rows["N_SY_MAIN_CENTER"]["source_ref"] == "IMG_9540.JPG"
+    assert all(row["data_confidence"] == 5 for row in rows.values())
 
 
 def test_seed_segments_cover_pilot_routes() -> None:

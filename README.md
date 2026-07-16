@@ -29,6 +29,14 @@ docker compose -f docker-compose.postgis.yml up -d
 Copy-Item backend\.env.example backend\.env
 ```
 
+同时复制前端高德配置模板，并只在本机填写 Web 端 JS API Key 与安全密钥：
+
+```powershell
+Copy-Item frontend\.env.example frontend\.env.local
+```
+
+`frontend/.env.local` 已被 Git 忽略，不得提交或发到公开渠道。
+
 4. 初始化数据库和种子数据。
 
 ```powershell
@@ -83,4 +91,6 @@ npm.cmd run build
 - 基于老人画像的 TOP 候选路线排序
 - 支持轮椅、拐杖、慢行等画像的硬约束和差异化权重
 - H5 推荐模式和老人模式切换
+- 高德真实底图、师大苑区域限制和 GPS 校准路网
+- 地图路段与现场照片证据双向联动
 - 老人模式大字提示、大按钮、模拟导航和模拟求助

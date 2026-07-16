@@ -161,7 +161,10 @@ def seed_core_pois(pilot_area_id: int) -> int:
             :name,
             :poi_type,
             :description,
-            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
+            COALESCE(
+                (SELECT geom FROM road_node WHERE osm_node_ref = :linked_node_code),
+                ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)
+            ),
             :address_text,
             :linked_node_code,
             :is_accessible,
@@ -180,7 +183,10 @@ def seed_core_pois(pilot_area_id: int) -> int:
         SET
             pilot_area_id = :pilot_area_id,
             description = :description,
-            geom = ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
+            geom = COALESCE(
+                (SELECT geom FROM road_node WHERE osm_node_ref = :linked_node_code),
+                ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)
+            ),
             address_text = :address_text,
             linked_node_code = :linked_node_code,
             is_accessible = :is_accessible,
@@ -290,7 +296,12 @@ def seed_core_segments(pilot_area_id: int) -> int:
                 SELECT id FROM road_node WHERE osm_node_ref = :end_node_code
             ),
             name = :name,
-            geom = ST_SetSRID(ST_GeomFromText(:wkt), 4326),
+            geom = (
+                SELECT ST_MakeLine(start_node.geom, end_node.geom)
+                FROM road_node start_node, road_node end_node
+                WHERE start_node.osm_node_ref = :start_node_code
+                  AND end_node.osm_node_ref = :end_node_code
+            ),
             length_m = :length_m,
             slope_percent = :slope_percent,
             surface_type = :surface_type,
@@ -401,7 +412,10 @@ def seed_core_segments(pilot_area_id: int) -> int:
                         :start_node_id,
                         :end_node_id,
                         :name,
-                        ST_SetSRID(ST_GeomFromText(:wkt), 4326),
+                        ST_MakeLine(
+                            (SELECT geom FROM road_node WHERE id = :start_node_id),
+                            (SELECT geom FROM road_node WHERE id = :end_node_id)
+                        ),
                         :length_m,
                         :slope_percent,
                         :surface_type,
@@ -444,7 +458,7 @@ def seed_map_data() -> dict[str, int]:
     shidayuan_area_id = area_ids["SHIDAYUAN"]
     return {
         "areas": len(area_ids),
-        "pois": seed_core_pois(shidayuan_area_id),
         "nodes": seed_core_nodes(shidayuan_area_id),
+        "pois": seed_core_pois(shidayuan_area_id),
         "segments": seed_core_segments(shidayuan_area_id),
     }

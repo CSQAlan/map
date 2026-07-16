@@ -2,109 +2,109 @@
   {
     "node_code": "N_SY_GATE_WEST",
     "name": "师大苑大学城西路入口节点",
-    "lon": 106.3060,
-    "lat": 29.6038,
+    "lon": 106.2883750,
+    "lat": 29.6136694,
     "node_type": "GATE",
     "source_ref": "IMG_9555.JPG",
-    "data_confidence": 3
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_COMMERCIAL_SIDEWALK",
     "name": "外部商业街人行道节点",
-    "lon": 106.3056,
-    "lat": 29.6035,
+    "lon": 106.2881250,
+    "lat": 29.6134861,
     "node_type": "POI_LINK",
-    "source_ref": "IMG_9555.JPG",
-    "data_confidence": 3
+    "source_ref": "IMG_9553.JPG",
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_MAIN_CENTER",
     "name": "师大苑内部主路中心节点",
-    "lon": 106.3068,
-    "lat": 29.6041,
+    "lon": 106.2875750,
+    "lat": 29.6161361,
     "node_type": "CROSSING",
     "source_ref": "IMG_9540.JPG",
-    "data_confidence": 3
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_BUILDING_A",
     "name": "师大苑楼栋组团A节点",
-    "lon": 106.3074,
-    "lat": 29.6045,
+    "lon": 106.2900778,
+    "lat": 29.6145389,
     "node_type": "BUILDING_GROUP",
-    "source_ref": "IMG_9510.PNG",
-    "data_confidence": 3
+    "source_ref": "IMG_9505.JPG",
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_BUILDING_B",
     "name": "师大苑楼栋组团B节点",
-    "lon": 106.3076,
-    "lat": 29.6037,
+    "lon": 106.2871389,
+    "lat": 29.6151611,
     "node_type": "BUILDING_GROUP",
-    "source_ref": "IMG_9535.PNG",
-    "data_confidence": 3
+    "source_ref": "IMG_9544.JPG",
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_LOTUS_ENTRY",
     "name": "荷塘水景入口观景节点",
-    "lon": 106.3084,
-    "lat": 29.6041,
+    "lon": 106.2884917,
+    "lat": 29.6144111,
     "node_type": "REST_AREA",
     "source_ref": "IMG_9550.JPG",
-    "data_confidence": 4
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_LOTUS_PLATFORM",
     "name": "荷塘平台休息节点",
-    "lon": 106.3090,
-    "lat": 29.60445,
+    "lon": 106.2884917,
+    "lat": 29.6144306,
     "node_type": "REST_AREA",
     "source_ref": "IMG_9551.JPG",
-    "data_confidence": 4
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_GARDEN_SPLIT",
     "name": "林下步道分叉节点",
-    "lon": 106.3078,
-    "lat": 29.60335,
+    "lon": 106.2884444,
+    "lat": 29.6163778,
     "node_type": "NORMAL",
     "source_ref": "IMG_9537.JPG",
-    "data_confidence": 4
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_GARDEN_REST",
     "name": "林下亭廊休息节点",
-    "lon": 106.3086,
-    "lat": 29.60315,
+    "lon": 106.2890917,
+    "lat": 29.6161611,
     "node_type": "REST_AREA",
     "source_ref": "IMG_9531.JPG",
-    "data_confidence": 4
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_POND_BRIDGE",
     "name": "水景桥节点",
-    "lon": 106.3092,
-    "lat": 29.6036,
+    "lon": 106.2872000,
+    "lat": 29.6151028,
     "node_type": "NORMAL",
     "source_ref": "IMG_9546.JPG",
-    "data_confidence": 4
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_STAIR_SHORTCUT",
     "name": "台阶捷径节点",
-    "lon": 106.3082,
-    "lat": 29.6038,
+    "lon": 106.2891528,
+    "lat": 29.6160472,
     "node_type": "NORMAL",
     "source_ref": "IMG_9526.JPG",
-    "data_confidence": 4
+    "data_confidence": 5
   },
   {
     "node_code": "N_SY_CRACK_RISK",
     "name": "路面裂缝风险节点",
-    "lon": 106.3065,
-    "lat": 29.60365,
+    "lon": 106.2888500,
+    "lat": 29.6145833,
     "node_type": "NORMAL",
     "source_ref": "IMG_9511.JPG",
-    "data_confidence": 4
+    "data_confidence": 5
   }
 ]
