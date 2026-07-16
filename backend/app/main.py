@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import get_settings
+from app.services.photo_evidence import EVIDENCE_ROOT
 
 
 settings = get_settings()
@@ -24,6 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(api_router, prefix="/api")
+app.mount(
+    "/media/evidence",
+    StaticFiles(directory=EVIDENCE_ROOT, check_dir=False),
+    name="evidence",
+)
 
 
 @app.get("/", tags=["root"])

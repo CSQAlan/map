@@ -23,9 +23,9 @@ class FakeResult:
 
 
 class FakeSession:
-    def execute(self, query: Any) -> FakeResult:
+    def execute(self, query: Any, params: dict[str, Any] | None = None) -> FakeResult:
         sql = str(query)
-        if "ST_AsGeoJSON(geom) AS geom_geojson" in sql and "FROM poi_facility" in sql:
+        if "AS geom_geojson" in sql and "FROM poi_facility" in sql:
             return FakeResult(
                 [
                     {
@@ -33,11 +33,14 @@ class FakeSession:
                         "name": GATE_NAME,
                         "poi_type": "ENTRANCE",
                         "is_accessible": True,
+                        "source_provider": "manual_photo",
+                        "data_confidence": 4,
+                        "evidence_photo_refs": ["SY_IMG_9555"],
                         "geom_geojson": '{"type":"Point","coordinates":[106.3060,29.6038]}',
                     }
                 ]
             )
-        if "ST_AsGeoJSON(geom) AS geom_geojson" in sql and "FROM road_segment" in sql:
+        if "AS geom_geojson" in sql and "FROM road_segment" in sql:
             return FakeResult(
                 [
                     {
@@ -47,6 +50,12 @@ class FakeSession:
                         "slope_percent": 1.5,
                         "wheelchair_accessible": True,
                         "step_count": 0,
+                        "surface_level": 5,
+                        "safety_level": 4,
+                        "barrier_free_level": 5,
+                        "source_provider": "manual_photo",
+                        "data_confidence": 4,
+                        "evidence_photo_refs": ["SY_IMG_9499"],
                         "geom_geojson": '{"type":"LineString","coordinates":[[106.3060,29.6038],[106.3068,29.6041]]}',
                     }
                 ]
@@ -134,9 +143,24 @@ def test_map_api_returns_seeded_names() -> None:
 
 
 def test_get_map_geojson() -> None:
-    response = client.get("/api/map-data/geojson")
+    response = client.get("/api/map-data/geojson?area_code=SHIDAYUAN&coordinate_system=GCJ02")
     assert response.status_code == 200
     data = response.json()
     assert data["type"] == "FeatureCollection"
+    assert data["area_code"] == "SHIDAYUAN"
+    assert data["coordinate_system"] == "GCJ02"
     assert len(data["features"]) == 2
     assert {feature["properties"]["kind"] for feature in data["features"]} == {"poi", "segment"}
+    segment = next(feature for feature in data["features"] if feature["properties"]["kind"] == "segment")
+    assert segment["properties"]["evidence_photos"][0]["photo_id"] == "SY_IMG_9499"
+    assert segment["properties"]["risk_summary"] == "适合轮椅通行"
+
+
+def test_map_geojson_rejects_unknown_coordinate_system() -> None:
+    response = client.get("/api/map-data/geojson?coordinate_system=BD09")
+    assert response.status_code == 422
+
+
+def test_evidence_static_route_blocks_directory_traversal() -> None:
+    response = client.get("/media/evidence/../db/seed_data/core_nodes.json")
+    assert response.status_code != 200
