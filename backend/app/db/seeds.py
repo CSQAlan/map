@@ -4,6 +4,7 @@ from pathlib import Path
 from sqlalchemy import text
 
 from app.core.database import engine
+from app.services.photo_evidence import load_photo_manifest
 
 
 SEED_DIR = Path(__file__).resolve().parent / "seed_data"
@@ -64,6 +65,14 @@ LEGACY_CAMPUS_SEGMENT_CODES = [
 
 def load_seed_json(filename: str) -> list[dict]:
     return json.loads((SEED_DIR / filename).read_text(encoding="utf-8"))
+
+
+def normalize_evidence_photo_refs(refs: list[str]) -> list[str]:
+    by_original_name = {
+        evidence.original_name: photo_id
+        for photo_id, evidence in load_photo_manifest().items()
+    }
+    return [by_original_name.get(ref, ref) for ref in refs]
 
 
 def deactivate_legacy_campus_seed_data() -> None:
@@ -192,7 +201,9 @@ def seed_core_pois(pilot_area_id: int) -> int:
                 **row,
                 "pilot_area_id": pilot_area_id,
                 "evidence_photo_refs": json.dumps(
-                    row.get("evidence_photo_refs", POI_DEFAULTS["evidence_photo_refs"]),
+                    normalize_evidence_photo_refs(
+                        row.get("evidence_photo_refs", POI_DEFAULTS["evidence_photo_refs"])
+                    ),
                     ensure_ascii=False,
                 ),
             }
@@ -312,7 +323,7 @@ def seed_core_segments(pilot_area_id: int) -> int:
         for row in rows:
             payload = {**SEGMENT_DEFAULTS, **row, "pilot_area_id": pilot_area_id}
             payload["evidence_photo_refs"] = json.dumps(
-                payload["evidence_photo_refs"],
+                normalize_evidence_photo_refs(payload["evidence_photo_refs"]),
                 ensure_ascii=False,
             )
             existing_id = connection.execute(

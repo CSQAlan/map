@@ -1,6 +1,6 @@
 from app.core.database import project_root
 from app.db.schema import load_schema_sql
-from app.db.seeds import load_seed_json
+from app.db.seeds import load_seed_json, normalize_evidence_photo_refs
 
 
 def test_load_schema_sql_reads_init_schema() -> None:
@@ -58,6 +58,13 @@ def test_seed_segments_cover_pilot_routes() -> None:
     assert "S_SY_STAIR_SHORTCUT" in codes
     assert "S_SY_CRACKED_PAVEMENT" in codes
     assert all("evidence_photo_refs" in row for row in rows)
+
+
+def test_seed_normalizes_original_photo_names_to_stable_ids() -> None:
+    assert normalize_evidence_photo_refs(["IMG_9499.JPG", "IMG_9510.PNG"]) == [
+        "SY_IMG_9499",
+        "SY_IMG_9510",
+    ]
 
 
 def test_seed_graph_has_route_alternatives() -> None:

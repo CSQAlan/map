@@ -19,3 +19,4 @@ dependencies:
       - python-dotenv
       - httpx
       - pytest
+      - pillow==12.3.0

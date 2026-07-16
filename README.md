@@ -1,6 +1,6 @@
 # 助老地图 MVP
 
-面向比赛演示的“助老地图”试点项目，当前试点范围为重庆师范大学。项目已实现基础后端、PostGIS 数据库初始化、路线推荐 API，以及 Vue 3 H5 演示页。
+面向比赛演示的“助老地图”试点项目，当前试点范围为师大苑小区。项目已实现基础后端、PostGIS 数据库初始化、适老路线推荐 API、现场照片证据，以及 Vue 3 H5 演示页。
 
 ## 技术栈
 
@@ -36,6 +36,16 @@ $env:PYTHONPATH=(Resolve-Path backend).Path
 python -m app.scripts.init_map_data
 ```
 
+现场原图保留在项目根目录的本地采集文件夹，不直接提交 Git。首次运行或原图更新后，生成用于网页展示的 WebP：
+
+```powershell
+cd backend
+..\.conda\elder-map-py311\python.exe -m app.scripts.build_photo_derivatives --source "..\IMG_9536等56项文件"
+cd ..
+```
+
+脚本只处理 `photo_manifest.json` 中登记的关键证据图，输出缩略图和按需加载的展示图，不修改原图。
+
 5. 启动后端和前端。
 
 ```powershell
@@ -69,7 +79,7 @@ npm.cmd run build
 
 ## 当前能力
 
-- 三号门到校医院/食堂的步行路线推荐
+- 师大苑入口到荷塘、楼栋和商业街的步行路线推荐
 - 基于老人画像的 TOP 候选路线排序
 - 支持轮椅、拐杖、慢行等画像的硬约束和差异化权重
 - H5 推荐模式和老人模式切换
