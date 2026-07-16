@@ -969,6 +969,24 @@ dd,
   font-weight: 700;
 }
 
+.map-fallback-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.map-fallback-notice button {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: #714914;
+  color: #fff;
+  font-weight: 800;
+}
+
 .evidence-section {
   margin-top: 22px;
   padding-top: 20px;

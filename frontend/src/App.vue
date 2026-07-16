@@ -45,6 +45,7 @@ const actionStatus = ref('尚未开始导航，请先确认路线。');
 const mapFeatures = ref([]);
 const pilotArea = ref(null);
 const mapFailure = ref('');
+const mapRetrying = ref(false);
 const selectedSegmentCode = ref(null);
 const diagnosticSuggestions = ref([]);
 const diagnosticsLoading = ref(false);
@@ -132,7 +133,7 @@ async function fetchPilotArea() {
     if (!response.ok) throw new Error('无法读取师大苑试点边界');
     pilotArea.value = await response.json();
   } catch (error) {
-    mapFailure.value = error instanceof Error ? error.message : '试点边界加载失败';
+    mapFailure.value = `试点边界加载失败：${error instanceof Error ? error.message : '未知错误'}`;
   }
 }
 
@@ -153,10 +154,18 @@ async function fetchMapData() {
     mapFeatures.value = payload.features ?? [];
   } catch (error) {
     mapFeatures.value = [];
-    mapFailure.value = error instanceof Error ? error.message : '地图数据加载失败';
+    mapFailure.value = `地图数据加载失败：${error instanceof Error ? error.message : '未知错误'}`;
   } finally {
     mapLoading.value = false;
   }
+}
+
+async function retryRealMap() {
+  mapRetrying.value = true;
+  mapFailure.value = '';
+  pilotArea.value = null;
+  await Promise.all([fetchPilotArea(), fetchMapData()]);
+  mapRetrying.value = false;
 }
 
 function selectMapSegment(segmentCode) {
@@ -525,10 +534,13 @@ async function sendSos() {
             :route-segment-codes="routeSegmentCodes"
             :selected-segment-code="selectedSegmentCode"
             @select-segment="selectMapSegment"
-            @map-error="mapFailure = $event"
+            @map-error="mapFailure = `高德底图加载失败：${$event}`"
           />
           <p v-if="mapFailure" class="map-fallback-notice">
-            {{ mapFailure }}，已显示师大苑离线路网。
+            <span>{{ mapFailure }}，已显示师大苑离线路网。</span>
+            <button type="button" :disabled="mapRetrying" @click="retryRealMap">
+              {{ mapRetrying ? '正在重试...' : '重新加载真实地图' }}
+            </button>
           </p>
           <FallbackRouteMap
             v-if="!pilotArea || mapFailure"

@@ -14,6 +14,9 @@ export function loadAmap() {
     key,
     version: '2.0',
     plugins: ['AMap.Scale', 'AMap.ToolBar'],
+  }).catch((error) => {
+    amapPromise = null;
+    throw error;
   });
   return amapPromise;
 }
