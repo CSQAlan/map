@@ -1131,3 +1131,63 @@ dd,
 
 body.lightbox-open { overflow: hidden; }
 .segment-detail.selected { outline: 3px solid rgba(217, 119, 31, 0.48); }
+
+.map-road.selected {
+  stroke: #d9771f;
+  stroke-width: 12;
+}
+
+@media (max-width: 760px) {
+  .amap-route-map,
+  .campus-map {
+    min-height: 360px;
+  }
+
+  .route-evidence-strip {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+  }
+
+  .route-evidence-card {
+    min-width: 160px;
+    scroll-snap-align: start;
+  }
+
+  .evidence-summary,
+  .evidence-summary dl {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-summary dl {
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+  }
+
+  .evidence-photo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-lightbox {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+    padding: calc(68px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .photo-lightbox figure {
+    grid-column: 1 / -1;
+    max-width: 100%;
+  }
+
+  .lightbox-nav {
+    width: 100%;
+  }
+
+  button,
+  select,
+  input {
+    min-height: 44px;
+  }
+}

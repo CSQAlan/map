@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import AmapRouteMap from './components/AmapRouteMap.vue';
 import EvidenceGallery from './components/EvidenceGallery.vue';
+import FallbackRouteMap from './components/FallbackRouteMap.vue';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
@@ -109,29 +110,6 @@ const routeEvidenceFeatures = computed(() => {
     .map((code) => byCode.get(code))
     .filter(Boolean);
 });
-const poiFeatures = computed(() =>
-  mapFeatures.value.filter((feature) => feature.properties?.kind === 'poi')
-);
-const mapBounds = computed(() => {
-  const points = [];
-  for (const feature of mapFeatures.value) {
-    collectCoordinates(feature.geometry?.coordinates, points);
-  }
-  for (const segment of selectedSegments.value) {
-    collectCoordinates(segment.geometry_coordinates, points);
-  }
-  if (!points.length) {
-    return { minLon: 106.307, maxLon: 106.31, minLat: 29.6036, maxLat: 29.6051 };
-  }
-  const lons = points.map((point) => point[0]);
-  const lats = points.map((point) => point[1]);
-  return {
-    minLon: Math.min(...lons),
-    maxLon: Math.max(...lons),
-    minLat: Math.min(...lats),
-    maxLat: Math.max(...lats),
-  };
-});
 const nextStepText = computed(() => {
   const firstSegmentName = selectedSegments.value[0]?.name ?? selectedRoute.value?.segment_names?.[0];
   if (!firstSegmentName) return '请先在推荐模式生成一条路线。';
@@ -156,47 +134,6 @@ async function fetchPilotArea() {
   } catch (error) {
     mapFailure.value = error instanceof Error ? error.message : '试点边界加载失败';
   }
-}
-
-function collectCoordinates(coordinates, points) {
-  if (!Array.isArray(coordinates)) return;
-  if (typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
-    points.push(coordinates);
-    return;
-  }
-  for (const item of coordinates) {
-    collectCoordinates(item, points);
-  }
-}
-
-function projectPoint(point) {
-  const width = 760;
-  const height = 360;
-  const padding = 42;
-  const bounds = mapBounds.value;
-  const lonRange = bounds.maxLon - bounds.minLon || 0.001;
-  const latRange = bounds.maxLat - bounds.minLat || 0.001;
-  const x = padding + ((point[0] - bounds.minLon) / lonRange) * (width - padding * 2);
-  const y = height - padding - ((point[1] - bounds.minLat) / latRange) * (height - padding * 2);
-  return [x, y];
-}
-
-function pathForCoordinates(coordinates) {
-  if (!Array.isArray(coordinates) || !coordinates.length) return '';
-  return coordinates
-    .map((point, index) => {
-      const [x, y] = projectPoint(point);
-      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(' ');
-}
-
-function pointForFeature(feature) {
-  return projectPoint(feature.geometry.coordinates);
-}
-
-function isRouteFeature(feature) {
-  return routeSegmentCodes.value.has(feature.properties?.segment_code);
 }
 
 function priorityLabel(priority) {
@@ -591,29 +528,13 @@ async function sendSos() {
           <p v-if="mapFailure" class="map-fallback-notice">
             {{ mapFailure }}，已显示师大苑离线路网。
           </p>
-          <svg v-if="!pilotArea || mapFailure" class="campus-map" viewBox="0 0 760 360" role="img" aria-label="师大苑试点路线示意图">
-            <defs>
-              <linearGradient id="routeGlow" x1="0" x2="1">
-                <stop offset="0%" stop-color="#2f6f5e" />
-                <stop offset="100%" stop-color="#e6a93c" />
-              </linearGradient>
-            </defs>
-            <path
-              v-for="feature in roadFeatures"
-              :key="feature.properties.segment_code"
-              :d="pathForCoordinates(feature.geometry.coordinates)"
-              :class="['map-road', { active: isRouteFeature(feature), stair: feature.properties.step_count > 0 }]"
-            />
-            <g
-              v-for="feature in poiFeatures"
-              :key="feature.properties.id"
-              class="map-poi"
-              :transform="`translate(${pointForFeature(feature)[0]}, ${pointForFeature(feature)[1]})`"
-            >
-              <circle r="10" />
-              <text x="14" y="5">{{ feature.properties.name }}</text>
-            </g>
-          </svg>
+          <FallbackRouteMap
+            v-if="!pilotArea || mapFailure"
+            :features="mapFeatures"
+            :route-segment-codes="routeSegmentCodes"
+            :selected-segment-code="selectedSegmentCode"
+            @select-segment="selectMapSegment"
+          />
           <div class="map-legend">
             <span><i class="legend-route"></i>当前推荐路线</span>
             <span><i class="legend-road"></i>试点路网</span>
