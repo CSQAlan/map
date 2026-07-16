@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -5,13 +7,18 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.routes import RouteRecommendResponse
 from app.services.route_planner import (
+    ROUTE_STRATEGY_METADATA,
     SUPPORTED_MOBILITY_TYPES,
+    SUPPORTED_ROUTE_STRATEGIES,
     explain_avoided_segments,
+    normalize_route_strategy,
     recommend_routes,
 )
 
 
 router = APIRouter()
+
+RouteStrategyQuery = Literal["BALANCED", "SAFEST", "FLATTEST", "COMFORT", "SHORTEST"]
 
 GATE_3_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u4e09\u53f7\u95e8"
 CLINIC_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u6821\u533b\u9662"
@@ -29,10 +36,17 @@ def recommend_route(
     start_name: str = Query(...),
     end_name: str = Query(...),
     mobility_type: str = Query(...),
+    strategy: RouteStrategyQuery = Query(
+        "BALANCED",
+        description="Route ranking strategy: BALANCED, SAFEST, FLATTEST, COMFORT, or SHORTEST.",
+    ),
     db: Session = Depends(get_db),
 ) -> RouteRecommendResponse:
     if mobility_type not in SUPPORTED_MOBILITY_TYPES:
         raise HTTPException(status_code=422, detail="Unsupported mobility_type")
+    normalized_strategy = normalize_route_strategy(strategy)
+    if normalized_strategy not in SUPPORTED_ROUTE_STRATEGIES:
+        raise HTTPException(status_code=422, detail="Unsupported strategy")
     if start_name == end_name:
         raise HTTPException(status_code=400, detail="Start and end cannot be the same")
 
@@ -44,6 +58,7 @@ def recommend_route(
         start_node_code,
         end_node_code,
         mobility_type,
+        strategy=normalized_strategy,
     )
     avoided_segments = explain_avoided_segments(active_segments, mobility_type)
     if not routes:
@@ -58,6 +73,9 @@ def recommend_route(
         start_name=start_name,
         end_name=end_name,
         mobility_type=mobility_type,
+        strategy=normalized_strategy,
+        strategy_label=ROUTE_STRATEGY_METADATA[normalized_strategy]["label"],
+        strategy_description=ROUTE_STRATEGY_METADATA[normalized_strategy]["description"],
         routes=routes,
         avoided_segments=avoided_segments,
     )

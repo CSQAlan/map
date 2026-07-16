@@ -341,6 +341,75 @@ def test_recommend_routes_returns_sorted_top_three() -> None:
     assert routes[0]["rank"] == 1
 
 
+def test_route_strategy_changes_first_recommendation() -> None:
+    safe_base = {
+        "slope_percent": 0.8,
+        "surface_level": 5,
+        "safety_level": 5,
+        "barrier_free_level": 5,
+        "rest_facility_score": 4,
+        "crossing_safety_level": 5,
+        "lighting_level": 5,
+        "step_count": 0,
+        "width_m": 1.8,
+        "wheelchair_accessible": True,
+    }
+    short_risky_base = {
+        "slope_percent": 1.0,
+        "surface_level": 3,
+        "safety_level": 1,
+        "barrier_free_level": 3,
+        "rest_facility_score": 2,
+        "crossing_safety_level": 1,
+        "lighting_level": 1,
+        "step_count": 0,
+        "width_m": 1.1,
+        "wheelchair_accessible": True,
+    }
+    segments = [
+        {
+            **short_risky_base,
+            "segment_code": "A_B_SHORT",
+            "name": "short risky start",
+            "start_node_code": "A",
+            "end_node_code": "B",
+            "length_m": 30,
+        },
+        {
+            **short_risky_base,
+            "segment_code": "B_D_SHORT",
+            "name": "short risky end",
+            "start_node_code": "B",
+            "end_node_code": "D",
+            "length_m": 30,
+        },
+        {
+            **safe_base,
+            "segment_code": "A_C_SAFE",
+            "name": "safe start",
+            "start_node_code": "A",
+            "end_node_code": "C",
+            "length_m": 150,
+        },
+        {
+            **safe_base,
+            "segment_code": "C_D_SAFE",
+            "name": "safe end",
+            "start_node_code": "C",
+            "end_node_code": "D",
+            "length_m": 150,
+        },
+    ]
+
+    safest_routes = recommend_routes(segments, "A", "D", "INDEPENDENT", strategy="SAFEST")
+    shortest_routes = recommend_routes(segments, "A", "D", "INDEPENDENT", strategy="SHORTEST")
+
+    assert safest_routes[0]["segment_codes"] == ["A_C_SAFE", "C_D_SAFE"]
+    assert shortest_routes[0]["segment_codes"] == ["A_B_SHORT", "B_D_SHORT"]
+    assert "已按安全优先排序" in safest_routes[0]["summary"]
+    assert "已按距离优先排序" in shortest_routes[0]["summary"]
+
+
 def test_recommend_routes_filters_inaccessible_wheelchair_path() -> None:
     accessible = {
         "length_m": 80,

@@ -153,6 +153,39 @@ def test_recommend_route_api_returns_candidates() -> None:
     assert data["routes"][0]["segments"][0]["benefit_tags"]
     assert data["routes"][0]["segments"][0]["explanation"]
     assert "avoided_segments" in data
+    assert data["strategy"] == "BALANCED"
+    assert data["strategy_label"] == "综合推荐"
+
+
+def test_recommend_route_api_returns_strategy_metadata() -> None:
+    response = client.get(
+        "/api/routes/recommend",
+        params={
+            "start_name": GATE_3_NAME,
+            "end_name": CANTEEN_NAME,
+            "mobility_type": "ASSISTED",
+            "strategy": "SAFEST",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["strategy"] == "SAFEST"
+    assert data["strategy_label"] == "最安全"
+    assert "安全" in data["strategy_description"]
+    assert data["routes"]
+
+
+def test_recommend_route_api_rejects_unknown_strategy() -> None:
+    response = client.get(
+        "/api/routes/recommend",
+        params={
+            "start_name": GATE_3_NAME,
+            "end_name": CANTEEN_NAME,
+            "mobility_type": "ASSISTED",
+            "strategy": "UNKNOWN",
+        },
+    )
+    assert response.status_code == 422
 
 
 def test_recommend_route_api_returns_avoided_segment_reasons() -> None:

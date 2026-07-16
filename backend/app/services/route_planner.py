@@ -30,6 +30,105 @@ SURFACE_DIFFICULTY = {
 
 DEFAULT_SURFACE_TYPE = "CONCRETE"
 
+SUPPORTED_ROUTE_STRATEGIES = {
+    "BALANCED",
+    "SAFEST",
+    "FLATTEST",
+    "COMFORT",
+    "SHORTEST",
+}
+
+ROUTE_STRATEGY_METADATA = {
+    "BALANCED": {
+        "label": "综合推荐",
+        "description": "兼顾距离、坡度、安全、无障碍和休息条件。",
+    },
+    "SAFEST": {
+        "label": "最安全",
+        "description": "优先选择安全等级、过街安全、照明和无障碍条件更好的路线。",
+    },
+    "FLATTEST": {
+        "label": "最平缓",
+        "description": "优先选择坡度更低、台阶更少、宽度更友好的路线。",
+    },
+    "COMFORT": {
+        "label": "最舒适",
+        "description": "优先选择休息点、座椅、树荫、扶手和路面体验更好的路线。",
+    },
+    "SHORTEST": {
+        "label": "最短距离",
+        "description": "优先缩短步行距离，但仍保留老人画像的硬约束。",
+    },
+}
+
+ROUTE_STRATEGY_WEIGHT_OVERRIDES = {
+    "BALANCED": {},
+    "SAFEST": {
+        "distance": 0.45,
+        "slope": 1.2,
+        "surface": 1.5,
+        "safety": 3.4,
+        "barrier_free": 2.2,
+        "rest": 0.5,
+        "step": 2.4,
+        "width": 1.3,
+        "crossing": 2.8,
+        "lighting": 1.6,
+        "shade": -0.2,
+        "bench": -0.2,
+        "handrail": -0.6,
+        "ramp": -0.8,
+    },
+    "FLATTEST": {
+        "distance": 0.55,
+        "slope": 4.0,
+        "surface": 1.2,
+        "safety": 1.0,
+        "barrier_free": 1.8,
+        "rest": 0.5,
+        "step": 3.2,
+        "width": 1.4,
+        "crossing": 0.7,
+        "lighting": 0.4,
+        "shade": -0.2,
+        "bench": -0.2,
+        "handrail": -0.5,
+        "ramp": -1.5,
+    },
+    "COMFORT": {
+        "distance": 0.6,
+        "slope": 1.1,
+        "surface": 2.0,
+        "safety": 1.2,
+        "barrier_free": 1.2,
+        "rest": 2.6,
+        "step": 1.5,
+        "width": 0.9,
+        "crossing": 0.7,
+        "lighting": 0.8,
+        "shade": -1.4,
+        "bench": -1.5,
+        "handrail": -0.9,
+        "ramp": -0.7,
+    },
+    "SHORTEST": {
+        "distance": 4.2,
+        "slope": 0.25,
+        "surface": 0.25,
+        "safety": 0.2,
+        "barrier_free": 0.2,
+        "rest": 0.1,
+        "step": 0.35,
+        "width": 0.2,
+        "crossing": 0.1,
+        "lighting": 0.1,
+        "shade": 0.0,
+        "bench": 0.0,
+        "handrail": -0.1,
+        "ramp": -0.1,
+    },
+}
+
 MOBILITY_PROFILES = {
     "INDEPENDENT": {
         "max_slope_percent": 12.0,
@@ -143,6 +242,10 @@ def normalize_mobility_type(mobility_type: str) -> str:
     return PROFILE_ALIASES.get(mobility_type, mobility_type)
 
 
+def normalize_route_strategy(strategy: str | None) -> str:
+    return strategy or "BALANCED"
+
+
 def numeric(segment: Mapping[str, Any], key: str, default: float) -> float:
     value = segment.get(key, default)
     return default if value is None else float(value)
@@ -160,6 +263,13 @@ def boolean(segment: Mapping[str, Any], key: str, default: bool) -> bool:
 
 def profile_for(mobility_type: str) -> dict[str, Any]:
     return MOBILITY_PROFILES[normalize_mobility_type(mobility_type)]
+
+
+def strategy_weights_for(mobility_type: str, strategy: str = "BALANCED") -> dict[str, float]:
+    profile = profile_for(mobility_type)
+    weights = dict(profile["weights"])
+    weights.update(ROUTE_STRATEGY_WEIGHT_OVERRIDES[normalize_route_strategy(strategy)])
+    return weights
 
 
 def is_segment_allowed(segment: Mapping[str, Any], mobility_type: str) -> bool:
@@ -186,15 +296,21 @@ def is_segment_allowed(segment: Mapping[str, Any], mobility_type: str) -> bool:
     return True
 
 
-def segment_cost(segment: Mapping[str, Any], mobility_type: str) -> float:
+def segment_cost(
+    segment: Mapping[str, Any],
+    mobility_type: str,
+    strategy: str = "BALANCED",
+) -> float:
     profile = profile_for(mobility_type)
-    weights = profile["weights"]
+    weights = strategy_weights_for(mobility_type, strategy)
     distance_cost = numeric(segment, "length_m", 0) / 100
     slope_risk = numeric(segment, "slope_percent", 0)
     surface_level_risk = 6 - integer(segment, "surface_level", 3)
     safety_risk = 6 - integer(segment, "safety_level", 3)
     barrier_free_risk = 6 - integer(segment, "barrier_free_level", 3)
     rest_risk = 6 - integer(segment, "rest_facility_score", 3)
+    crossing_safety_risk = 6 - integer(segment, "crossing_safety_level", 3)
+    lighting_risk = 6 - integer(segment, "lighting_level", 3)
     step_risk = integer(segment, "step_count", 0) * 2
     width_risk = max(0, float(profile["min_width_m"]) - numeric(segment, "width_m", 1.5)) * 4
     surface_type = str(segment.get("surface_type") or DEFAULT_SURFACE_TYPE).upper()
@@ -212,6 +328,8 @@ def segment_cost(segment: Mapping[str, Any], mobility_type: str) -> float:
         + weights["safety"] * safety_risk
         + weights["barrier_free"] * barrier_free_risk
         + weights["rest"] * rest_risk
+        + weights.get("crossing", 0.0) * crossing_safety_risk
+        + weights.get("lighting", 0.0) * lighting_risk
         + weights["step"] * step_risk
         + weights["width"] * width_risk
         + weights["shade"] * shade_benefit
@@ -420,8 +538,12 @@ def build_segment_detail(segment: Mapping[str, Any], mobility_type: str) -> dict
     }
 
 
-def route_score(segments: list[Mapping[str, Any]], mobility_type: str) -> float:
-    return sum(segment_cost(segment, mobility_type) for segment in segments)
+def route_score(
+    segments: list[Mapping[str, Any]],
+    mobility_type: str,
+    strategy: str = "BALANCED",
+) -> float:
+    return sum(segment_cost(segment, mobility_type, strategy) for segment in segments)
 
 
 def edge_key(segment: Mapping[str, Any]) -> tuple[str, str, str]:
@@ -465,6 +587,7 @@ def dijkstra_path(
     start_node_code: str,
     end_node_code: str,
     mobility_type: str = "INDEPENDENT",
+    strategy: str = "BALANCED",
     blocked_edges: set[tuple[str, str, str]] | None = None,
     blocked_nodes: set[str] | None = None,
 ) -> list[Mapping[str, Any]]:
@@ -489,7 +612,7 @@ def dijkstra_path(
             next_node = str(segment["end_node_code"])
             if next_node in visited_nodes:
                 continue
-            next_cost = cost + segment_cost(segment, mobility_type)
+            next_cost = cost + segment_cost(segment, mobility_type, strategy)
             if next_cost >= best_cost_by_node.get(next_node, float("inf")):
                 continue
             best_cost_by_node[next_node] = next_cost
@@ -505,8 +628,9 @@ def top_k_dijkstra_paths(
     end_node_code: str,
     mobility_type: str,
     limit: int = 3,
+    strategy: str = "BALANCED",
 ) -> list[list[Mapping[str, Any]]]:
-    first_path = dijkstra_path(segments, start_node_code, end_node_code, mobility_type)
+    first_path = dijkstra_path(segments, start_node_code, end_node_code, mobility_type, strategy)
     if not first_path:
         return []
 
@@ -534,6 +658,7 @@ def top_k_dijkstra_paths(
                 spur_node,
                 end_node_code,
                 mobility_type,
+                strategy,
                 blocked_edges=blocked_edges,
                 blocked_nodes=blocked_nodes,
             )
@@ -546,7 +671,7 @@ def top_k_dijkstra_paths(
             candidate_signatures.add(signature)
             heapq.heappush(
                 candidates,
-                (route_score(candidate_path, mobility_type), sequence, candidate_path),
+                (route_score(candidate_path, mobility_type, strategy), sequence, candidate_path),
             )
             sequence += 1
 
@@ -593,7 +718,11 @@ def enumerate_paths(
     return paths
 
 
-def build_summary(path: list[Mapping[str, Any]], mobility_type: str) -> str:
+def build_summary(
+    path: list[Mapping[str, Any]],
+    mobility_type: str,
+    strategy: str = "BALANCED",
+) -> str:
     avg_slope = sum(numeric(segment, "slope_percent", 0) for segment in path) / len(path)
     avg_surface = sum(integer(segment, "surface_level", 3) for segment in path) / len(path)
     avg_safety = sum(integer(segment, "safety_level", 3) for segment in path) / len(path)
@@ -605,6 +734,14 @@ def build_summary(path: list[Mapping[str, Any]], mobility_type: str) -> str:
     avg_shade = sum(numeric(segment, "shade_coverage_percent", 0) for segment in path) / len(path)
 
     reasons = []
+    strategy_reason = {
+        "SAFEST": "已按安全优先排序",
+        "FLATTEST": "已按平缓优先排序",
+        "COMFORT": "已按舒适优先排序",
+        "SHORTEST": "已按距离优先排序",
+    }.get(normalize_route_strategy(strategy))
+    if strategy_reason:
+        reasons.append(strategy_reason)
     if mobility_type == "WHEELCHAIR":
         reasons.append("轮椅可通行")
     if avg_slope <= 1.5:
@@ -634,11 +771,20 @@ def recommend_routes(
     end_node_code: str,
     mobility_type: str,
     limit: int = 3,
+    strategy: str = "BALANCED",
 ) -> list[dict[str, Any]]:
-    paths = top_k_dijkstra_paths(segments, start_node_code, end_node_code, mobility_type, limit)
+    normalized_strategy = normalize_route_strategy(strategy)
+    paths = top_k_dijkstra_paths(
+        segments,
+        start_node_code,
+        end_node_code,
+        mobility_type,
+        limit,
+        normalized_strategy,
+    )
     ranked = []
     for path in paths:
-        score = route_score(path, mobility_type)
+        score = route_score(path, mobility_type, normalized_strategy)
         ranked.append((score, path))
     ranked.sort(key=lambda item: item[0])
 
@@ -657,7 +803,11 @@ def recommend_routes(
                     build_segment_detail(segment, normalize_mobility_type(mobility_type))
                     for segment in path
                 ],
-                "summary": build_summary(path, normalize_mobility_type(mobility_type)),
+                "summary": build_summary(
+                    path,
+                    normalize_mobility_type(mobility_type),
+                    normalized_strategy,
+                ),
             }
         )
     return routes

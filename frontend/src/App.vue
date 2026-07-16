@@ -17,10 +17,19 @@ const profileOptions = [
   { label: '家属陪同', value: 'FAMILY_ASSISTED', hint: '兼顾陪同行走、安全提示和路线稳定性' },
 ];
 
+const strategyOptions = [
+  { label: '综合推荐', value: 'BALANCED', hint: '兼顾距离、坡度、安全、无障碍和休息条件' },
+  { label: '最安全', value: 'SAFEST', hint: '优先安全等级、过街安全、照明和无障碍' },
+  { label: '最平缓', value: 'FLATTEST', hint: '优先低坡度、少台阶、坡道和路宽' },
+  { label: '最舒适', value: 'COMFORT', hint: '优先休息点、座椅、树荫和路面舒适度' },
+  { label: '最短距离', value: 'SHORTEST', hint: '距离优先，但仍遵守老人画像硬约束' },
+];
+
 const activeMode = ref('recommend');
 const startName = ref(startOptions[0].value);
 const endName = ref(endOptions[1].value);
 const mobilityType = ref('WHEELCHAIR');
+const routeStrategy = ref('BALANCED');
 const routes = ref([]);
 const avoidedSegments = ref([]);
 const selectedRouteIndex = ref(0);
@@ -65,6 +74,9 @@ const collectionForm = ref({
 
 const selectedProfile = computed(() =>
   profileOptions.find((item) => item.value === mobilityType.value)
+);
+const selectedStrategy = computed(() =>
+  strategyOptions.find((item) => item.value === routeStrategy.value)
 );
 const selectedEnd = computed(() => endOptions.find((item) => item.value === endName.value));
 const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
@@ -321,6 +333,7 @@ async function fetchRoutes() {
       start_name: startName.value,
       end_name: endName.value,
       mobility_type: mobilityType.value,
+      strategy: routeStrategy.value,
     });
     const response = await fetch(`${API_BASE_URL}/api/routes/recommend?${params.toString()}`);
     const payload = await response.json().catch(() => ({}));
@@ -359,6 +372,16 @@ async function fetchRoutes() {
 function selectRoute(index) {
   selectedRouteIndex.value = index;
   actionStatus.value = `已选择推荐路线 ${index + 1}。`;
+}
+
+function selectStrategy(strategyValue) {
+  if (routeStrategy.value === strategyValue) return;
+  routeStrategy.value = strategyValue;
+  routes.value = [];
+  avoidedSegments.value = [];
+  selectedRouteIndex.value = 0;
+  errorMessage.value = '';
+  actionStatus.value = `已切换为“${selectedStrategy.value?.label}”，请重新生成路线。`;
 }
 
 function startNavigation() {
@@ -457,6 +480,26 @@ async function sendSos() {
               <span>{{ profile.hint }}</span>
             </button>
           </div>
+        </div>
+
+        <div>
+          <p class="section-kicker">推荐策略</p>
+          <div class="strategy-grid">
+            <button
+              v-for="strategy in strategyOptions"
+              :key="strategy.value"
+              class="strategy-chip"
+              :class="{ selected: routeStrategy === strategy.value }"
+              type="button"
+              @click="selectStrategy(strategy.value)"
+            >
+              <strong>{{ strategy.label }}</strong>
+              <span>{{ strategy.hint }}</span>
+            </button>
+          </div>
+          <p class="strategy-note">
+            当前策略：{{ selectedStrategy?.label }}，{{ selectedStrategy?.hint }}
+          </p>
         </div>
 
         <label class="field-block">

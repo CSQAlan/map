@@ -39,5 +39,8 @@ class RouteRecommendResponse(BaseModel):
     start_name: str
     end_name: str
     mobility_type: str
+    strategy: str
+    strategy_label: str
+    strategy_description: str
     routes: list[RouteCandidateResponse]
     avoided_segments: list[AvoidedSegmentResponse]
