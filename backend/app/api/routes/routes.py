@@ -20,17 +20,6 @@ router = APIRouter()
 
 RouteStrategyQuery = Literal["BALANCED", "SAFEST", "FLATTEST", "COMFORT", "SHORTEST"]
 
-GATE_3_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u4e09\u53f7\u95e8"
-CLINIC_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u6821\u533b\u9662"
-CANTEEN_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u98df\u5802"
-
-POI_NODE_CODES = {
-    GATE_3_NAME: "N_GATE3",
-    CLINIC_NAME: "N_CLINIC",
-    CANTEEN_NAME: "N_CANTEEN",
-}
-
-
 @router.get("/recommend", response_model=RouteRecommendResponse)
 def recommend_route(
     start_name: str = Query(...),
@@ -82,16 +71,29 @@ def recommend_route(
 
 
 def resolve_poi_node_code(db: Session, name: str) -> str:
-    node_code = POI_NODE_CODES.get(name)
-    if node_code is None:
-        raise HTTPException(status_code=404, detail=f"POI not found: {name}")
-    exists = db.execute(
-        text("SELECT id FROM poi_facility WHERE name = :name AND status = 'ACTIVE'"),
+    row = db.execute(
+        text(
+            """
+            SELECT linked_node_code
+            FROM poi_facility
+            WHERE name = :name AND status = 'ACTIVE'
+            """
+        ),
         {"name": name},
+    ).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"POI not found: {name}")
+    node_code = row["linked_node_code"]
+    if not node_code:
+        raise HTTPException(status_code=422, detail=f"POI has no linked route node: {name}")
+
+    exists = db.execute(
+        text("SELECT id FROM road_node WHERE osm_node_ref = :node_code"),
+        {"node_code": node_code},
     ).scalar_one_or_none()
     if exists is None:
-        raise HTTPException(status_code=404, detail=f"POI not found: {name}")
-    return node_code
+        raise HTTPException(status_code=422, detail=f"Linked route node not found: {node_code}")
+    return str(node_code)
 
 
 def load_active_segments(db: Session) -> list[dict]:

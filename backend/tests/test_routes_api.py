@@ -9,9 +9,9 @@ from app.main import app
 
 client = TestClient(app)
 
-GATE_3_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u4e09\u53f7\u95e8"
-CLINIC_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u6821\u533b\u9662"
-CANTEEN_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u98df\u5802"
+GATE_NAME = "师大苑大学城西路入口"
+LOTUS_NAME = "师大苑荷塘水景休息区"
+BUILDING_A_NAME = "师大苑楼栋组团A"
 UNKNOWN_GATE_NAME = "\u4e0d\u5b58\u5728\u7684\u95e8"
 
 
@@ -19,8 +19,14 @@ class FakeResult:
     def __init__(self, rows: list[dict[str, Any]]) -> None:
         self._rows = rows
 
-    def mappings(self) -> list[dict[str, Any]]:
-        return self._rows
+    def __iter__(self) -> Any:
+        return iter(self._rows)
+
+    def mappings(self) -> "FakeResult":
+        return self
+
+    def first(self) -> dict[str, Any] | None:
+        return self._rows[0] if self._rows else None
 
     def scalar_one_or_none(self) -> int | None:
         return self._rows[0]["id"] if self._rows else None
@@ -29,96 +35,109 @@ class FakeResult:
 class FakeSession:
     def execute(self, query: Any, params: dict[str, Any] | None = None) -> FakeResult:
         sql = str(query)
-        if "FROM poi_facility" in sql:
+        if "FROM poi_facility" in sql and "linked_node_code" in sql:
             name = params["name"] if params else ""
             mapping = {
-                GATE_3_NAME: 1,
-                CLINIC_NAME: 2,
-                CANTEEN_NAME: 3,
+                GATE_NAME: "N_SY_GATE_WEST",
+                LOTUS_NAME: "N_SY_LOTUS_ENTRY",
+                BUILDING_A_NAME: "N_SY_BUILDING_A",
             }
-            return FakeResult([{"id": mapping[name]}] if name in mapping else [])
+            return FakeResult([{"linked_node_code": mapping[name]}] if name in mapping else [])
+        if "FROM road_node" in sql:
+            return FakeResult([{"id": 1}])
         return FakeResult(
             [
                 {
-                    "segment_code": "S_GATE3_TO_WIDE_PATH",
-                    "name": "\u4e09\u53f7\u95e8\u5230\u5bbd\u7f13\u6b65\u9053",
-                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3071,29.6038],[106.3084,29.6040]]}',
-                    "start_node_code": "N_GATE3",
-                    "end_node_code": "N_WIDE_PATH",
-                    "length_m": 136,
+                    "segment_code": "S_SY_GATE_TO_MAIN",
+                    "name": "入口到内部主路中心",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3060,29.6038],[106.3068,29.6041]]}',
+                    "start_node_code": "N_SY_GATE_WEST",
+                    "end_node_code": "N_SY_MAIN_CENTER",
+                    "length_m": 92,
                     "slope_percent": 1.2,
+                    "surface_type": "ASPHALT",
                     "surface_level": 4,
-                    "safety_level": 5,
-                    "barrier_free_level": 5,
-                    "rest_facility_score": 4,
-                    "width_m": 1.6,
+                    "safety_level": 3,
+                    "barrier_free_level": 4,
+                    "rest_facility_score": 3,
+                    "crossing_safety_level": 3,
+                    "lighting_level": 4,
+                    "width_m": 3.2,
                     "wheelchair_accessible": True,
-                    "has_ramp": True,
+                    "has_ramp": False,
                     "has_handrail": False,
-                    "shade_coverage_percent": 35,
+                    "shade_coverage_percent": 80,
                     "bench_count": 0,
                     "step_count": 0,
                 },
                 {
-                    "segment_code": "S_WIDE_PATH_TO_SIDE",
-                    "name": "\u5bbd\u7f13\u6b65\u9053\u5230\u98df\u5802\u4fa7\u8def",
-                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3084,29.6040],[106.3089,29.6045]]}',
-                    "start_node_code": "N_WIDE_PATH",
-                    "end_node_code": "N_SIDE_PATH",
-                    "length_m": 72,
-                    "slope_percent": 1.6,
+                    "segment_code": "S_SY_MAIN_TO_LOTUS",
+                    "name": "内部主路到荷塘观景入口",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3068,29.6041],[106.3084,29.6041]]}',
+                    "start_node_code": "N_SY_MAIN_CENTER",
+                    "end_node_code": "N_SY_LOTUS_ENTRY",
+                    "length_m": 154,
+                    "slope_percent": 1.4,
+                    "surface_type": "ASPHALT",
                     "surface_level": 4,
-                    "safety_level": 5,
-                    "barrier_free_level": 5,
+                    "safety_level": 3,
+                    "barrier_free_level": 4,
                     "rest_facility_score": 4,
-                    "width_m": 1.5,
+                    "crossing_safety_level": 3,
+                    "lighting_level": 4,
+                    "width_m": 3.0,
                     "wheelchair_accessible": True,
                     "has_ramp": False,
-                    "has_handrail": True,
-                    "shade_coverage_percent": 45,
+                    "has_handrail": False,
+                    "shade_coverage_percent": 85,
                     "bench_count": 1,
                     "step_count": 0,
                 },
                 {
-                    "segment_code": "S_SIDE_TO_CANTEEN",
-                    "name": "\u98df\u5802\u4fa7\u8def\u5230\u98df\u5802",
-                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3089,29.6045],[106.3092,29.6049]]}',
-                    "start_node_code": "N_SIDE_PATH",
-                    "end_node_code": "N_CANTEEN",
-                    "length_m": 54,
-                    "slope_percent": 1.4,
+                    "segment_code": "S_SY_MAIN_TO_BUILDING_A",
+                    "name": "内部主路到楼栋组团A",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3068,29.6041],[106.3074,29.6045]]}',
+                    "start_node_code": "N_SY_MAIN_CENTER",
+                    "end_node_code": "N_SY_BUILDING_A",
+                    "length_m": 78,
+                    "slope_percent": 1.6,
+                    "surface_type": "ASPHALT",
                     "surface_level": 4,
-                    "safety_level": 4,
+                    "safety_level": 3,
                     "barrier_free_level": 4,
-                    "rest_facility_score": 4,
-                    "width_m": 1.4,
+                    "rest_facility_score": 3,
+                    "crossing_safety_level": 3,
+                    "lighting_level": 4,
+                    "width_m": 2.8,
                     "wheelchair_accessible": True,
                     "has_ramp": False,
                     "has_handrail": False,
-                    "shade_coverage_percent": 20,
+                    "shade_coverage_percent": 75,
                     "bench_count": 0,
                     "step_count": 0,
                 },
                 {
-                    "segment_code": "S_STAIR_SHORTCUT",
-                    "name": "\u98df\u5802\u53f0\u9636\u6377\u5f84",
-                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3078,29.6039],[106.3092,29.6049]]}',
-                    "start_node_code": "N_GATE3",
-                    "end_node_code": "N_UNUSED_STAIR",
-                    "length_m": 90,
-                    "slope_percent": 2.4,
+                    "segment_code": "S_SY_STAIR_SHORTCUT",
+                    "name": "内部主路到亭廊台阶捷径",
+                    "geom_geojson": '{"type":"LineString","coordinates":[[106.3068,29.6041],[106.3086,29.60315]]}',
+                    "start_node_code": "N_SY_MAIN_CENTER",
+                    "end_node_code": "N_SY_GARDEN_REST",
+                    "length_m": 168,
+                    "slope_percent": 3.2,
+                    "surface_type": "BRICK",
                     "surface_level": 3,
                     "safety_level": 3,
-                    "barrier_free_level": 2,
-                    "rest_facility_score": 2,
-                    "width_m": 0.9,
+                    "barrier_free_level": 1,
+                    "rest_facility_score": 4,
+                    "width_m": 1.0,
                     "wheelchair_accessible": False,
                     "has_ramp": False,
                     "has_handrail": False,
-                    "shade_coverage_percent": 10,
-                    "bench_count": 0,
+                    "shade_coverage_percent": 85,
+                    "bench_count": 1,
                     "step_count": 3,
                     "crossing_safety_level": 3,
+                    "lighting_level": 3,
                 },
             ]
         )
@@ -139,8 +158,8 @@ def test_recommend_route_api_returns_candidates() -> None:
     response = client.get(
         "/api/routes/recommend",
         params={
-            "start_name": GATE_3_NAME,
-            "end_name": CANTEEN_NAME,
+            "start_name": GATE_NAME,
+            "end_name": LOTUS_NAME,
             "mobility_type": "ASSISTED",
         },
     )
@@ -148,7 +167,7 @@ def test_recommend_route_api_returns_candidates() -> None:
     data = response.json()
     assert len(data["routes"]) == 1
     assert data["routes"][0]["rank"] == 1
-    assert data["routes"][0]["segments"][0]["segment_code"] == "S_GATE3_TO_WIDE_PATH"
+    assert data["routes"][0]["segments"][0]["segment_code"] == "S_SY_GATE_TO_MAIN"
     assert data["routes"][0]["segments"][0]["geometry_coordinates"]
     assert data["routes"][0]["segments"][0]["benefit_tags"]
     assert data["routes"][0]["segments"][0]["explanation"]
@@ -161,8 +180,8 @@ def test_recommend_route_api_returns_strategy_metadata() -> None:
     response = client.get(
         "/api/routes/recommend",
         params={
-            "start_name": GATE_3_NAME,
-            "end_name": CANTEEN_NAME,
+            "start_name": GATE_NAME,
+            "end_name": LOTUS_NAME,
             "mobility_type": "ASSISTED",
             "strategy": "SAFEST",
         },
@@ -179,8 +198,8 @@ def test_recommend_route_api_rejects_unknown_strategy() -> None:
     response = client.get(
         "/api/routes/recommend",
         params={
-            "start_name": GATE_3_NAME,
-            "end_name": CANTEEN_NAME,
+            "start_name": GATE_NAME,
+            "end_name": LOTUS_NAME,
             "mobility_type": "ASSISTED",
             "strategy": "UNKNOWN",
         },
@@ -192,34 +211,32 @@ def test_recommend_route_api_returns_avoided_segment_reasons() -> None:
     response = client.get(
         "/api/routes/recommend",
         params={
-            "start_name": GATE_3_NAME,
-            "end_name": CANTEEN_NAME,
+            "start_name": GATE_NAME,
+            "end_name": LOTUS_NAME,
             "mobility_type": "WHEELCHAIR",
         },
     )
     assert response.status_code == 200
     data = response.json()
     avoided = data["avoided_segments"]
-    assert avoided[0]["segment_code"] == "S_STAIR_SHORTCUT"
+    assert avoided[0]["segment_code"] == "S_SY_STAIR_SHORTCUT"
     assert avoided[0]["avoidance_level"] == "BLOCKED"
     assert "台阶" in "，".join(avoided[0]["reasons"])
     assert "路宽" in "，".join(avoided[0]["reasons"])
 
 
-def test_recommend_route_api_returns_reasons_when_no_route_found() -> None:
+def test_recommend_route_api_can_route_to_building_group() -> None:
     response = client.get(
         "/api/routes/recommend",
         params={
-            "start_name": GATE_3_NAME,
-            "end_name": CLINIC_NAME,
+            "start_name": GATE_NAME,
+            "end_name": BUILDING_A_NAME,
             "mobility_type": "WHEELCHAIR",
         },
     )
-    assert response.status_code == 404
-    detail = response.json()["detail"]
-    assert detail["message"] == "No reachable route found"
-    assert detail["avoided_segments"][0]["segment_code"] == "S_STAIR_SHORTCUT"
-    assert detail["avoided_segments"][0]["avoidance_level"] == "BLOCKED"
+    assert response.status_code == 200
+    data = response.json()
+    assert data["routes"][0]["segment_codes"] == ["S_SY_GATE_TO_MAIN", "S_SY_MAIN_TO_BUILDING_A"]
 
 
 def test_recommend_route_api_rejects_unknown_poi() -> None:
@@ -227,7 +244,7 @@ def test_recommend_route_api_rejects_unknown_poi() -> None:
         "/api/routes/recommend",
         params={
             "start_name": UNKNOWN_GATE_NAME,
-            "end_name": CANTEEN_NAME,
+            "end_name": LOTUS_NAME,
             "mobility_type": "ASSISTED",
         },
     )

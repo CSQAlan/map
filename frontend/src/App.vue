@@ -4,10 +4,12 @@ import { computed, onMounted, ref } from 'vue';
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
 
-const startOptions = [{ label: '重庆师范大学三号门', value: '重庆师范大学三号门' }];
+const startOptions = [{ label: '师大苑大学城西路入口', value: '师大苑大学城西路入口' }];
 const endOptions = [
-  { label: '校医院', value: '重庆师范大学校医院' },
-  { label: '食堂', value: '重庆师范大学食堂' },
+  { label: '荷塘水景休息区', value: '师大苑荷塘水景休息区' },
+  { label: '楼栋组团A', value: '师大苑楼栋组团A' },
+  { label: '楼栋组团B', value: '师大苑楼栋组团B' },
+  { label: '外部商业街人行道', value: '师大苑外部商业街人行道' },
 ];
 const profileOptions = [
   { label: '轮椅老人', value: 'WHEELCHAIR', hint: '不走台阶，优先坡道、宽路和无障碍路段' },
@@ -27,7 +29,7 @@ const strategyOptions = [
 
 const activeMode = ref('recommend');
 const startName = ref(startOptions[0].value);
-const endName = ref(endOptions[1].value);
+const endName = ref(endOptions[0].value);
 const mobilityType = ref('WHEELCHAIR');
 const routeStrategy = ref('BALANCED');
 const routes = ref([]);
@@ -433,10 +435,10 @@ async function sendSos() {
 <template>
   <main class="app-shell">
     <section class="hero-panel">
-      <p class="eyebrow">重庆师范大学试点</p>
+      <p class="eyebrow">师大苑小区试点</p>
       <div class="hero-copy">
         <h1>助老地图 H5 演示</h1>
-        <p>不是普通最短路，而是根据老人身体能力动态筛路、算路、解释路线。</p>
+        <p>基于师大苑现场踩点照片，按老人身体能力动态筛路、算路、解释路线。</p>
       </div>
       <div class="mode-tabs" aria-label="页面模式切换">
         <button
@@ -531,10 +533,10 @@ async function sendSos() {
       <section class="routes-panel" aria-live="polite">
         <div class="map-panel">
           <div class="panel-heading">
-            <p class="section-kicker">校园示意图</p>
+            <p class="section-kicker">小区示意图</p>
             <h2>{{ mapLoading ? '正在加载路网' : '试点路网与推荐路线' }}</h2>
           </div>
-          <svg class="campus-map" viewBox="0 0 760 360" role="img" aria-label="重庆师范大学试点路线示意图">
+          <svg class="campus-map" viewBox="0 0 760 360" role="img" aria-label="师大苑试点路线示意图">
             <defs>
               <linearGradient id="routeGlow" x1="0" x2="1">
                 <stop offset="0%" stop-color="#2f6f5e" />
@@ -591,7 +593,7 @@ async function sendSos() {
         <section class="diagnostics-panel">
           <div class="panel-heading compact">
             <p class="section-kicker">适老化诊断</p>
-            <h2>{{ diagnosticsLoading ? '正在生成改造建议' : '校园路段改造建议' }}</h2>
+            <h2>{{ diagnosticsLoading ? '正在生成改造建议' : '师大苑路段改造建议' }}</h2>
           </div>
           <div v-if="diagnosticsLoading" class="diagnostics-empty">
             正在读取路段数据并生成适老化诊断建议...
@@ -629,7 +631,7 @@ async function sendSos() {
         </div>
 
         <div v-if="!hasRoutes" class="empty-state">
-          <span>从三号门出发，选择画像后生成路线。</span>
+          <span>从师大苑入口出发，选择画像后生成路线。</span>
           <strong>轮椅、拐杖、慢行老人会得到不同路线排序。</strong>
         </div>
 

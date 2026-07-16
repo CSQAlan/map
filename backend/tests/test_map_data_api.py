@@ -9,9 +9,9 @@ from app.main import app
 
 client = TestClient(app)
 
-GATE_3_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u4e09\u53f7\u95e8"
-CLINIC_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u6821\u533b\u9662"
-CANTEEN_NAME = "\u91cd\u5e86\u5e08\u8303\u5927\u5b66\u98df\u5802"
+GATE_NAME = "师大苑大学城西路入口"
+LOTUS_NAME = "师大苑荷塘水景休息区"
+COMMERCIAL_NAME = "师大苑外部商业街人行道"
 
 
 class FakeResult:
@@ -30,10 +30,10 @@ class FakeSession:
                 [
                     {
                         "id": 1,
-                        "name": GATE_3_NAME,
-                        "poi_type": "GATE",
+                        "name": GATE_NAME,
+                        "poi_type": "ENTRANCE",
                         "is_accessible": True,
-                        "geom_geojson": '{"type":"Point","coordinates":[106.3071,29.6038]}',
+                        "geom_geojson": '{"type":"Point","coordinates":[106.3060,29.6038]}',
                     }
                 ]
             )
@@ -42,29 +42,29 @@ class FakeSession:
                 [
                     {
                         "id": 1,
-                        "segment_code": "S_GATE3_TO_CROSS1",
-                        "name": "\u4e09\u53f7\u95e8\u5230\u4e3b\u8def\u53e3A",
+                        "segment_code": "S_SY_GATE_TO_MAIN",
+                        "name": "入口到内部主路中心",
                         "slope_percent": 1.5,
                         "wheelchair_accessible": True,
                         "step_count": 0,
-                        "geom_geojson": '{"type":"LineString","coordinates":[[106.3071,29.6038],[106.3076,29.6041]]}',
+                        "geom_geojson": '{"type":"LineString","coordinates":[[106.3060,29.6038],[106.3068,29.6041]]}',
                     }
                 ]
             )
         if "FROM poi_facility" in sql:
             return FakeResult(
                 [
-                    {"id": 1, "name": GATE_3_NAME, "poi_type": "GATE", "is_accessible": True},
-                    {"id": 2, "name": CLINIC_NAME, "poi_type": "CLINIC", "is_accessible": True},
-                    {"id": 3, "name": CANTEEN_NAME, "poi_type": "CANTEEN", "is_accessible": True},
+                    {"id": 1, "name": GATE_NAME, "poi_type": "ENTRANCE", "is_accessible": True},
+                    {"id": 2, "name": LOTUS_NAME, "poi_type": "REST_AREA", "is_accessible": True},
+                    {"id": 3, "name": COMMERCIAL_NAME, "poi_type": "SERVICE_ACCESS", "is_accessible": True},
                 ]
             )
         return FakeResult(
             [
                 {
                     "id": 1,
-                    "segment_code": "S_GATE3_TO_CROSS1",
-                    "name": "\u4e09\u53f7\u95e8\u5230\u4e3b\u8def\u53e3A",
+                    "segment_code": "S_SY_GATE_TO_MAIN",
+                    "name": "入口到内部主路中心",
                     "length_m": 65.0,
                     "slope_percent": 1.5,
                     "surface_type": "CONCRETE",
@@ -81,8 +81,8 @@ class FakeSession:
                 },
                 {
                     "id": 2,
-                    "segment_code": "S_CROSS1_TO_CLINIC",
-                    "name": "\u4e3b\u8def\u53e3A\u5230\u6821\u533b\u9662",
+                    "segment_code": "S_SY_MAIN_TO_LOTUS",
+                    "name": "内部主路到荷塘观景入口",
                     "length_m": 58.0,
                     "slope_percent": 2.2,
                     "surface_type": "CONCRETE",
@@ -128,9 +128,9 @@ def test_map_api_returns_seeded_names() -> None:
     response = client.get("/api/map-data/pois")
     assert response.status_code == 200
     names = {row["name"] for row in response.json()}
-    assert GATE_3_NAME in names
-    assert CLINIC_NAME in names
-    assert CANTEEN_NAME in names
+    assert GATE_NAME in names
+    assert LOTUS_NAME in names
+    assert COMMERCIAL_NAME in names
 
 
 def test_get_map_geojson() -> None:

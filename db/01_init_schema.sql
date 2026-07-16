@@ -1,5 +1,5 @@
 -- 助老地图 MVP 初始化数据库脚本
--- 试点范围：重庆师范大学三号门 / 校医院 / 食堂
+-- 试点范围：师大苑小区入口 / 荷塘休息区 / 外部商业街
 -- 目标数据库：PostgreSQL 16 + PostGIS
 
 CREATE EXTENSION IF NOT EXISTS postgis;
@@ -96,16 +96,26 @@ CREATE TABLE IF NOT EXISTS poi_facility (
     description VARCHAR(255),
     geom GEOMETRY(Point, 4326) NOT NULL,
     address_text VARCHAR(255),
+    linked_node_code VARCHAR(50),
     is_accessible BOOLEAN NOT NULL DEFAULT TRUE,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     source VARCHAR(20) NOT NULL DEFAULT 'MANUAL',
+    source_provider VARCHAR(30) NOT NULL DEFAULT 'manual_photo',
+    source_coord_type VARCHAR(30) NOT NULL DEFAULT 'wgs84',
+    source_ref VARCHAR(255),
+    evidence_photo_refs JSONB NOT NULL DEFAULT '[]'::jsonb,
+    data_confidence SMALLINT NOT NULL DEFAULT 3,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT ck_poi_facility_poi_type CHECK (
-        poi_type IN ('GATE', 'CLINIC', 'CANTEEN', 'BUS_STOP', 'REST_SEAT', 'TOILET', 'RAMP')
+        poi_type IN (
+            'GATE', 'CLINIC', 'CANTEEN', 'BUS_STOP', 'REST_SEAT', 'TOILET', 'RAMP',
+            'ENTRANCE', 'BUILDING_GROUP', 'REST_AREA', 'SERVICE_ACCESS', 'WAYPOINT'
+        )
     ),
     CONSTRAINT ck_poi_facility_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
-    CONSTRAINT ck_poi_facility_source CHECK (source IN ('OSM', 'MANUAL', 'DERIVED'))
+    CONSTRAINT ck_poi_facility_source CHECK (source IN ('OSM', 'MANUAL', 'DERIVED')),
+    CONSTRAINT ck_poi_facility_data_confidence CHECK (data_confidence BETWEEN 1 AND 5)
 );
 
 CREATE INDEX IF NOT EXISTS gist_poi_facility_geom ON poi_facility USING GIST (geom);
@@ -117,10 +127,15 @@ CREATE TABLE IF NOT EXISTS road_node (
     name VARCHAR(100),
     geom GEOMETRY(Point, 4326) NOT NULL,
     node_type VARCHAR(20) NOT NULL DEFAULT 'NORMAL',
+    source_provider VARCHAR(30) NOT NULL DEFAULT 'manual_photo',
+    source_coord_type VARCHAR(30) NOT NULL DEFAULT 'wgs84',
+    source_ref VARCHAR(255),
+    data_confidence SMALLINT NOT NULL DEFAULT 3,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT ck_road_node_node_type CHECK (
-        node_type IN ('NORMAL', 'GATE', 'CROSSING', 'POI_LINK')
-    )
+        node_type IN ('NORMAL', 'GATE', 'CROSSING', 'POI_LINK', 'REST_AREA', 'BUILDING_GROUP')
+    ),
+    CONSTRAINT ck_road_node_data_confidence CHECK (data_confidence BETWEEN 1 AND 5)
 );
 
 CREATE INDEX IF NOT EXISTS gist_road_node_geom ON road_node USING GIST (geom);
@@ -152,6 +167,13 @@ CREATE TABLE IF NOT EXISTS road_segment (
     step_height_cm NUMERIC(5,2) NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     data_source VARCHAR(20) NOT NULL DEFAULT 'MANUAL',
+    source_provider VARCHAR(30) NOT NULL DEFAULT 'manual_photo',
+    source_coord_type VARCHAR(30) NOT NULL DEFAULT 'wgs84',
+    source_ref VARCHAR(255),
+    evidence_photo_refs JSONB NOT NULL DEFAULT '[]'::jsonb,
+    data_confidence SMALLINT NOT NULL DEFAULT 3,
+    last_verified_at TIMESTAMPTZ,
+    verified_by VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uk_road_segment_segment_code UNIQUE (segment_code),
@@ -175,6 +197,7 @@ CREATE TABLE IF NOT EXISTS road_segment (
     CONSTRAINT ck_road_segment_step_height_cm CHECK (step_height_cm >= 0),
     CONSTRAINT ck_road_segment_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
     CONSTRAINT ck_road_segment_data_source CHECK (data_source IN ('OSM', 'DEM', 'MANUAL', 'OSM_DEM_MANUAL')),
+    CONSTRAINT ck_road_segment_data_confidence CHECK (data_confidence BETWEEN 1 AND 5),
     CONSTRAINT ck_road_segment_not_self_loop CHECK (start_node_id <> end_node_id)
 );
 
@@ -189,6 +212,36 @@ ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS has_ramp BOOLEAN NOT NULL DEFA
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS shade_coverage_percent SMALLINT NOT NULL DEFAULT 0;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS bench_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS step_height_cm NUMERIC(5,2) NOT NULL DEFAULT 0;
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS linked_node_code VARCHAR(50);
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS source_provider VARCHAR(30) NOT NULL DEFAULT 'manual_photo';
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS source_coord_type VARCHAR(30) NOT NULL DEFAULT 'wgs84';
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS source_ref VARCHAR(255);
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS evidence_photo_refs JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS data_confidence SMALLINT NOT NULL DEFAULT 3;
+ALTER TABLE road_node ADD COLUMN IF NOT EXISTS source_provider VARCHAR(30) NOT NULL DEFAULT 'manual_photo';
+ALTER TABLE road_node ADD COLUMN IF NOT EXISTS source_coord_type VARCHAR(30) NOT NULL DEFAULT 'wgs84';
+ALTER TABLE road_node ADD COLUMN IF NOT EXISTS source_ref VARCHAR(255);
+ALTER TABLE road_node ADD COLUMN IF NOT EXISTS data_confidence SMALLINT NOT NULL DEFAULT 3;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS source_provider VARCHAR(30) NOT NULL DEFAULT 'manual_photo';
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS source_coord_type VARCHAR(30) NOT NULL DEFAULT 'wgs84';
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS source_ref VARCHAR(255);
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS evidence_photo_refs JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS data_confidence SMALLINT NOT NULL DEFAULT 3;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS last_verified_at TIMESTAMPTZ;
+ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS verified_by VARCHAR(100);
+
+ALTER TABLE poi_facility DROP CONSTRAINT IF EXISTS ck_poi_facility_poi_type;
+ALTER TABLE poi_facility ADD CONSTRAINT ck_poi_facility_poi_type CHECK (
+    poi_type IN (
+        'GATE', 'CLINIC', 'CANTEEN', 'BUS_STOP', 'REST_SEAT', 'TOILET', 'RAMP',
+        'ENTRANCE', 'BUILDING_GROUP', 'REST_AREA', 'SERVICE_ACCESS', 'WAYPOINT'
+    )
+);
+
+ALTER TABLE road_node DROP CONSTRAINT IF EXISTS ck_road_node_node_type;
+ALTER TABLE road_node ADD CONSTRAINT ck_road_node_node_type CHECK (
+    node_type IN ('NORMAL', 'GATE', 'CROSSING', 'POI_LINK', 'REST_AREA', 'BUILDING_GROUP')
+);
 
 -- =========================
 -- 3. 数据采集与审核

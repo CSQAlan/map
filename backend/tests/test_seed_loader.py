@@ -13,21 +13,24 @@ def test_load_schema_sql_reads_init_schema() -> None:
 def test_load_seed_json_reads_core_pois() -> None:
     rows = load_seed_json("core_pois.json")
     names = {row["name"] for row in rows}
-    assert {"重庆师范大学三号门", "重庆师范大学校医院", "重庆师范大学食堂"} <= names
+    assert {
+        "师大苑大学城西路入口",
+        "师大苑荷塘水景休息区",
+        "师大苑外部商业街人行道",
+    } <= names
+    assert all("linked_node_code" in row for row in rows)
 
 
 def test_seed_segments_cover_pilot_routes() -> None:
     rows = load_seed_json("core_segments.json")
     codes = {row["segment_code"] for row in rows}
-    assert "S_GATE3_TO_CROSS1" in codes
-    assert "S_CROSS1_TO_CLINIC" in codes
-    assert "S_CLINIC_TO_CROSS2" in codes
-    assert "S_CROSS2_TO_CANTEEN" in codes
-    assert "S_GATE3_TO_REST" in codes
-    assert "S_REST_TO_CLINIC" in codes
-    assert "S_GATE3_TO_WIDE_PATH" in codes
-    assert "S_WIDE_PATH_TO_SIDE" in codes
-    assert "S_SIDE_TO_CANTEEN" in codes
+    assert "S_SY_GATE_TO_MAIN" in codes
+    assert "S_SY_MAIN_TO_LOTUS" in codes
+    assert "S_SY_MAIN_TO_BUILDING_A" in codes
+    assert "S_SY_GATE_TO_COMMERCIAL" in codes
+    assert "S_SY_STAIR_SHORTCUT" in codes
+    assert "S_SY_CRACKED_PAVEMENT" in codes
+    assert all("evidence_photo_refs" in row for row in rows)
 
 
 def test_seed_graph_has_route_alternatives() -> None:
@@ -36,8 +39,9 @@ def test_seed_graph_has_route_alternatives() -> None:
     for row in rows:
         starts.setdefault(row["start_node_code"], set()).add(row["end_node_code"])
 
-    assert len(starts["N_GATE3"]) >= 3
-    assert "N_CLINIC" in starts["N_CROSS_1"]
-    assert "N_CLINIC" in starts["N_REST_AREA"]
-    assert "N_CANTEEN" in starts["N_CROSS_2"]
-    assert "N_CANTEEN" in starts["N_SIDE_PATH"]
+    assert len(starts["N_SY_GATE_WEST"]) >= 4
+    assert "N_SY_MAIN_CENTER" in starts["N_SY_GATE_WEST"]
+    assert "N_SY_COMMERCIAL_SIDEWALK" in starts["N_SY_GATE_WEST"]
+    assert "N_SY_LOTUS_ENTRY" in starts["N_SY_MAIN_CENTER"]
+    assert "N_SY_LOTUS_ENTRY" in starts["N_SY_BUILDING_A"]
+    assert "N_SY_LOTUS_ENTRY" in starts["N_SY_BUILDING_B"]

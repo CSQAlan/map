@@ -1,29 +1,80 @@
 [
   {
-    "name": "重庆师范大学三号门",
-    "poi_type": "GATE",
-    "description": "比赛版试点入口",
-    "lon": 106.3071,
+    "name": "师大苑大学城西路入口",
+    "poi_type": "ENTRANCE",
+    "description": "师大苑试点入口，连接外部大学城西路和小区内部主路。",
+    "lon": 106.3060,
     "lat": 29.6038,
+    "linked_node_code": "N_SY_GATE_WEST",
     "is_accessible": true,
-    "source": "MANUAL"
+    "source": "MANUAL",
+    "source_ref": "IMG_9555.JPG",
+    "evidence_photo_refs": ["IMG_9555.JPG", "IMG_9553.JPG"],
+    "data_confidence": 3
   },
   {
-    "name": "重庆师范大学校医院",
-    "poi_type": "CLINIC",
-    "description": "比赛版试点医疗目的地",
-    "lon": 106.3080,
-    "lat": 29.6044,
+    "name": "师大苑荷塘水景休息区",
+    "poi_type": "REST_AREA",
+    "description": "荷塘旁观景与休息区域，树荫和座椅条件较好，平台边缘需注意高差。",
+    "lon": 106.3084,
+    "lat": 29.6041,
+    "linked_node_code": "N_SY_LOTUS_ENTRY",
     "is_accessible": true,
-    "source": "MANUAL"
+    "source": "MANUAL",
+    "source_ref": "IMG_9550.JPG",
+    "evidence_photo_refs": ["IMG_9550.JPG", "IMG_9551.JPG"],
+    "data_confidence": 4
   },
   {
-    "name": "重庆师范大学食堂",
-    "poi_type": "CANTEEN",
-    "description": "比赛版试点生活目的地",
-    "lon": 106.3092,
-    "lat": 29.6049,
+    "name": "师大苑楼栋组团A",
+    "poi_type": "BUILDING_GROUP",
+    "description": "地图截图中 48-51 栋附近的第一版楼栋组团。",
+    "lon": 106.3074,
+    "lat": 29.6045,
+    "linked_node_code": "N_SY_BUILDING_A",
     "is_accessible": true,
-    "source": "MANUAL"
+    "source": "MANUAL",
+    "source_ref": "IMG_9510.PNG",
+    "evidence_photo_refs": ["IMG_9510.PNG", "IMG_9505.JPG"],
+    "data_confidence": 3
+  },
+  {
+    "name": "师大苑楼栋组团B",
+    "poi_type": "BUILDING_GROUP",
+    "description": "地图截图中 54-56 栋附近的第一版楼栋组团。",
+    "lon": 106.3076,
+    "lat": 29.6037,
+    "linked_node_code": "N_SY_BUILDING_B",
+    "is_accessible": true,
+    "source": "MANUAL",
+    "source_ref": "IMG_9535.PNG",
+    "evidence_photo_refs": ["IMG_9535.PNG", "IMG_9544.JPG"],
+    "data_confidence": 3
+  },
+  {
+    "name": "师大苑林下休闲步道",
+    "poi_type": "REST_AREA",
+    "description": "树荫较好、环境舒适的林下步道，但存在窄路、台阶和边缘高差。",
+    "lon": 106.3086,
+    "lat": 29.60315,
+    "linked_node_code": "N_SY_GARDEN_REST",
+    "is_accessible": false,
+    "source": "MANUAL",
+    "source_ref": "IMG_9537.JPG",
+    "evidence_photo_refs": ["IMG_9509.JPG", "IMG_9537.JPG", "IMG_9539.JPG"],
+    "data_confidence": 4
+  },
+  {
+    "name": "师大苑外部商业街人行道",
+    "poi_type": "SERVICE_ACCESS",
+    "description": "小区外部生活服务方向，人行道较宽但车流和围挡需要注意。",
+    "lon": 106.3056,
+    "lat": 29.6035,
+    "linked_node_code": "N_SY_COMMERCIAL_SIDEWALK",
+    "is_accessible": true,
+    "source": "MANUAL",
+    "source_ref": "IMG_9555.JPG",
+    "evidence_photo_refs": ["IMG_9555.JPG"],
+    "data_confidence": 3
   }
 ]

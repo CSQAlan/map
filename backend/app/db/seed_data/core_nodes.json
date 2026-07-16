@@ -1,58 +1,110 @@
 [
   {
-    "node_code": "N_GATE3",
-    "name": "三号门节点",
-    "lon": 106.3071,
+    "node_code": "N_SY_GATE_WEST",
+    "name": "师大苑大学城西路入口节点",
+    "lon": 106.3060,
     "lat": 29.6038,
-    "node_type": "GATE"
+    "node_type": "GATE",
+    "source_ref": "IMG_9555.JPG",
+    "data_confidence": 3
   },
   {
-    "node_code": "N_CROSS_1",
-    "name": "主路口A",
-    "lon": 106.3076,
+    "node_code": "N_SY_COMMERCIAL_SIDEWALK",
+    "name": "外部商业街人行道节点",
+    "lon": 106.3056,
+    "lat": 29.6035,
+    "node_type": "POI_LINK",
+    "source_ref": "IMG_9555.JPG",
+    "data_confidence": 3
+  },
+  {
+    "node_code": "N_SY_MAIN_CENTER",
+    "name": "师大苑内部主路中心节点",
+    "lon": 106.3068,
     "lat": 29.6041,
-    "node_type": "CROSSING"
+    "node_type": "CROSSING",
+    "source_ref": "IMG_9540.JPG",
+    "data_confidence": 3
   },
   {
-    "node_code": "N_CLINIC",
-    "name": "校医院节点",
-    "lon": 106.3080,
-    "lat": 29.6044,
-    "node_type": "POI_LINK"
-  },
-  {
-    "node_code": "N_CROSS_2",
-    "name": "主路口B",
-    "lon": 106.3085,
-    "lat": 29.6046,
-    "node_type": "CROSSING"
-  },
-  {
-    "node_code": "N_CANTEEN",
-    "name": "食堂节点",
-    "lon": 106.3092,
-    "lat": 29.6049,
-    "node_type": "POI_LINK"
-  },
-  {
-    "node_code": "N_REST_AREA",
-    "name": "休息点节点",
-    "lon": 106.3078,
-    "lat": 29.6039,
-    "node_type": "NORMAL"
-  },
-  {
-    "node_code": "N_WIDE_PATH",
-    "name": "宽缓步道节点",
-    "lon": 106.3084,
-    "lat": 29.6040,
-    "node_type": "NORMAL"
-  },
-  {
-    "node_code": "N_SIDE_PATH",
-    "name": "食堂侧路节点",
-    "lon": 106.3089,
+    "node_code": "N_SY_BUILDING_A",
+    "name": "师大苑楼栋组团A节点",
+    "lon": 106.3074,
     "lat": 29.6045,
-    "node_type": "NORMAL"
+    "node_type": "BUILDING_GROUP",
+    "source_ref": "IMG_9510.PNG",
+    "data_confidence": 3
+  },
+  {
+    "node_code": "N_SY_BUILDING_B",
+    "name": "师大苑楼栋组团B节点",
+    "lon": 106.3076,
+    "lat": 29.6037,
+    "node_type": "BUILDING_GROUP",
+    "source_ref": "IMG_9535.PNG",
+    "data_confidence": 3
+  },
+  {
+    "node_code": "N_SY_LOTUS_ENTRY",
+    "name": "荷塘水景入口观景节点",
+    "lon": 106.3084,
+    "lat": 29.6041,
+    "node_type": "REST_AREA",
+    "source_ref": "IMG_9550.JPG",
+    "data_confidence": 4
+  },
+  {
+    "node_code": "N_SY_LOTUS_PLATFORM",
+    "name": "荷塘平台休息节点",
+    "lon": 106.3090,
+    "lat": 29.60445,
+    "node_type": "REST_AREA",
+    "source_ref": "IMG_9551.JPG",
+    "data_confidence": 4
+  },
+  {
+    "node_code": "N_SY_GARDEN_SPLIT",
+    "name": "林下步道分叉节点",
+    "lon": 106.3078,
+    "lat": 29.60335,
+    "node_type": "NORMAL",
+    "source_ref": "IMG_9537.JPG",
+    "data_confidence": 4
+  },
+  {
+    "node_code": "N_SY_GARDEN_REST",
+    "name": "林下亭廊休息节点",
+    "lon": 106.3086,
+    "lat": 29.60315,
+    "node_type": "REST_AREA",
+    "source_ref": "IMG_9531.JPG",
+    "data_confidence": 4
+  },
+  {
+    "node_code": "N_SY_POND_BRIDGE",
+    "name": "水景桥节点",
+    "lon": 106.3092,
+    "lat": 29.6036,
+    "node_type": "NORMAL",
+    "source_ref": "IMG_9546.JPG",
+    "data_confidence": 4
+  },
+  {
+    "node_code": "N_SY_STAIR_SHORTCUT",
+    "name": "台阶捷径节点",
+    "lon": 106.3082,
+    "lat": 29.6038,
+    "node_type": "NORMAL",
+    "source_ref": "IMG_9526.JPG",
+    "data_confidence": 4
+  },
+  {
+    "node_code": "N_SY_CRACK_RISK",
+    "name": "路面裂缝风险节点",
+    "lon": 106.3065,
+    "lat": 29.60365,
+    "node_type": "NORMAL",
+    "source_ref": "IMG_9511.JPG",
+    "data_confidence": 4
   }
 ]

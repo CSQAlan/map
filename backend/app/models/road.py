@@ -15,6 +15,10 @@ class RoadNode(Base):
     name: Mapped[str | None] = mapped_column(String(100))
     geom: Mapped[str] = mapped_column(nullable=False)
     node_type: Mapped[str] = mapped_column(String(20), default="NORMAL", nullable=False)
+    source_provider: Mapped[str] = mapped_column(String(30), default="manual_photo", nullable=False)
+    source_coord_type: Mapped[str] = mapped_column(String(30), default="wgs84", nullable=False)
+    source_ref: Mapped[str | None] = mapped_column(String(255))
+    data_confidence: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
 
 
 class RoadSegment(TimestampMixin, Base):
@@ -45,6 +49,13 @@ class RoadSegment(TimestampMixin, Base):
     step_height_cm: Mapped[float] = mapped_column(Numeric(5, 2), default=0, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="ACTIVE", nullable=False)
     data_source: Mapped[str] = mapped_column(String(20), default="MANUAL", nullable=False)
+    source_provider: Mapped[str] = mapped_column(String(30), default="manual_photo", nullable=False)
+    source_coord_type: Mapped[str] = mapped_column(String(30), default="wgs84", nullable=False)
+    source_ref: Mapped[str | None] = mapped_column(String(255))
+    evidence_photo_refs: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    data_confidence: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    last_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    verified_by: Mapped[str | None] = mapped_column(String(100))
 
 
 class SegmentCollectRecord(Base):
