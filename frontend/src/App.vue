@@ -148,10 +148,12 @@ async function fetchMapData() {
     const response = await fetch(
       `${API_BASE_URL}/api/map-data/geojson?area_code=SHIDAYUAN&coordinate_system=GCJ02`
     );
+    if (!response.ok) throw new Error('无法读取师大苑地图数据');
     const payload = await response.json();
     mapFeatures.value = payload.features ?? [];
-  } catch {
+  } catch (error) {
     mapFeatures.value = [];
+    mapFailure.value = error instanceof Error ? error.message : '地图数据加载失败';
   } finally {
     mapLoading.value = false;
   }

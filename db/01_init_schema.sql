@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS poi_facility (
 
 CREATE INDEX IF NOT EXISTS gist_poi_facility_geom ON poi_facility USING GIST (geom);
 CREATE INDEX IF NOT EXISTS idx_poi_facility_poi_type ON poi_facility(poi_type);
+CREATE INDEX IF NOT EXISTS idx_poi_facility_pilot_area_id ON poi_facility(pilot_area_id);
 
 CREATE TABLE IF NOT EXISTS road_node (
     id BIGSERIAL PRIMARY KEY,
@@ -160,6 +161,7 @@ CREATE TABLE IF NOT EXISTS road_node (
 
 CREATE INDEX IF NOT EXISTS gist_road_node_geom ON road_node USING GIST (geom);
 CREATE INDEX IF NOT EXISTS idx_road_node_osm_node_ref ON road_node(osm_node_ref);
+CREATE INDEX IF NOT EXISTS idx_road_node_pilot_area_id ON road_node(pilot_area_id);
 
 CREATE TABLE IF NOT EXISTS road_segment (
     id BIGSERIAL PRIMARY KEY,
@@ -225,6 +227,7 @@ CREATE TABLE IF NOT EXISTS road_segment (
 CREATE INDEX IF NOT EXISTS idx_road_segment_start_node_id ON road_segment(start_node_id);
 CREATE INDEX IF NOT EXISTS idx_road_segment_end_node_id ON road_segment(end_node_id);
 CREATE INDEX IF NOT EXISTS gist_road_segment_geom ON road_segment USING GIST (geom);
+CREATE INDEX IF NOT EXISTS idx_road_segment_pilot_area_id ON road_segment(pilot_area_id);
 
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS surface_type VARCHAR(30) NOT NULL DEFAULT 'CONCRETE';
 ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS pilot_area_id BIGINT;

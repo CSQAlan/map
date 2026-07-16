@@ -29,6 +29,7 @@ def recommend_route(
         "BALANCED",
         description="Route ranking strategy: BALANCED, SAFEST, FLATTEST, COMFORT, or SHORTEST.",
     ),
+    area_code: Literal["SHIDAYUAN"] = Query("SHIDAYUAN"),
     db: Session = Depends(get_db),
 ) -> RouteRecommendResponse:
     if mobility_type not in SUPPORTED_MOBILITY_TYPES:
@@ -39,9 +40,9 @@ def recommend_route(
     if start_name == end_name:
         raise HTTPException(status_code=400, detail="Start and end cannot be the same")
 
-    start_node_code = resolve_poi_node_code(db, start_name)
-    end_node_code = resolve_poi_node_code(db, end_name)
-    active_segments = load_active_segments(db)
+    start_node_code = resolve_poi_node_code(db, start_name, area_code)
+    end_node_code = resolve_poi_node_code(db, end_name, area_code)
+    active_segments = load_active_segments(db, area_code)
     routes = recommend_routes(
         active_segments,
         start_node_code,
@@ -70,16 +71,20 @@ def recommend_route(
     )
 
 
-def resolve_poi_node_code(db: Session, name: str) -> str:
+def resolve_poi_node_code(db: Session, name: str, area_code: str) -> str:
     row = db.execute(
         text(
             """
             SELECT linked_node_code
-            FROM poi_facility
-            WHERE name = :name AND status = 'ACTIVE'
+            FROM poi_facility pf
+            JOIN pilot_area pa ON pa.id = pf.pilot_area_id
+            WHERE pf.name = :name
+              AND pf.status = 'ACTIVE'
+              AND pa.area_code = :area_code
+              AND pa.status = 'ACTIVE'
             """
         ),
-        {"name": name},
+        {"name": name, "area_code": area_code},
     ).mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail=f"POI not found: {name}")
@@ -88,15 +93,24 @@ def resolve_poi_node_code(db: Session, name: str) -> str:
         raise HTTPException(status_code=422, detail=f"POI has no linked route node: {name}")
 
     exists = db.execute(
-        text("SELECT id FROM road_node WHERE osm_node_ref = :node_code"),
-        {"node_code": node_code},
+        text(
+            """
+            SELECT rn.id
+            FROM road_node rn
+            JOIN pilot_area pa ON pa.id = rn.pilot_area_id
+            WHERE rn.osm_node_ref = :node_code
+              AND pa.area_code = :area_code
+              AND pa.status = 'ACTIVE'
+            """
+        ),
+        {"node_code": node_code, "area_code": area_code},
     ).scalar_one_or_none()
     if exists is None:
         raise HTTPException(status_code=422, detail=f"Linked route node not found: {node_code}")
     return str(node_code)
 
 
-def load_active_segments(db: Session) -> list[dict]:
+def load_active_segments(db: Session, area_code: str) -> list[dict]:
     rows = db.execute(
         text(
             """
@@ -126,9 +140,13 @@ def load_active_segments(db: Session) -> list[dict]:
             FROM road_segment rs
             JOIN road_node rn_start ON rn_start.id = rs.start_node_id
             JOIN road_node rn_end ON rn_end.id = rs.end_node_id
+            JOIN pilot_area pa ON pa.id = rs.pilot_area_id
             WHERE rs.status = 'ACTIVE'
+              AND pa.area_code = :area_code
+              AND pa.status = 'ACTIVE'
             ORDER BY rs.id
             """
-        )
+        ),
+        {"area_code": area_code},
     ).mappings()
     return [dict(row) for row in rows]

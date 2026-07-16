@@ -17,7 +17,7 @@ function resolveUrl(url) {
 }
 
 function markImageFailed(event) {
-  event.target.closest('.evidence-photo')?.classList.add('image-failed');
+  event.target.closest('.evidence-photo, .route-evidence-card')?.classList.add('image-failed');
 }
 </script>
 
@@ -33,7 +33,13 @@ function markImageFailed(event) {
         v-for="item in routeFeatures"
         :key="item.properties.segment_code"
         type="button"
-        :class="['route-evidence-card', { active: feature?.properties.segment_code === item.properties.segment_code }]"
+        :class="[
+          'route-evidence-card',
+          {
+            active: feature?.properties.segment_code === item.properties.segment_code,
+            'no-photo': !item.properties.evidence_photos?.[0],
+          },
+        ]"
         @click="emit('select-segment', item.properties.segment_code)"
       >
         <img
@@ -43,8 +49,9 @@ function markImageFailed(event) {
           width="160"
           height="104"
           loading="lazy"
+          @error="markImageFailed"
         />
-        <span v-else class="evidence-placeholder">暂无照片</span>
+        <span class="evidence-placeholder">{{ item.properties.evidence_photos?.[0] ? '照片暂不可用' : '暂无照片' }}</span>
         <strong>{{ item.properties.name }}</strong>
         <small>{{ item.properties.risk_summary }}</small>
       </button>

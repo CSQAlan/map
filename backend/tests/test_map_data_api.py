@@ -25,6 +25,8 @@ class FakeResult:
 class FakeSession:
     def execute(self, query: Any, params: dict[str, Any] | None = None) -> FakeResult:
         sql = str(query)
+        if "FROM pilot_area" in sql:
+            return FakeResult([{"id": 1}] if params and params.get("area_code") == "SHIDAYUAN" else [])
         if "AS geom_geojson" in sql and "FROM poi_facility" in sql:
             return FakeResult(
                 [
@@ -159,6 +161,11 @@ def test_get_map_geojson() -> None:
 def test_map_geojson_rejects_unknown_coordinate_system() -> None:
     response = client.get("/api/map-data/geojson?coordinate_system=BD09")
     assert response.status_code == 422
+
+
+def test_map_geojson_returns_404_for_unknown_area() -> None:
+    response = client.get("/api/map-data/geojson?area_code=UNKNOWN")
+    assert response.status_code == 404
 
 
 def test_evidence_static_route_blocks_directory_traversal() -> None:

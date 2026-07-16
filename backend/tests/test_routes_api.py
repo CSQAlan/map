@@ -249,3 +249,16 @@ def test_recommend_route_api_rejects_unknown_poi() -> None:
         },
     )
     assert response.status_code == 404
+
+
+def test_recommend_route_api_rejects_other_pilot_area() -> None:
+    response = client.get(
+        "/api/routes/recommend",
+        params={
+            "start_name": GATE_NAME,
+            "end_name": LOTUS_NAME,
+            "mobility_type": "ASSISTED",
+            "area_code": "OTHER",
+        },
+    )
+    assert response.status_code == 422

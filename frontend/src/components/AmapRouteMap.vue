@@ -15,6 +15,7 @@ const emit = defineEmits(['select-segment', 'map-error']);
 let AMap;
 let map;
 let overlays = [];
+let roadOverlays = new Map();
 
 onMounted(async () => {
   try {
@@ -57,6 +58,7 @@ function renderOverlays() {
   if (!map || !AMap) return;
   if (overlays.length) map.remove(overlays);
   overlays = [];
+  roadOverlays = new Map();
 
   const boundary = new AMap.Polygon({
     path: props.area.boundary.coordinates[0],
@@ -71,12 +73,29 @@ function renderOverlays() {
 
   for (const feature of props.features) {
     if (feature.properties?.kind === 'segment') {
-      overlays.push(createRoadOverlay(feature));
+      const road = createRoadOverlay(feature);
+      overlays.push(road);
+      roadOverlays.set(feature.properties.segment_code, road);
     } else if (feature.properties?.kind === 'poi') {
       overlays.push(createPoiOverlay(feature));
     }
   }
   map.add(overlays);
+  if (props.selectedSegmentCode) focusSelectedSegment();
+}
+
+function focusSelectedSegment() {
+  if (!map) return;
+  const overlay = roadOverlays.get(props.selectedSegmentCode);
+  if (overlay) map.setFitView([overlay], false, [90, 90, 90, 90], 19);
+}
+
+function fitCurrentRoute() {
+  if (!map) return;
+  const routeOverlays = [...props.routeSegmentCodes]
+    .map((code) => roadOverlays.get(code))
+    .filter(Boolean);
+  map.setFitView(routeOverlays.length ? routeOverlays : overlays, false, [70, 70, 70, 70], 18);
 }
 
 function createRoadOverlay(feature) {
@@ -115,5 +134,11 @@ function createPoiOverlay(feature) {
 </script>
 
 <template>
-  <div id="shidayuan-amap" class="amap-route-map" aria-label="师大苑真实地图"></div>
+  <div class="amap-map-shell">
+    <div id="shidayuan-amap" class="amap-route-map" aria-label="师大苑真实地图"></div>
+    <div class="amap-map-actions">
+      <button type="button" @click="focusSelectedSegment">查看当前路段</button>
+      <button type="button" @click="fitCurrentRoute">回到完整路线</button>
+    </div>
+  </div>
 </template>

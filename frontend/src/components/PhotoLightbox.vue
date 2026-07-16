@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
 const props = defineProps({
   photos: { type: Array, default: () => [] },
@@ -9,15 +9,20 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 const currentIndex = ref(props.initialIndex);
+const dialogRef = ref(null);
+const closeButtonRef = ref(null);
 let touchStartX = 0;
+let opener = null;
 
 watch(
   () => props.initialIndex,
   (index) => {
     currentIndex.value = index;
     if (index >= 0) {
+      opener = document.activeElement;
       document.body.classList.add('lightbox-open');
       window.addEventListener('keydown', onKeydown);
+      nextTick(() => closeButtonRef.value?.focus());
     } else {
       cleanup();
     }
@@ -35,6 +40,7 @@ function cleanup() {
 function close() {
   cleanup();
   emit('close');
+  nextTick(() => opener?.focus?.());
 }
 
 function move(delta) {
@@ -46,6 +52,26 @@ function onKeydown(event) {
   if (event.key === 'Escape') close();
   if (event.key === 'ArrowLeft') move(-1);
   if (event.key === 'ArrowRight') move(1);
+  if (event.key === 'Tab') trapFocus(event);
+}
+
+function trapFocus(event) {
+  const focusable = [...(dialogRef.value?.querySelectorAll('button:not([disabled])') ?? [])];
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function markImageFailed(event) {
+  event.target.hidden = true;
+  event.target.nextElementSibling.hidden = false;
 }
 
 function resolveUrl(url) {
@@ -62,12 +88,13 @@ function finishSwipe(event) {
   <div
     v-if="currentIndex >= 0 && photos[currentIndex]"
     class="photo-lightbox"
+    ref="dialogRef"
     role="dialog"
     aria-modal="true"
     aria-label="现场证据大图"
     @click.self="close"
   >
-    <button class="lightbox-close" type="button" aria-label="关闭大图" @click="close">关闭</button>
+    <button ref="closeButtonRef" class="lightbox-close" type="button" aria-label="关闭大图" @click="close">关闭</button>
     <button v-if="photos.length > 1" class="lightbox-nav previous" type="button" @click="move(-1)">
       上一张
     </button>
@@ -75,7 +102,9 @@ function finishSwipe(event) {
       <img
         :src="resolveUrl(photos[currentIndex].display_url)"
         :alt="photos[currentIndex].caption"
+        @error="markImageFailed"
       />
+      <span class="lightbox-image-fallback" hidden>现场照片暂不可用</span>
       <figcaption>
         <strong>{{ photos[currentIndex].caption }}</strong>
         <span v-if="photos[currentIndex].risk_tags?.length">

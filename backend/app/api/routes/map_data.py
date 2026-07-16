@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ def list_pois(
     area_code: str = Query("SHIDAYUAN"),
     db: Session = Depends(get_db),
 ) -> list[PoiResponse]:
+    _require_active_area(db, area_code)
     rows = db.execute(
         text(
             """
@@ -38,6 +39,7 @@ def list_segments(
     area_code: str = Query("SHIDAYUAN"),
     db: Session = Depends(get_db),
 ) -> list[RoadSegmentResponse]:
+    _require_active_area(db, area_code)
     rows = db.execute(
         text(
             """
@@ -75,6 +77,7 @@ def get_map_geojson(
     coordinate_system: Literal["WGS84", "GCJ02"] = Query("GCJ02"),
     db: Session = Depends(get_db),
 ) -> dict:
+    _require_active_area(db, area_code)
     poi_rows = db.execute(
         text(
             """
@@ -178,6 +181,17 @@ def _geojson_geometry(raw_geometry: str) -> dict:
     import json
 
     return json.loads(raw_geometry)
+
+
+def _require_active_area(db: Session, area_code: str) -> int:
+    rows = db.execute(
+        text("SELECT id FROM pilot_area WHERE area_code = :area_code AND status = 'ACTIVE'"),
+        {"area_code": area_code},
+    ).mappings()
+    row = next(iter(rows), None)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Pilot area not found: {area_code}")
+    return int(row["id"])
 
 
 def _evidence_photos(photo_refs: list[str] | None) -> list[dict]:

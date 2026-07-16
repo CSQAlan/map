@@ -923,6 +923,30 @@ dd,
   background: #e9efe9;
 }
 
+.amap-map-shell {
+  position: relative;
+}
+
+.amap-map-actions {
+  position: absolute;
+  z-index: 80;
+  left: 14px;
+  top: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.amap-map-actions button {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid rgba(33, 95, 80, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #215f50;
+  font-weight: 800;
+  box-shadow: 0 5px 14px rgba(20, 62, 51, 0.16);
+}
+
 .amap-poi-label {
   max-width: 150px;
   padding: 8px 12px;
@@ -984,10 +1008,14 @@ dd,
 }
 
 .evidence-placeholder {
-  display: grid;
+  display: none;
   place-items: center;
   background: #dfe7df;
 }
+
+.route-evidence-card.image-failed img { display: none; }
+.route-evidence-card.image-failed .evidence-placeholder { display: grid; }
+.route-evidence-card.no-photo .evidence-placeholder { display: grid; }
 
 .selected-evidence-card {
   padding: 18px;
@@ -1102,6 +1130,18 @@ dd,
   border-radius: 16px;
   object-fit: contain;
 }
+
+.lightbox-image-fallback {
+  min-width: min(70vw, 720px);
+  min-height: 50vh;
+  place-items: center;
+  border-radius: 16px;
+  background: #dfe7df;
+  color: #29483f;
+  font-weight: 800;
+}
+
+.lightbox-image-fallback:not([hidden]) { display: grid; }
 
 .photo-lightbox figcaption {
   display: flex;
