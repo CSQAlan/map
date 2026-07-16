@@ -1,4 +1,5 @@
 import json
+import heapq
 from collections.abc import Mapping
 from typing import Any
 
@@ -423,6 +424,141 @@ def route_score(segments: list[Mapping[str, Any]], mobility_type: str) -> float:
     return sum(segment_cost(segment, mobility_type) for segment in segments)
 
 
+def edge_key(segment: Mapping[str, Any]) -> tuple[str, str, str]:
+    return (
+        str(segment["start_node_code"]),
+        str(segment["end_node_code"]),
+        str(segment["segment_code"]),
+    )
+
+
+def path_signature(path: list[Mapping[str, Any]]) -> tuple[str, ...]:
+    return tuple(str(segment["segment_code"]) for segment in path)
+
+
+def build_allowed_graph(
+    segments: list[Mapping[str, Any]],
+    mobility_type: str,
+    blocked_edges: set[tuple[str, str, str]] | None = None,
+    blocked_nodes: set[str] | None = None,
+) -> dict[str, list[Mapping[str, Any]]]:
+    blocked_edges = blocked_edges or set()
+    blocked_nodes = blocked_nodes or set()
+    graph: dict[str, list[Mapping[str, Any]]] = {}
+    for segment in segments:
+        start_node = str(segment["start_node_code"])
+        end_node = str(segment["end_node_code"])
+        if start_node in blocked_nodes or end_node in blocked_nodes:
+            continue
+        if edge_key(segment) in blocked_edges:
+            continue
+        if is_segment_allowed(segment, mobility_type):
+            graph.setdefault(start_node, []).append(segment)
+
+    for outgoing_segments in graph.values():
+        outgoing_segments.sort(key=lambda segment: str(segment["segment_code"]))
+    return graph
+
+
+def dijkstra_path(
+    segments: list[Mapping[str, Any]],
+    start_node_code: str,
+    end_node_code: str,
+    mobility_type: str = "INDEPENDENT",
+    blocked_edges: set[tuple[str, str, str]] | None = None,
+    blocked_nodes: set[str] | None = None,
+) -> list[Mapping[str, Any]]:
+    if start_node_code == end_node_code:
+        return []
+
+    graph = build_allowed_graph(segments, mobility_type, blocked_edges, blocked_nodes)
+    best_cost_by_node: dict[str, float] = {start_node_code: 0.0}
+    queue: list[tuple[float, int, str, list[Mapping[str, Any]]]] = [(0.0, 0, start_node_code, [])]
+    sequence = 1
+
+    while queue:
+        cost, _, current_node, path = heapq.heappop(queue)
+        if cost > best_cost_by_node.get(current_node, float("inf")):
+            continue
+        if current_node == end_node_code:
+            return path
+
+        visited_nodes = {str(segment["start_node_code"]) for segment in path}
+        visited_nodes.add(current_node)
+        for segment in graph.get(current_node, []):
+            next_node = str(segment["end_node_code"])
+            if next_node in visited_nodes:
+                continue
+            next_cost = cost + segment_cost(segment, mobility_type)
+            if next_cost >= best_cost_by_node.get(next_node, float("inf")):
+                continue
+            best_cost_by_node[next_node] = next_cost
+            heapq.heappush(queue, (next_cost, sequence, next_node, [*path, segment]))
+            sequence += 1
+
+    return []
+
+
+def top_k_dijkstra_paths(
+    segments: list[Mapping[str, Any]],
+    start_node_code: str,
+    end_node_code: str,
+    mobility_type: str,
+    limit: int = 3,
+) -> list[list[Mapping[str, Any]]]:
+    first_path = dijkstra_path(segments, start_node_code, end_node_code, mobility_type)
+    if not first_path:
+        return []
+
+    accepted_paths = [first_path]
+    accepted_signatures = {path_signature(first_path)}
+    candidates: list[tuple[float, int, list[Mapping[str, Any]]]] = []
+    candidate_signatures = set()
+    sequence = 0
+
+    while len(accepted_paths) < limit:
+        base_path = accepted_paths[-1]
+        for spur_index in range(len(base_path)):
+            root_path = base_path[:spur_index]
+            spur_node = str(base_path[spur_index]["start_node_code"])
+            blocked_edges = set()
+            blocked_nodes = {str(segment["start_node_code"]) for segment in root_path}
+
+            for accepted_path in accepted_paths:
+                if path_signature(accepted_path[:spur_index]) == path_signature(root_path):
+                    if spur_index < len(accepted_path):
+                        blocked_edges.add(edge_key(accepted_path[spur_index]))
+
+            spur_path = dijkstra_path(
+                segments,
+                spur_node,
+                end_node_code,
+                mobility_type,
+                blocked_edges=blocked_edges,
+                blocked_nodes=blocked_nodes,
+            )
+            if not spur_path:
+                continue
+            candidate_path = [*root_path, *spur_path]
+            signature = path_signature(candidate_path)
+            if signature in accepted_signatures or signature in candidate_signatures:
+                continue
+            candidate_signatures.add(signature)
+            heapq.heappush(
+                candidates,
+                (route_score(candidate_path, mobility_type), sequence, candidate_path),
+            )
+            sequence += 1
+
+        if not candidates:
+            break
+        _, _, next_path = heapq.heappop(candidates)
+        accepted_paths.append(next_path)
+        accepted_signatures.add(path_signature(next_path))
+
+    return accepted_paths[:limit]
+
+
 def enumerate_paths(
     segments: list[Mapping[str, Any]],
     start_node_code: str,
@@ -499,7 +635,7 @@ def recommend_routes(
     mobility_type: str,
     limit: int = 3,
 ) -> list[dict[str, Any]]:
-    paths = enumerate_paths(segments, start_node_code, end_node_code, mobility_type)
+    paths = top_k_dijkstra_paths(segments, start_node_code, end_node_code, mobility_type, limit)
     ranked = []
     for path in paths:
         score = route_score(path, mobility_type)

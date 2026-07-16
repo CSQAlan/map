@@ -1,11 +1,13 @@
 from app.services.route_planner import (
     build_segment_detail,
+    dijkstra_path,
     enumerate_paths,
     explain_avoided_segments,
     is_segment_allowed,
     recommend_routes,
     route_score,
     segment_cost,
+    top_k_dijkstra_paths,
 )
 
 
@@ -174,6 +176,131 @@ def test_enumerate_paths_finds_multiple_simple_paths() -> None:
     codes = [[segment["segment_code"] for segment in path] for path in paths]
     assert ["A_B", "B_D"] in codes
     assert ["A_C", "C_D"] in codes
+
+
+def test_dijkstra_path_selects_lowest_cost_route_not_first_route() -> None:
+    base = {
+        "slope_percent": 1,
+        "surface_level": 5,
+        "safety_level": 5,
+        "barrier_free_level": 5,
+        "rest_facility_score": 5,
+        "step_count": 0,
+        "width_m": 1.6,
+        "wheelchair_accessible": True,
+    }
+    segments = [
+        {**base, "segment_code": "A_B", "start_node_code": "A", "end_node_code": "B", "length_m": 300},
+        {**base, "segment_code": "B_D", "start_node_code": "B", "end_node_code": "D", "length_m": 300},
+        {**base, "segment_code": "A_C", "start_node_code": "A", "end_node_code": "C", "length_m": 40},
+        {**base, "segment_code": "C_D", "start_node_code": "C", "end_node_code": "D", "length_m": 40},
+    ]
+
+    path = dijkstra_path(segments, "A", "D", "INDEPENDENT")
+
+    assert [segment["segment_code"] for segment in path] == ["A_C", "C_D"]
+
+
+def test_dijkstra_path_respects_blocked_edges_for_spur_routes() -> None:
+    base = {
+        "length_m": 50,
+        "slope_percent": 1,
+        "surface_level": 5,
+        "safety_level": 5,
+        "barrier_free_level": 5,
+        "rest_facility_score": 5,
+        "step_count": 0,
+        "width_m": 1.6,
+        "wheelchair_accessible": True,
+    }
+    segments = [
+        {**base, "segment_code": "A_B", "start_node_code": "A", "end_node_code": "B"},
+        {**base, "segment_code": "B_D", "start_node_code": "B", "end_node_code": "D"},
+        {**base, "segment_code": "A_C", "start_node_code": "A", "end_node_code": "C", "length_m": 70},
+        {**base, "segment_code": "C_D", "start_node_code": "C", "end_node_code": "D", "length_m": 70},
+    ]
+
+    path = dijkstra_path(segments, "A", "D", "INDEPENDENT", blocked_edges={("A", "B", "A_B")})
+
+    assert [segment["segment_code"] for segment in path] == ["A_C", "C_D"]
+
+
+def test_dijkstra_path_avoids_back_edge_cycles() -> None:
+    base = {
+        "length_m": 50,
+        "slope_percent": 1,
+        "surface_level": 5,
+        "safety_level": 5,
+        "barrier_free_level": 5,
+        "rest_facility_score": 5,
+        "step_count": 0,
+        "width_m": 1.6,
+        "wheelchair_accessible": True,
+    }
+    segments = [
+        {**base, "segment_code": "A_B", "start_node_code": "A", "end_node_code": "B"},
+        {**base, "segment_code": "B_A", "start_node_code": "B", "end_node_code": "A"},
+        {**base, "segment_code": "B_D", "start_node_code": "B", "end_node_code": "D"},
+    ]
+
+    path = dijkstra_path(segments, "A", "D", "INDEPENDENT")
+
+    assert [segment["segment_code"] for segment in path] == ["A_B", "B_D"]
+
+
+def test_top_k_dijkstra_paths_returns_sorted_unique_candidates() -> None:
+    base = {
+        "slope_percent": 1,
+        "surface_level": 5,
+        "safety_level": 5,
+        "barrier_free_level": 5,
+        "rest_facility_score": 5,
+        "step_count": 0,
+        "width_m": 1.6,
+        "wheelchair_accessible": True,
+    }
+    segments = [
+        {**base, "segment_code": "A_B", "start_node_code": "A", "end_node_code": "B", "length_m": 40},
+        {**base, "segment_code": "B_D", "start_node_code": "B", "end_node_code": "D", "length_m": 40},
+        {**base, "segment_code": "A_C", "start_node_code": "A", "end_node_code": "C", "length_m": 70},
+        {**base, "segment_code": "C_D", "start_node_code": "C", "end_node_code": "D", "length_m": 70},
+        {**base, "segment_code": "A_E", "start_node_code": "A", "end_node_code": "E", "length_m": 90},
+        {**base, "segment_code": "E_D", "start_node_code": "E", "end_node_code": "D", "length_m": 90},
+    ]
+
+    paths = top_k_dijkstra_paths(segments, "A", "D", "INDEPENDENT", limit=3)
+    codes = [[segment["segment_code"] for segment in path] for path in paths]
+    scores = [route_score(path, "INDEPENDENT") for path in paths]
+
+    assert codes == [["A_B", "B_D"], ["A_C", "C_D"], ["A_E", "E_D"]]
+    assert scores == sorted(scores)
+
+
+def test_top_k_dijkstra_paths_keeps_deterministic_order_for_equal_costs() -> None:
+    base = {
+        "length_m": 50,
+        "slope_percent": 1,
+        "surface_level": 5,
+        "safety_level": 5,
+        "barrier_free_level": 5,
+        "rest_facility_score": 5,
+        "step_count": 0,
+        "width_m": 1.6,
+        "wheelchair_accessible": True,
+    }
+    segments = [
+        {**base, "segment_code": "A_C", "start_node_code": "A", "end_node_code": "C"},
+        {**base, "segment_code": "C_D", "start_node_code": "C", "end_node_code": "D"},
+        {**base, "segment_code": "A_B", "start_node_code": "A", "end_node_code": "B"},
+        {**base, "segment_code": "B_D", "start_node_code": "B", "end_node_code": "D"},
+    ]
+
+    paths = top_k_dijkstra_paths(segments, "A", "D", "INDEPENDENT", limit=2)
+
+    assert [[segment["segment_code"] for segment in path] for path in paths] == [
+        ["A_B", "B_D"],
+        ["A_C", "C_D"],
+    ]
 
 
 def test_recommend_routes_returns_sorted_top_three() -> None:
