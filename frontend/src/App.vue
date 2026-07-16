@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import AmapRouteMap from './components/AmapRouteMap.vue';
+import EvidenceGallery from './components/EvidenceGallery.vue';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
@@ -95,6 +96,19 @@ const routeSegmentCodes = computed(() => new Set(selectedRoute.value?.segment_co
 const roadFeatures = computed(() =>
   mapFeatures.value.filter((feature) => feature.properties?.kind === 'segment')
 );
+const selectedEvidenceFeature = computed(() =>
+  roadFeatures.value.find(
+    (feature) => feature.properties.segment_code === selectedSegmentCode.value
+  ) ?? null
+);
+const routeEvidenceFeatures = computed(() => {
+  const byCode = new Map(
+    roadFeatures.value.map((feature) => [feature.properties.segment_code, feature])
+  );
+  return (selectedRoute.value?.segment_codes ?? [])
+    .map((code) => byCode.get(code))
+    .filter(Boolean);
+});
 const poiFeatures = computed(() =>
   mapFeatures.value.filter((feature) => feature.properties?.kind === 'poi')
 );
@@ -382,6 +396,7 @@ async function fetchRoutes() {
     routes.value = payload.routes ?? [];
     avoidedSegments.value = payload.avoided_segments ?? [];
     selectedRouteIndex.value = 0;
+    selectedSegmentCode.value = routes.value[0]?.segment_codes?.[0] ?? null;
     actionStatus.value = routes.value.length
       ? `已按“${selectedProfile.value?.label}”生成路线，可切换到老人模式演示。`
       : '没有找到可用路线，请更换目的地或老人画像。';
@@ -400,6 +415,7 @@ async function fetchRoutes() {
 
 function selectRoute(index) {
   selectedRouteIndex.value = index;
+  selectedSegmentCode.value = routes.value[index]?.segment_codes?.[0] ?? null;
   actionStatus.value = `已选择推荐路线 ${index + 1}。`;
 }
 
@@ -603,6 +619,12 @@ async function sendSos() {
             <span><i class="legend-road"></i>试点路网</span>
             <span><i class="legend-risk"></i>含台阶路段</span>
           </div>
+          <EvidenceGallery
+            :feature="selectedEvidenceFeature"
+            :route-features="routeEvidenceFeatures"
+            :api-base-url="API_BASE_URL"
+            @select-segment="selectMapSegment"
+          />
         </div>
 
         <section v-if="avoidedSegments.length" class="avoidance-panel">
@@ -707,6 +729,11 @@ async function sendSos() {
               v-for="segment in route.segments"
               :key="segment.segment_code"
               class="segment-detail"
+              :class="{ selected: selectedSegmentCode === segment.segment_code }"
+              role="button"
+              tabindex="0"
+              @click.stop="selectMapSegment(segment.segment_code)"
+              @keydown.enter.stop.prevent="selectMapSegment(segment.segment_code)"
             >
               <div class="segment-title">
                 <strong>{{ segment.name }}</strong>
