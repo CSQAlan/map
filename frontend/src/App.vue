@@ -1,8 +1,15 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import AmapRouteMap from './components/AmapRouteMap.vue';
-import EvidenceGallery from './components/EvidenceGallery.vue';
-import FallbackRouteMap from './components/FallbackRouteMap.vue';
+import PageNavigation from './components/PageNavigation.vue';
+import RecommendPage from './pages/RecommendPage.vue';
+import ElderPage from './pages/ElderPage.vue';
+import CollectPage from './pages/CollectPage.vue';
+import LoginPage from './pages/LoginPage.vue';
+import ProfilePage from './pages/ProfilePage.vue';
+import GuestProfilePage from './pages/GuestProfilePage.vue';
+import NavigationPage from './pages/NavigationPage.vue';
+import ProfilePrompt from './components/ProfilePrompt.vue';
+import HealthReminder from './components/HealthReminder.vue';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
@@ -30,7 +37,10 @@ const strategyOptions = [
   { label: '最短距离', value: 'SHORTEST', hint: '距离优先，但仍遵守老人画像硬约束' },
 ];
 
-const activeMode = ref('recommend');
+const activeMode = ref('login');
+const currentUser = ref(null);
+const isGuest = ref(false);
+const profileSaving = ref(false);
 const startName = ref(startOptions[0].value);
 const endName = ref(endOptions[0].value);
 const mobilityType = ref('WHEELCHAIR');
@@ -49,6 +59,12 @@ const mapRetrying = ref(false);
 const selectedSegmentCode = ref(null);
 const diagnosticSuggestions = ref([]);
 const diagnosticsLoading = ref(false);
+const profilePromptOpen = computed(
+  () => activeMode.value === 'elder' && !isGuest.value && Boolean(currentUser.value) && !currentUser.value.profileComplete
+);
+const healthReminderOpen = computed(
+  () => activeMode.value === 'elder' && !isGuest.value && Boolean(currentUser.value?.profileComplete) && !currentUser.value?.healthConditions && !currentUser.value?.healthReminderDismissed
+);
 const sosSubmitting = ref(false);
 const collectionSegments = ref([]);
 const pendingCollectionRecords = ref([]);
@@ -118,6 +134,21 @@ const nextStepText = computed(() => {
 });
 
 onMounted(() => {
+  // Check for saved user session
+  const savedUser = localStorage.getItem('elderMapUser');
+  if (savedUser) {
+    try {
+      currentUser.value = JSON.parse(savedUser);
+      // Apply user's mobility type preference
+      if (currentUser.value?.mobilityType) {
+        mobilityType.value = currentUser.value.mobilityType;
+      }
+    } catch (e) {
+      console.error('Failed to parse saved user data');
+      localStorage.removeItem('elderMapUser');
+    }
+  }
+
   fetchPilotArea();
   fetchMapData();
   fetchDiagnostics();
@@ -137,11 +168,6 @@ async function fetchPilotArea() {
   }
 }
 
-function priorityLabel(priority) {
-  if (priority === 'HIGH') return '高优先级';
-  if (priority === 'MEDIUM') return '中优先级';
-  return '低优先级';
-}
 
 async function fetchMapData() {
   mapLoading.value = true;
@@ -313,16 +339,33 @@ function formatApiError(detail, fallback = '采集记录提交失败。') {
   return fallback;
 }
 
-async function fetchRoutes() {
+function resolvePilotLocation(input, options) {
+  const normalizedInput = input.trim();
+  const exact = options.find((option) => option.value === normalizedInput || option.label === normalizedInput);
+  if (exact) return exact.value;
+  const fuzzy = options.find(
+    (option) => option.label.includes(normalizedInput) || normalizedInput.includes(option.label)
+  );
+  return fuzzy?.value ?? null;
+}
+
+async function fetchRoutes(returnToHome = false) {
   loading.value = true;
   errorMessage.value = '';
   avoidedSegments.value = [];
   actionStatus.value = '正在根据老人画像重新计算适老路线。';
 
   try {
+    const resolvedStart = resolvePilotLocation(startName.value, startOptions);
+    const resolvedEnd = resolvePilotLocation(endName.value, endOptions);
+    if (!resolvedStart || !resolvedEnd) {
+      throw new Error('请从输入框提示的试点地点中选择起点和目的地。');
+    }
+    startName.value = resolvedStart;
+    endName.value = resolvedEnd;
     const params = new URLSearchParams({
-      start_name: startName.value,
-      end_name: endName.value,
+      start_name: resolvedStart,
+      end_name: resolvedEnd,
       mobility_type: mobilityType.value,
       strategy: routeStrategy.value,
     });
@@ -348,6 +391,7 @@ async function fetchRoutes() {
     actionStatus.value = routes.value.length
       ? `已按“${selectedProfile.value?.label}”生成路线，可切换到老人模式演示。`
       : '没有找到可用路线，请更换目的地或老人画像。';
+    if (returnToHome && routes.value.length) activeMode.value = 'elder';
   } catch (error) {
     routes.value = [];
     selectedRouteIndex.value = 0;
@@ -378,6 +422,7 @@ function selectStrategy(strategyValue) {
 }
 
 function startNavigation() {
+  if (selectedRoute.value) activeMode.value = 'navigation';
   if (!selectedRoute.value) {
     activeMode.value = 'recommend';
     actionStatus.value = '请先生成一条路线。';
@@ -388,7 +433,15 @@ function startNavigation() {
 
 function reroute() {
   activeMode.value = 'recommend';
-  fetchRoutes();
+}
+
+async function planRouteFromElderHome() {
+  await fetchRoutes(false);
+  if (routes.value.length) activeMode.value = 'navigation';
+}
+
+function openProfile() {
+  activeMode.value = currentUser.value && !isGuest.value ? 'profile' : 'login';
 }
 
 async function sendSos() {
@@ -399,7 +452,7 @@ async function sendSos() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        elder_name: '演示老人',
+        elder_name: currentUser.value?.realName || (isGuest.value ? '访客' : '演示老人'),
         mobility_type: mobilityType.value,
         route_summary: selectedRoute.value?.summary ?? null,
         current_step: nextStepText.value,
@@ -421,506 +474,280 @@ async function sendSos() {
     sosSubmitting.value = false;
   }
 }
+
+function handleLogin(credentials) {
+  // Simulate login/register - in production this would call an API
+  isGuest.value = false;
+  const userData = {
+    username: credentials.username,
+    realName: '',
+    age: '',
+    phone: '',
+    mobilityType: 'INDEPENDENT',
+    hasWheelchair: false,
+    hasCane: false,
+    healthConditions: '',
+    emergencyContact: '',
+    emergencyPhone: '',
+    profileComplete: false,
+    password: credentials.password,
+    createdAt: new Date().toISOString()
+  };
+
+  currentUser.value = userData;
+  localStorage.setItem('elderMapUser', JSON.stringify(userData));
+  activeMode.value = 'elder';
+}
+
+function handleSkipLogin() {
+  activeMode.value = 'guest-profile';
+}
+
+function enterGuestMode(profile) {
+  isGuest.value = true;
+  currentUser.value = null;
+  mobilityType.value = profile.mobilityType;
+  actionStatus.value = profile.healthCondition
+    ? '已按本次出行情况为您调整推荐。'
+    : '请选择起点和目的地，系统会为您推荐路线。';
+  activeMode.value = 'elder';
+}
+
+function handleLogout() {
+  currentUser.value = null;
+  isGuest.value = false;
+  localStorage.removeItem('elderMapUser');
+  activeMode.value = 'login';
+}
+
+function handleSaveProfile(profileData) {
+  profileSaving.value = true;
+  try {
+    const updatedUser = {
+      ...currentUser.value,
+      ...profileData,
+      profileComplete: true,
+      updatedAt: new Date().toISOString()
+    };
+    currentUser.value = updatedUser;
+    localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+
+    // Update mobility type if changed
+    if (profileData.mobilityType && profileData.mobilityType !== mobilityType.value) {
+      mobilityType.value = profileData.mobilityType;
+    }
+
+    actionStatus.value = '个人信息已保存';
+    setTimeout(() => {
+      actionStatus.value = '尚未开始导航，请先确认路线。';
+    }, 2000);
+  } catch (error) {
+    actionStatus.value = '保存失败，请重试';
+  } finally {
+    profileSaving.value = false;
+  }
+}
+
+function loginWithSavedAccount() {
+  if (!currentUser.value) return;
+  isGuest.value = false;
+  activeMode.value = 'elder';
+}
+
+function selectInitialProfile(profileValue) {
+  mobilityType.value = profileValue;
+  const updatedUser = {
+    ...currentUser.value,
+    mobilityType: profileValue,
+    profileComplete: true,
+    updatedAt: new Date().toISOString(),
+  };
+  currentUser.value = updatedUser;
+  localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+  actionStatus.value = '已按您的出行情况选择推荐路线。';
+}
+
+function openHealthProfile() {
+  activeMode.value = 'profile';
+}
+
+function skipHealthReminder() {
+  const updatedUser = {
+    ...currentUser.value,
+    healthReminderDismissed: true,
+    updatedAt: new Date().toISOString(),
+  };
+  currentUser.value = updatedUser;
+  localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+}
 </script>
 
 <template>
   <main class="app-shell">
-    <section class="hero-panel">
-      <p class="eyebrow">师大苑小区试点</p>
-      <div class="hero-copy">
-        <h1>助老地图 H5 演示</h1>
-        <p>基于师大苑现场踩点照片，按老人身体能力动态筛路、算路、解释路线。</p>
-      </div>
-      <div class="mode-tabs" aria-label="页面模式切换">
-        <button
-          :class="{ active: activeMode === 'recommend' }"
-          type="button"
-          @click="activeMode = 'recommend'"
-        >
-          推荐模式
-        </button>
-        <button
-          :class="{ active: activeMode === 'elder' }"
-          type="button"
-          @click="activeMode = 'elder'"
-        >
-          老人模式
-        </button>
-        <button
-          :class="{ active: activeMode === 'collect' }"
-          type="button"
-          @click="activeMode = 'collect'"
-        >
-          采集模式
-        </button>
-      </div>
-    </section>
+    <PageNavigation
+      :active-mode="activeMode"
+      :current-user="currentUser"
+      :is-guest="isGuest"
+      @update:active-mode="activeMode = $event"
+    />
 
-    <section v-if="activeMode === 'recommend'" class="workspace-grid">
-      <form class="control-panel" @submit.prevent="fetchRoutes">
-        <div>
-          <p class="section-kicker">老人画像</p>
-          <div class="profile-grid">
-            <button
-              v-for="profile in profileOptions"
-              :key="profile.value"
-              class="profile-chip"
-              :class="{ selected: mobilityType === profile.value }"
-              type="button"
-              @click="mobilityType = profile.value"
-            >
-              <strong>{{ profile.label }}</strong>
-              <span>{{ profile.hint }}</span>
-            </button>
-          </div>
-        </div>
+    <LoginPage
+      v-if="activeMode === 'login'"
+      :loading="loading"
+      :saved-user="currentUser"
+      @login="handleLogin"
+      @quick-login="loginWithSavedAccount"
+      @skip="handleSkipLogin"
+    />
 
-        <div>
-          <p class="section-kicker">推荐策略</p>
-          <div class="strategy-grid">
-            <button
-              v-for="strategy in strategyOptions"
-              :key="strategy.value"
-              class="strategy-chip"
-              :class="{ selected: routeStrategy === strategy.value }"
-              type="button"
-              @click="selectStrategy(strategy.value)"
-            >
-              <strong>{{ strategy.label }}</strong>
-              <span>{{ strategy.hint }}</span>
-            </button>
-          </div>
-          <p class="strategy-note">
-            当前策略：{{ selectedStrategy?.label }}，{{ selectedStrategy?.hint }}
-          </p>
-        </div>
+    <ProfilePage
+      v-else-if="activeMode === 'profile'"
+      :user="currentUser"
+      :loading="profileSaving"
+      @save="handleSaveProfile"
+      @logout="handleLogout"
+    />
 
-        <label class="field-block">
-          <span>起点</span>
-          <select v-model="startName">
-            <option v-for="option in startOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-        </label>
+    <GuestProfilePage
+      v-else-if="activeMode === 'guest-profile'"
+      @continue="enterGuestMode"
+      @back="activeMode = 'login'"
+    />
 
-        <label class="field-block">
-          <span>目的地</span>
-          <select v-model="endName">
-            <option v-for="option in endOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-        </label>
+    <NavigationPage
+      v-else-if="activeMode === 'navigation'"
+      :routes="routes"
+      :selected-route-index="selectedRouteIndex"
+      :selected-route="selectedRoute"
+      :selected-profile="selectedProfile"
+      :map-features="mapFeatures"
+      :pilot-area="pilotArea"
+      :map-failure="mapFailure"
+      :map-retrying="mapRetrying"
+      :selected-segment-code="selectedSegmentCode"
+      :sos-submitting="sosSubmitting"
+      @select-route="selectRoute"
+      @open-routes="activeMode = 'recommend'"
+      @retry-map="retryRealMap"
+      @select-segment="selectMapSegment"
+      @map-error="mapFailure = `地图加载失败：${$event}`"
+      @send-sos="sendSos"
+    />
 
-        <button class="primary-action" type="submit" :disabled="loading">
-          {{ loading ? '正在计算...' : '生成适老路线' }}
-        </button>
+    <RecommendPage
+      v-else-if="activeMode === 'recommend'"
+      :mobility-type="mobilityType"
+      :route-strategy="routeStrategy"
+      :start-name="startName"
+      :end-name="endName"
+      :start-options="startOptions"
+      :end-options="endOptions"
+      :profile-options="profileOptions"
+      :strategy-options="strategyOptions"
+      :routes="routes"
+      :avoided-segments="avoidedSegments"
+      :selected-route-index="selectedRouteIndex"
+      :loading="loading"
+      :error-message="errorMessage"
+      :action-status="actionStatus"
+      :map-features="mapFeatures"
+      :pilot-area="pilotArea"
+      :map-failure="mapFailure"
+      :map-retrying="mapRetrying"
+      :map-loading="mapLoading"
+      :selected-segment-code="selectedSegmentCode"
+      :diagnostic-suggestions="diagnosticSuggestions"
+      :diagnostics-loading="diagnosticsLoading"
+      :api-base-url="API_BASE_URL"
+      @update:mobility-type="mobilityType = $event"
+      @update:route-strategy="selectStrategy($event)"
+      @update:start-name="startName = $event"
+      @update:end-name="endName = $event"
+      @fetch-routes="fetchRoutes(false)"
+      @start-navigation="startNavigation"
+      @select-route="selectRoute"
+      @select-strategy="selectStrategy"
+      @select-segment="selectMapSegment"
+      @retry-map="retryRealMap"
+      @map-error="mapFailure = `高德底图加载失败：${$event}`"
+    />
 
-        <p class="status-line">{{ actionStatus }}</p>
-        <p v-if="errorMessage" class="error-line">{{ errorMessage }}</p>
-      </form>
+    <ElderPage
+      v-else-if="activeMode === 'elder'"
+      :start-name="startName"
+      :end-name="endName"
+      :start-options="startOptions"
+      :end-options="endOptions"
+      :selected-route="selectedRoute"
+      :routes="routes"
+      :selected-route-index="selectedRouteIndex"
+      :selected-profile="selectedProfile"
+      :action-status="actionStatus"
+      :sos-submitting="sosSubmitting"
+      :loading="loading"
+      :map-features="mapFeatures"
+      :pilot-area="pilotArea"
+      :map-failure="mapFailure"
+      :map-retrying="mapRetrying"
+      :selected-segment-code="selectedSegmentCode"
+      :is-guest="isGuest"
+      @update:start-name="startName = $event"
+      @update:end-name="endName = $event"
+      @plan-route="planRouteFromElderHome"
+      @select-route="selectRoute"
+      @reroute="reroute"
+      @send-sos="sendSos"
+      @retry-map="retryRealMap"
+      @select-segment="selectMapSegment"
+      @map-error="mapFailure = `高德底图加载失败：${$event}`"
+      @open-profile="openProfile"
+    />
 
-      <section class="routes-panel" aria-live="polite">
-        <div class="map-panel">
-          <div class="panel-heading">
-            <p class="section-kicker">小区示意图</p>
-            <h2>{{ mapLoading ? '正在加载路网' : '试点路网与推荐路线' }}</h2>
-          </div>
-          <AmapRouteMap
-            v-if="pilotArea && !mapFailure"
-            :area="pilotArea"
-            :features="mapFeatures"
-            :route-segment-codes="routeSegmentCodes"
-            :selected-segment-code="selectedSegmentCode"
-            @select-segment="selectMapSegment"
-            @map-error="mapFailure = `高德底图加载失败：${$event}`"
-          />
-          <p v-if="mapFailure" class="map-fallback-notice">
-            <span>{{ mapFailure }}，已显示师大苑离线路网。</span>
-            <button type="button" :disabled="mapRetrying" @click="retryRealMap">
-              {{ mapRetrying ? '正在重试...' : '重新加载真实地图' }}
-            </button>
-          </p>
-          <FallbackRouteMap
-            v-if="!pilotArea || mapFailure"
-            :features="mapFeatures"
-            :route-segment-codes="routeSegmentCodes"
-            :selected-segment-code="selectedSegmentCode"
-            @select-segment="selectMapSegment"
-          />
-          <div class="map-legend">
-            <span><i class="legend-route"></i>当前推荐路线</span>
-            <span><i class="legend-road"></i>试点路网</span>
-            <span><i class="legend-risk"></i>含台阶路段</span>
-          </div>
-          <EvidenceGallery
-            :feature="selectedEvidenceFeature"
-            :route-features="routeEvidenceFeatures"
-            :api-base-url="API_BASE_URL"
-            @select-segment="selectMapSegment"
-          />
-        </div>
+    <CollectPage
+      v-else
+      :collection-segments="collectionSegments"
+      :collection-form="collectionForm"
+      :selected-collection-segment="selectedCollectionSegment"
+      :collection-loading="collectionLoading"
+      :collection-submitting="collectionSubmitting"
+      :collection-message="collectionMessage"
+      :collection-error="collectionError"
+      :pending-collection-records="pendingCollectionRecords"
+      :audit-loading-ids="auditLoadingIds"
+      @update:segment-code="collectionForm.segment_code = $event"
+      @update:collector="collectionForm.collector = $event"
+      @update:surface_type="collectionForm.surface_type = $event"
+      @update:width_m="collectionForm.width_m = $event"
+      @update:surface_level="collectionForm.surface_level = $event"
+      @update:safety_level="collectionForm.safety_level = $event"
+      @update:barrier_free_level="collectionForm.barrier_free_level = $event"
+      @update:rest_facility_score="collectionForm.rest_facility_score = $event"
+      @update:lighting_level="collectionForm.lighting_level = $event"
+      @update:crossing_safety_level="collectionForm.crossing_safety_level = $event"
+      @update:shade_coverage_percent="collectionForm.shade_coverage_percent = $event"
+      @update:bench_count="collectionForm.bench_count = $event"
+      @update:step_count="collectionForm.step_count = $event"
+      @update:step_height_cm="collectionForm.step_height_cm = $event"
+      @update:wheelchair_accessible="collectionForm.wheelchair_accessible = $event"
+      @update:has_ramp="collectionForm.has_ramp = $event"
+      @update:has_handrail="collectionForm.has_handrail = $event"
+      @update:remark="collectionForm.remark = $event"
+      @use-segment="useCollectionSegment"
+      @capture-location="captureCurrentLocation"
+      @submit-collection="submitCollection"
+      @audit-collection="auditCollection"
+    />
 
-        <section v-if="avoidedSegments.length" class="avoidance-panel">
-          <div class="panel-heading compact">
-            <p class="section-kicker">不可通行与需注意路段</p>
-            <h2>系统识别了哪些风险？</h2>
-          </div>
-          <article
-            v-for="segment in avoidedSegments"
-            :key="segment.segment_code"
-            class="avoidance-card"
-          >
-            <div class="avoidance-card-top">
-              <strong>{{ segment.name || segment.segment_code }}</strong>
-              <span :class="['avoidance-badge', segment.avoidance_level === 'BLOCKED' ? 'blocked' : 'high-risk']">
-                {{ segment.avoidance_level === 'BLOCKED' ? '系统已避开' : '可通行但需注意' }}
-              </span>
-            </div>
-            <ul>
-              <li v-for="reason in segment.reasons" :key="`${segment.segment_code}-${reason}`">
-                {{ reason }}
-              </li>
-            </ul>
-          </article>
-        </section>
+    <ProfilePrompt
+      v-if="profilePromptOpen"
+      :options="profileOptions"
+      @select="selectInitialProfile"
+    />
 
-        <section class="diagnostics-panel">
-          <div class="panel-heading compact">
-            <p class="section-kicker">适老化诊断</p>
-            <h2>{{ diagnosticsLoading ? '正在生成改造建议' : '师大苑路段改造建议' }}</h2>
-          </div>
-          <div v-if="diagnosticsLoading" class="diagnostics-empty">
-            正在读取路段数据并生成适老化诊断建议...
-          </div>
-          <div v-else-if="!diagnosticSuggestions.length" class="diagnostics-empty">
-            暂未发现高优先级改造建议，后续可通过现场采集继续补充数据。
-          </div>
-          <article
-            v-for="item in diagnosticSuggestions"
-            :key="`${item.segment_code}-${item.issue_type}`"
-            class="diagnostic-card"
-          >
-            <div class="diagnostic-card-top">
-              <strong>{{ item.segment_name || item.segment_code }}</strong>
-              <span :class="['diagnostic-priority', item.priority.toLowerCase()]">
-                {{ priorityLabel(item.priority) }}
-              </span>
-            </div>
-            <p>{{ item.problem }}</p>
-            <strong class="diagnostic-suggestion">{{ item.suggestion }}</strong>
-            <div class="diagnostic-evidence">
-              <span
-                v-for="evidence in item.evidence"
-                :key="`${item.segment_code}-${item.issue_type}-${evidence}`"
-              >
-                {{ evidence }}
-              </span>
-            </div>
-          </article>
-        </section>
-
-        <div class="panel-heading">
-          <p class="section-kicker">候选路线</p>
-          <h2>{{ hasRoutes ? `共 ${routes.length} 条推荐` : '等待生成路线' }}</h2>
-        </div>
-
-        <div v-if="!hasRoutes" class="empty-state">
-          <span>从师大苑入口出发，选择画像后生成路线。</span>
-          <strong>轮椅、拐杖、慢行老人会得到不同路线排序。</strong>
-        </div>
-
-        <article
-          v-for="(route, index) in routes"
-          :key="`${route.rank}-${route.route_score}`"
-          class="route-card"
-          :class="{ chosen: selectedRouteIndex === index }"
-          role="button"
-          tabindex="0"
-          @click="selectRoute(index)"
-          @keydown.enter.prevent="selectRoute(index)"
-          @keydown.space.prevent="selectRoute(index)"
-        >
-          <div class="route-card-top">
-            <div>
-              <p class="rank-label">推荐路线 {{ route.rank }}</p>
-              <h3>{{ route.summary || '综合适老成本较低' }}</h3>
-            </div>
-            <strong>{{ route.route_score }} 分</strong>
-          </div>
-          <dl class="route-metrics">
-            <div>
-              <dt>距离</dt>
-              <dd>{{ route.distance_m }} 米</dd>
-            </div>
-            <div>
-              <dt>预计</dt>
-              <dd>{{ route.estimated_minutes }} 分钟</dd>
-            </div>
-          </dl>
-          <ol class="segment-flow">
-            <li
-              v-for="segment in route.segments"
-              :key="segment.segment_code"
-              class="segment-detail"
-              :class="{ selected: selectedSegmentCode === segment.segment_code }"
-              role="button"
-              tabindex="0"
-              @click.stop="selectMapSegment(segment.segment_code)"
-              @keydown.enter.stop.prevent="selectMapSegment(segment.segment_code)"
-            >
-              <div class="segment-title">
-                <strong>{{ segment.name }}</strong>
-                <span>{{ segment.length_m }} 米</span>
-              </div>
-              <p>{{ segment.explanation }}</p>
-              <div class="tag-row">
-                <span
-                  v-for="tag in segment.benefit_tags"
-                  :key="`${segment.segment_code}-good-${tag}`"
-                  class="route-tag benefit"
-                >
-                  {{ tag }}
-                </span>
-                <span
-                  v-for="tag in segment.risk_tags"
-                  :key="`${segment.segment_code}-risk-${tag}`"
-                  class="route-tag risk"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-            </li>
-          </ol>
-        </article>
-      </section>
-    </section>
-
-    <section v-else-if="activeMode === 'elder'" class="elder-panel">
-      <div class="elder-summary">
-        <p class="section-kicker">当前路线</p>
-        <h2>{{ selectedEnd?.label ?? '目的地' }}</h2>
-        <p>{{ selectedRoute?.summary ?? '请先在推荐模式生成一条路线。' }}</p>
-      </div>
-
-      <div class="elder-next-step">
-        <span>下一步</span>
-        <strong>{{ nextStepText }}</strong>
-      </div>
-
-      <div v-if="selectedSegments.length" class="elder-route-note">
-        <span>本段提醒</span>
-        <strong>{{ selectedSegments[0].explanation }}</strong>
-      </div>
-
-      <div class="elder-metrics">
-        <div>
-          <span>距离</span>
-          <strong>{{ selectedRoute?.distance_m ?? '--' }} 米</strong>
-        </div>
-        <div>
-          <span>时间</span>
-          <strong>{{ selectedRoute?.estimated_minutes ?? '--' }} 分钟</strong>
-        </div>
-        <div>
-          <span>画像</span>
-          <strong>{{ selectedProfile?.label }}</strong>
-        </div>
-      </div>
-
-      <div class="elder-actions">
-        <button class="big-action start" type="button" @click="startNavigation">开始导航</button>
-        <button class="big-action refresh" type="button" @click="reroute">重新推荐</button>
-        <button class="big-action sos" type="button" :disabled="sosSubmitting" @click="sendSos">
-          {{ sosSubmitting ? '记录中...' : '紧急求助' }}
-        </button>
-      </div>
-
-      <p class="elder-status">{{ actionStatus }}</p>
-    </section>
-
-    <section v-else class="collection-panel">
-      <div class="collection-hero">
-        <div>
-          <p class="section-kicker">手机现场采集</p>
-          <h2>路段适老数据录入</h2>
-          <p>队友到现场后选择路段，记录坡度感受、路宽、台阶、坡道、扶手、照明和备注。提交后进入待审核队列，不会直接覆盖正式路线数据。</p>
-        </div>
-        <button class="secondary-action" type="button" @click="captureCurrentLocation">
-          记录手机定位
-        </button>
-      </div>
-
-      <form class="collection-form" @submit.prevent="submitCollection">
-        <label class="field-block full-span">
-          <span>选择采集路段</span>
-          <select
-            v-model="collectionForm.segment_code"
-            :disabled="collectionLoading"
-            @change="useCollectionSegment(collectionForm.segment_code)"
-          >
-            <option
-              v-for="segment in collectionSegments"
-              :key="segment.segment_code"
-              :value="segment.segment_code"
-            >
-              {{ segment.name || segment.segment_code }}
-            </option>
-          </select>
-        </label>
-
-        <div v-if="selectedCollectionSegment" class="selected-segment-card full-span">
-          <strong>{{ selectedCollectionSegment.name }}</strong>
-          <span>{{ selectedCollectionSegment.segment_code }} · {{ selectedCollectionSegment.length_m }} 米 · 坡度 {{ selectedCollectionSegment.slope_percent }}%</span>
-        </div>
-
-        <label class="field-block">
-          <span>采集人</span>
-          <input v-model.trim="collectionForm.collector" maxlength="50" required />
-        </label>
-
-        <label class="field-block">
-          <span>路面类型</span>
-          <select v-model="collectionForm.surface_type">
-            <option value="CONCRETE">水泥 / 混凝土</option>
-            <option value="ASPHALT">沥青</option>
-            <option value="BRICK">砖石</option>
-            <option value="TILE">地砖</option>
-            <option value="GRAVEL">碎石</option>
-            <option value="COBBLESTONE">鹅卵石</option>
-          </select>
-        </label>
-
-        <label class="field-block">
-          <span>路宽（米）</span>
-          <input v-model.number="collectionForm.width_m" min="0" max="20" step="0.1" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>路面平整度 1-5</span>
-          <input v-model.number="collectionForm.surface_level" min="1" max="5" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>安全等级 1-5</span>
-          <input v-model.number="collectionForm.safety_level" min="1" max="5" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>无障碍等级 1-5</span>
-          <input v-model.number="collectionForm.barrier_free_level" min="1" max="5" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>休息设施评分 1-5</span>
-          <input v-model.number="collectionForm.rest_facility_score" min="1" max="5" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>照明等级 1-5</span>
-          <input v-model.number="collectionForm.lighting_level" min="1" max="5" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>过街安全 1-5</span>
-          <input v-model.number="collectionForm.crossing_safety_level" min="1" max="5" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>树荫覆盖率 %</span>
-          <input v-model.number="collectionForm.shade_coverage_percent" min="0" max="100" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>座椅数量</span>
-          <input v-model.number="collectionForm.bench_count" min="0" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>台阶数量</span>
-          <input v-model.number="collectionForm.step_count" min="0" type="number" required />
-        </label>
-
-        <label class="field-block">
-          <span>台阶高度（厘米）</span>
-          <input v-model.number="collectionForm.step_height_cm" min="0" max="100" step="0.5" type="number" required />
-        </label>
-
-        <div class="toggle-grid full-span">
-          <label>
-            <input v-model="collectionForm.wheelchair_accessible" type="checkbox" />
-            轮椅可通行
-          </label>
-          <label>
-            <input v-model="collectionForm.has_ramp" type="checkbox" />
-            有坡道
-          </label>
-          <label>
-            <input v-model="collectionForm.has_handrail" type="checkbox" />
-            有扶手
-          </label>
-        </div>
-
-        <label class="field-block full-span">
-          <span>现场备注</span>
-          <textarea
-            v-model.trim="collectionForm.remark"
-            maxlength="400"
-            placeholder="例如：路面平整但下午人流较多；入口有 1 级小台阶。"
-          ></textarea>
-        </label>
-
-        <div class="location-preview full-span">
-          <span>定位</span>
-          <strong v-if="collectionForm.location_lat !== null && collectionForm.location_lon !== null">
-            {{ collectionForm.location_lon }}, {{ collectionForm.location_lat }}
-          </strong>
-          <strong v-else>暂未记录，可直接提交</strong>
-        </div>
-
-        <button class="primary-action full-span" type="submit" :disabled="collectionSubmitting || !collectionForm.segment_code">
-          {{ collectionSubmitting ? '正在提交...' : '提交为待审核记录' }}
-        </button>
-      </form>
-
-      <p class="status-line">{{ collectionMessage }}</p>
-      <p v-if="collectionError" class="error-line">{{ collectionError }}</p>
-
-      <section class="pending-panel">
-        <div class="panel-heading">
-          <p class="section-kicker">待审核数据</p>
-          <h2>最近 {{ pendingCollectionRecords.length }} 条采集记录</h2>
-        </div>
-        <article
-          v-for="record in pendingCollectionRecords"
-          :key="record.id"
-          class="pending-card"
-        >
-          <strong>{{ record.segment_name || record.segment_code }}</strong>
-          <span>{{ record.collector_name }} · 平整 {{ record.surface_level }} · 安全 {{ record.safety_level }} · 无障碍 {{ record.barrier_free_level }}</span>
-          <span>路宽 {{ record.width_m }} 米 · 坡道 {{ record.has_ramp ? '有' : '无' }} · 扶手 {{ record.has_handrail ? '有' : '无' }} · 台阶 {{ record.step_count }}</span>
-          <p>{{ record.remark || '暂无备注' }}</p>
-          <div class="pending-actions">
-            <button
-              class="audit-action approve"
-              type="button"
-              :disabled="auditLoadingIds.has(record.id)"
-              @click="auditCollection(record, 'APPROVED')"
-            >
-              通过并更新路段
-            </button>
-            <button
-              class="audit-action reject"
-              type="button"
-              :disabled="auditLoadingIds.has(record.id)"
-              @click="auditCollection(record, 'REJECTED')"
-            >
-              驳回
-            </button>
-          </div>
-        </article>
-      </section>
-    </section>
+    <HealthReminder
+      v-if="healthReminderOpen"
+      @go-profile="openHealthProfile"
+      @skip="skipHealthReminder"
+    />
   </main>
 </template>
