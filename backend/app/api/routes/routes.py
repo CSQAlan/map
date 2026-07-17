@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.routes import RouteRecommendResponse
+from app.schemas.routes import RouteEndpointResponse, RouteRecommendResponse
 from app.services.route_planner import (
     ROUTE_STRATEGY_METADATA,
     SUPPORTED_MOBILITY_TYPES,
@@ -19,6 +19,15 @@ from app.services.route_planner import (
 router = APIRouter()
 
 RouteStrategyQuery = Literal["BALANCED", "SAFEST", "FLATTEST", "COMFORT", "SHORTEST"]
+
+
+@router.get("/endpoints", response_model=list[RouteEndpointResponse])
+def list_route_endpoints(
+    area_code: Literal["SHIDAYUAN"] = Query("SHIDAYUAN"),
+    db: Session = Depends(get_db),
+) -> list[RouteEndpointResponse]:
+    return [RouteEndpointResponse(**row) for row in load_route_endpoints(db, area_code)]
+
 
 @router.get("/recommend", response_model=RouteRecommendResponse)
 def recommend_route(
@@ -72,42 +81,46 @@ def recommend_route(
 
 
 def resolve_poi_node_code(db: Session, name: str, area_code: str) -> str:
-    row = db.execute(
+    endpoints = load_route_endpoints(db, area_code, name=name)
+    if not endpoints:
+        raise HTTPException(status_code=404, detail=f"Route endpoint not found: {name}")
+    return endpoints[0]["linked_node_code"]
+
+
+def load_route_endpoints(
+    db: Session,
+    area_code: str,
+    name: str | None = None,
+) -> list[dict]:
+    name_filter = "AND pf.name = :name" if name is not None else ""
+    params = {"area_code": area_code}
+    if name is not None:
+        params["name"] = name
+    rows = db.execute(
         text(
-            """
-            SELECT linked_node_code
+            f"""
+            SELECT
+                pf.id,
+                pf.name,
+                pf.poi_type,
+                pf.linked_node_code,
+                pf.is_accessible
             FROM poi_facility pf
             JOIN pilot_area pa ON pa.id = pf.pilot_area_id
-            WHERE pf.name = :name
-              AND pf.status = 'ACTIVE'
+            JOIN road_node rn
+              ON rn.pilot_area_id = pf.pilot_area_id
+             AND rn.osm_node_ref = pf.linked_node_code
+            WHERE pf.status = 'ACTIVE'
+              AND pf.linked_node_code IS NOT NULL
               AND pa.area_code = :area_code
               AND pa.status = 'ACTIVE'
+              {name_filter}
+            ORDER BY pf.id
             """
         ),
-        {"name": name, "area_code": area_code},
-    ).mappings().first()
-    if row is None:
-        raise HTTPException(status_code=404, detail=f"POI not found: {name}")
-    node_code = row["linked_node_code"]
-    if not node_code:
-        raise HTTPException(status_code=422, detail=f"POI has no linked route node: {name}")
-
-    exists = db.execute(
-        text(
-            """
-            SELECT rn.id
-            FROM road_node rn
-            JOIN pilot_area pa ON pa.id = rn.pilot_area_id
-            WHERE rn.osm_node_ref = :node_code
-              AND pa.area_code = :area_code
-              AND pa.status = 'ACTIVE'
-            """
-        ),
-        {"node_code": node_code, "area_code": area_code},
-    ).scalar_one_or_none()
-    if exists is None:
-        raise HTTPException(status_code=422, detail=f"Linked route node not found: {node_code}")
-    return str(node_code)
+        params,
+    ).mappings()
+    return [dict(row) for row in rows]
 
 
 def load_active_segments(db: Session, area_code: str) -> list[dict]:

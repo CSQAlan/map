@@ -36,13 +36,25 @@ class FakeSession:
     def execute(self, query: Any, params: dict[str, Any] | None = None) -> FakeResult:
         sql = str(query)
         if "FROM poi_facility" in sql and "linked_node_code" in sql:
-            name = params["name"] if params else ""
+            name = params.get("name") if params else None
             mapping = {
                 GATE_NAME: "N_SY_GATE_WEST",
                 LOTUS_NAME: "N_SY_LOTUS_ENTRY",
                 BUILDING_A_NAME: "N_SY_BUILDING_A",
             }
-            return FakeResult([{"linked_node_code": mapping[name]}] if name in mapping else [])
+            endpoint_rows = [
+                {
+                    "id": index,
+                    "name": endpoint_name,
+                    "poi_type": "ENTRANCE" if endpoint_name == GATE_NAME else "REST_AREA",
+                    "linked_node_code": node_code,
+                    "is_accessible": True,
+                }
+                for index, (endpoint_name, node_code) in enumerate(mapping.items(), start=1)
+            ]
+            if name is None:
+                return FakeResult(endpoint_rows)
+            return FakeResult([row for row in endpoint_rows if row["name"] == name])
         if "FROM road_node" in sql:
             return FakeResult([{"id": 1}])
         return FakeResult(
@@ -194,6 +206,14 @@ def test_recommend_route_api_returns_strategy_metadata() -> None:
     assert data["routes"]
 
 
+def test_list_route_endpoints_returns_all_linked_pois() -> None:
+    response = client.get("/api/routes/endpoints")
+    assert response.status_code == 200
+    data = response.json()
+    assert [item["name"] for item in data] == [GATE_NAME, LOTUS_NAME, BUILDING_A_NAME]
+    assert all(item["linked_node_code"] for item in data)
+
+
 def test_recommend_route_api_rejects_unknown_strategy() -> None:
     response = client.get(
         "/api/routes/recommend",
@@ -237,6 +257,20 @@ def test_recommend_route_api_can_route_to_building_group() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["routes"][0]["segment_codes"] == ["S_SY_GATE_TO_MAIN", "S_SY_MAIN_TO_BUILDING_A"]
+
+
+def test_recommend_route_api_can_use_non_gate_as_start() -> None:
+    response = client.get(
+        "/api/routes/recommend",
+        params={
+            "start_name": LOTUS_NAME,
+            "end_name": BUILDING_A_NAME,
+            "mobility_type": "WHEELCHAIR",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["routes"][0]["segment_codes"] == ["S_SY_MAIN_TO_LOTUS", "S_SY_MAIN_TO_BUILDING_A"]
 
 
 def test_recommend_route_api_rejects_unknown_poi() -> None:

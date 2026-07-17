@@ -228,10 +228,16 @@ CREATE INDEX IF NOT EXISTS gist_road_segment_geom ON road_segment USING GIST (ge
 
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS surface_type VARCHAR(30) NOT NULL DEFAULT 'CONCRETE';
 ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS pilot_area_id BIGINT;
+ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS linked_node_code VARCHAR(50);
 ALTER TABLE road_node ADD COLUMN IF NOT EXISTS pilot_area_id BIGINT;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS pilot_area_id BIGINT;
 CREATE INDEX IF NOT EXISTS idx_poi_facility_pilot_area_id ON poi_facility(pilot_area_id);
+CREATE INDEX IF NOT EXISTS idx_poi_facility_linked_node_code ON poi_facility(linked_node_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_poi_facility_area_name_type
+    ON poi_facility(pilot_area_id, name, poi_type);
 CREATE INDEX IF NOT EXISTS idx_road_node_pilot_area_id ON road_node(pilot_area_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_road_node_area_osm_node_ref
+    ON road_node(pilot_area_id, osm_node_ref);
 CREATE INDEX IF NOT EXISTS idx_road_segment_pilot_area_id ON road_segment(pilot_area_id);
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS width_m NUMERIC(5,2) NOT NULL DEFAULT 1.50;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS has_handrail BOOLEAN NOT NULL DEFAULT FALSE;
@@ -239,7 +245,6 @@ ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS has_ramp BOOLEAN NOT NULL DEFA
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS shade_coverage_percent SMALLINT NOT NULL DEFAULT 0;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS bench_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE road_segment ADD COLUMN IF NOT EXISTS step_height_cm NUMERIC(5,2) NOT NULL DEFAULT 0;
-ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS linked_node_code VARCHAR(50);
 ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS source_provider VARCHAR(30) NOT NULL DEFAULT 'manual_photo';
 ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS source_coord_type VARCHAR(30) NOT NULL DEFAULT 'wgs84';
 ALTER TABLE poi_facility ADD COLUMN IF NOT EXISTS source_ref VARCHAR(255);

@@ -75,6 +75,68 @@ def normalize_evidence_photo_refs(refs: list[str]) -> list[str]:
     return [by_original_name.get(ref, ref) for ref in refs]
 
 
+def validate_map_data() -> dict[str, int]:
+    areas = load_seed_json("pilot_areas.json")
+    nodes = load_seed_json("core_nodes.json")
+    pois = load_seed_json("core_pois.json")
+    segments = load_seed_json("core_segments.json")
+
+    area_codes = [row["area_code"] for row in areas]
+    node_codes = [row["node_code"] for row in nodes]
+    segment_codes = [row["segment_code"] for row in segments]
+    poi_keys = [(row["name"], row["poi_type"]) for row in pois]
+    for label, values in {
+        "pilot area": area_codes,
+        "road node": node_codes,
+        "road segment": segment_codes,
+        "POI": poi_keys,
+    }.items():
+        duplicates = sorted({value for value in values if values.count(value) > 1})
+        if duplicates:
+            raise ValueError(f"Duplicate {label} seed keys: {duplicates}")
+
+    node_code_set = set(node_codes)
+    invalid_poi_links = [
+        row["name"]
+        for row in pois
+        if row.get("linked_node_code") and row["linked_node_code"] not in node_code_set
+    ]
+    if invalid_poi_links:
+        raise ValueError(f"POIs reference missing route nodes: {invalid_poi_links}")
+
+    invalid_segment_refs = [
+        row["segment_code"]
+        for row in segments
+        if row["start_node_code"] not in node_code_set or row["end_node_code"] not in node_code_set
+    ]
+    if invalid_segment_refs:
+        raise ValueError(f"Segments reference missing route nodes: {invalid_segment_refs}")
+
+    segment_node_codes = {
+        code
+        for row in segments
+        for code in (row["start_node_code"], row["end_node_code"])
+    }
+    endpoint_pois = [
+        row for row in pois if row.get("linked_node_code") in node_code_set and row.get("status", "ACTIVE") == "ACTIVE"
+    ]
+    isolated_endpoints = [
+        row["name"] for row in endpoint_pois if row["linked_node_code"] not in segment_node_codes
+    ]
+    if isolated_endpoints:
+        raise ValueError(f"Route endpoints are not connected to any segment: {isolated_endpoints}")
+    if len(endpoint_pois) < 2:
+        raise ValueError("At least two linked active POIs are required for route planning")
+
+    return {
+        "areas": len(areas),
+        "nodes": len(nodes),
+        "pois": len(pois),
+        "segments": len(segments),
+        "route_endpoints": len(endpoint_pois),
+    }
+
+
 def deactivate_legacy_campus_seed_data() -> None:
     with engine.begin() as connection:
         for poi_name in LEGACY_CAMPUS_POI_NAMES:
@@ -135,7 +197,7 @@ def seed_core_pois(pilot_area_id: int) -> int:
         """
         SELECT id
         FROM poi_facility
-        WHERE name = :name AND poi_type = :poi_type
+        WHERE pilot_area_id = :pilot_area_id AND name = :name AND poi_type = :poi_type
         """
     )
     insert_sql = text(
@@ -162,7 +224,12 @@ def seed_core_pois(pilot_area_id: int) -> int:
             :poi_type,
             :description,
             COALESCE(
-                (SELECT geom FROM road_node WHERE osm_node_ref = :linked_node_code),
+                (
+                    SELECT geom
+                    FROM road_node
+                    WHERE pilot_area_id = :pilot_area_id
+                      AND osm_node_ref = :linked_node_code
+                ),
                 ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)
             ),
             :address_text,
@@ -184,7 +251,12 @@ def seed_core_pois(pilot_area_id: int) -> int:
             pilot_area_id = :pilot_area_id,
             description = :description,
             geom = COALESCE(
-                (SELECT geom FROM road_node WHERE osm_node_ref = :linked_node_code),
+                (
+                    SELECT geom
+                    FROM road_node
+                    WHERE pilot_area_id = :pilot_area_id
+                      AND osm_node_ref = :linked_node_code
+                ),
                 ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)
             ),
             address_text = :address_text,
@@ -197,7 +269,7 @@ def seed_core_pois(pilot_area_id: int) -> int:
             source_ref = :source_ref,
             evidence_photo_refs = CAST(:evidence_photo_refs AS jsonb),
             data_confidence = :data_confidence
-        WHERE name = :name AND poi_type = :poi_type
+        WHERE pilot_area_id = :pilot_area_id AND name = :name AND poi_type = :poi_type
         """
     )
     with engine.begin() as connection:
@@ -227,7 +299,7 @@ def seed_core_nodes(pilot_area_id: int) -> int:
         """
         SELECT id
         FROM road_node
-        WHERE osm_node_ref = :node_code
+        WHERE pilot_area_id = :pilot_area_id AND osm_node_ref = :node_code
         """
     )
     insert_sql = text(
@@ -268,7 +340,7 @@ def seed_core_nodes(pilot_area_id: int) -> int:
             source_coord_type = :source_coord_type,
             source_ref = :source_ref,
             data_confidence = :data_confidence
-        WHERE osm_node_ref = :node_code
+        WHERE pilot_area_id = :pilot_area_id AND osm_node_ref = :node_code
         """
     )
     with engine.begin() as connection:
@@ -290,10 +362,14 @@ def seed_core_segments(pilot_area_id: int) -> int:
         SET
             pilot_area_id = :pilot_area_id,
             start_node_id = (
-                SELECT id FROM road_node WHERE osm_node_ref = :start_node_code
+                SELECT id
+                FROM road_node
+                WHERE pilot_area_id = :pilot_area_id AND osm_node_ref = :start_node_code
             ),
             end_node_id = (
-                SELECT id FROM road_node WHERE osm_node_ref = :end_node_code
+                SELECT id
+                FROM road_node
+                WHERE pilot_area_id = :pilot_area_id AND osm_node_ref = :end_node_code
             ),
             name = :name,
             geom = (
@@ -301,6 +377,8 @@ def seed_core_segments(pilot_area_id: int) -> int:
                 FROM road_node start_node, road_node end_node
                 WHERE start_node.osm_node_ref = :start_node_code
                   AND end_node.osm_node_ref = :end_node_code
+                  AND start_node.pilot_area_id = :pilot_area_id
+                  AND end_node.pilot_area_id = :pilot_area_id
             ),
             length_m = :length_m,
             slope_percent = :slope_percent,
@@ -356,20 +434,20 @@ def seed_core_segments(pilot_area_id: int) -> int:
                     """
                     SELECT id
                     FROM road_node
-                    WHERE osm_node_ref = :code
+                    WHERE pilot_area_id = :pilot_area_id AND osm_node_ref = :code
                     """
                 ),
-                {"code": row["start_node_code"]},
+                {"pilot_area_id": pilot_area_id, "code": row["start_node_code"]},
             ).scalar_one()
             end_node_id = connection.execute(
                 text(
                     """
                     SELECT id
                     FROM road_node
-                    WHERE osm_node_ref = :code
+                    WHERE pilot_area_id = :pilot_area_id AND osm_node_ref = :code
                     """
                 ),
-                {"code": row["end_node_code"]},
+                {"pilot_area_id": pilot_area_id, "code": row["end_node_code"]},
             ).scalar_one()
             connection.execute(
                 text(
@@ -452,13 +530,99 @@ def seed_core_segments(pilot_area_id: int) -> int:
     return len(rows)
 
 
+def validate_database_map_data(area_code: str = "SHIDAYUAN") -> dict[str, int]:
+    validation_sql = text(
+        """
+        WITH active_area AS (
+            SELECT id
+            FROM pilot_area
+            WHERE area_code = :area_code AND status = 'ACTIVE'
+        ),
+        route_endpoints AS (
+            SELECT pf.id, pf.name, pf.linked_node_code, rn.id AS node_id
+            FROM poi_facility pf
+            JOIN active_area pa ON pa.id = pf.pilot_area_id
+            LEFT JOIN road_node rn
+              ON rn.pilot_area_id = pf.pilot_area_id
+             AND rn.osm_node_ref = pf.linked_node_code
+            WHERE pf.status = 'ACTIVE'
+              AND pf.linked_node_code IS NOT NULL
+        ),
+        segment_nodes AS (
+            SELECT rs.start_node_id AS node_id
+            FROM road_segment rs
+            JOIN active_area pa ON pa.id = rs.pilot_area_id
+            WHERE rs.status = 'ACTIVE'
+            UNION
+            SELECT rs.end_node_id AS node_id
+            FROM road_segment rs
+            JOIN active_area pa ON pa.id = rs.pilot_area_id
+            WHERE rs.status = 'ACTIVE'
+        ),
+        cross_area_segments AS (
+            SELECT rs.id
+            FROM road_segment rs
+            JOIN active_area pa ON pa.id = rs.pilot_area_id
+            JOIN road_node start_node ON start_node.id = rs.start_node_id
+            JOIN road_node end_node ON end_node.id = rs.end_node_id
+            WHERE rs.status = 'ACTIVE'
+              AND (
+                  start_node.pilot_area_id <> rs.pilot_area_id
+                  OR end_node.pilot_area_id <> rs.pilot_area_id
+              )
+        )
+        SELECT
+            (SELECT COUNT(*) FROM active_area) AS active_area_count,
+            (SELECT COUNT(*) FROM route_endpoints WHERE node_id IS NOT NULL) AS route_endpoint_count,
+            (SELECT COUNT(*) FROM route_endpoints WHERE node_id IS NULL) AS invalid_link_count,
+            (SELECT COUNT(*) FROM cross_area_segments) AS cross_area_segment_node_count,
+            (
+                SELECT COUNT(*)
+                FROM route_endpoints re
+                WHERE re.node_id IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM segment_nodes sn WHERE sn.node_id = re.node_id
+                  )
+            ) AS isolated_endpoint_count
+        """
+    )
+    with engine.begin() as connection:
+        row = connection.execute(validation_sql, {"area_code": area_code}).mappings().one()
+
+    summary = {key: int(row[key]) for key in row.keys()}
+    if summary["active_area_count"] != 1:
+        raise ValueError(f"Expected one active pilot area for {area_code}, got {summary['active_area_count']}")
+    if summary["invalid_link_count"]:
+        raise ValueError(f"Database has {summary['invalid_link_count']} active POIs with invalid linked nodes")
+    if summary["cross_area_segment_node_count"]:
+        raise ValueError(
+            f"Database has {summary['cross_area_segment_node_count']} active segments with cross-area nodes"
+        )
+    if summary["isolated_endpoint_count"]:
+        raise ValueError(
+            f"Database has {summary['isolated_endpoint_count']} route endpoints disconnected from active segments"
+        )
+    if summary["route_endpoint_count"] < 2:
+        raise ValueError("Database requires at least two active linked route endpoints")
+    return summary
+
+
 def seed_map_data() -> dict[str, int]:
+    validate_map_data()
     deactivate_legacy_campus_seed_data()
     area_ids = seed_pilot_areas()
     shidayuan_area_id = area_ids["SHIDAYUAN"]
-    return {
+    seed_summary = {
         "areas": len(area_ids),
         "nodes": seed_core_nodes(shidayuan_area_id),
         "pois": seed_core_pois(shidayuan_area_id),
         "segments": seed_core_segments(shidayuan_area_id),
+    }
+    db_summary = validate_database_map_data("SHIDAYUAN")
+    return {
+        **seed_summary,
+        "route_endpoints": db_summary["route_endpoint_count"],
+        "invalid_link_count": db_summary["invalid_link_count"],
+        "isolated_endpoint_count": db_summary["isolated_endpoint_count"],
+        "cross_area_segment_node_count": db_summary["cross_area_segment_node_count"],
     }

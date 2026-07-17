@@ -1,6 +1,6 @@
 from app.core.database import project_root
 from app.db.schema import load_schema_sql
-from app.db.seeds import load_seed_json, normalize_evidence_photo_refs
+from app.db.seeds import load_seed_json, normalize_evidence_photo_refs, validate_map_data
 
 
 def test_load_schema_sql_reads_init_schema() -> None:
@@ -76,6 +76,12 @@ def test_seed_normalizes_original_photo_names_to_stable_ids() -> None:
         "SY_IMG_9499",
         "SY_IMG_9510",
     ]
+
+
+def test_validate_map_data_counts_route_endpoints() -> None:
+    summary = validate_map_data()
+    assert summary["areas"] == 1
+    assert summary["route_endpoints"] >= 6
 
 
 def test_seed_graph_has_route_alternatives() -> None:

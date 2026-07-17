@@ -3,6 +3,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
+from app.db.seeds import validate_database_map_data
 from app.main import app
 
 
@@ -30,6 +31,14 @@ def test_real_map_data_is_scoped_and_has_evidence() -> None:
 
 def test_real_map_data_rejects_unknown_area() -> None:
     assert client.get("/api/map-data/geojson?area_code=UNKNOWN").status_code == 404
+
+
+def test_real_database_seed_validation_passes() -> None:
+    summary = validate_database_map_data("SHIDAYUAN")
+    assert summary["route_endpoint_count"] == 6
+    assert summary["invalid_link_count"] == 0
+    assert summary["isolated_endpoint_count"] == 0
+    assert summary["cross_area_segment_node_count"] == 0
 
 
 def test_real_wheelchair_route_is_shidayuan_scoped() -> None:

@@ -44,3 +44,11 @@ class RouteRecommendResponse(BaseModel):
     strategy_description: str
     routes: list[RouteCandidateResponse]
     avoided_segments: list[AvoidedSegmentResponse]
+
+
+class RouteEndpointResponse(BaseModel):
+    id: int
+    name: str
+    poi_type: str
+    linked_node_code: str
+    is_accessible: bool

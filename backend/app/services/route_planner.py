@@ -521,6 +521,8 @@ def build_segment_detail(segment: Mapping[str, Any], mobility_type: str) -> dict
     geom_geojson = segment.get("geom_geojson")
     if geom_geojson:
         geometry_coordinates = json.loads(str(geom_geojson)).get("coordinates", [])
+        if segment.get("_is_reverse"):
+            geometry_coordinates = list(reversed(geometry_coordinates))
     return {
         "segment_code": str(segment["segment_code"]),
         "name": segment.get("name"),
@@ -554,8 +556,19 @@ def edge_key(segment: Mapping[str, Any]) -> tuple[str, str, str]:
     )
 
 
+def reverse_segment(segment: Mapping[str, Any]) -> dict[str, Any]:
+    reversed_segment = dict(segment)
+    reversed_segment["start_node_code"] = str(segment["end_node_code"])
+    reversed_segment["end_node_code"] = str(segment["start_node_code"])
+    reversed_segment["_is_reverse"] = True
+    return reversed_segment
+
+
 def path_signature(path: list[Mapping[str, Any]]) -> tuple[str, ...]:
-    return tuple(str(segment["segment_code"]) for segment in path)
+    return tuple(
+        f"{segment['start_node_code']}->{segment['end_node_code']}:{segment['segment_code']}"
+        for segment in path
+    )
 
 
 def build_allowed_graph(
@@ -572,10 +585,12 @@ def build_allowed_graph(
         end_node = str(segment["end_node_code"])
         if start_node in blocked_nodes or end_node in blocked_nodes:
             continue
-        if edge_key(segment) in blocked_edges:
-            continue
         if is_segment_allowed(segment, mobility_type):
-            graph.setdefault(start_node, []).append(segment)
+            if edge_key(segment) not in blocked_edges:
+                graph.setdefault(start_node, []).append(segment)
+            reversed_edge = reverse_segment(segment)
+            if edge_key(reversed_edge) not in blocked_edges:
+                graph.setdefault(end_node, []).append(reversed_edge)
 
     for outgoing_segments in graph.values():
         outgoing_segments.sort(key=lambda segment: str(segment["segment_code"]))
@@ -695,6 +710,7 @@ def enumerate_paths(
     for segment in segments:
         if is_segment_allowed(segment, mobility_type):
             graph.setdefault(str(segment["start_node_code"]), []).append(segment)
+            graph.setdefault(str(segment["end_node_code"]), []).append(reverse_segment(segment))
 
     paths: list[list[Mapping[str, Any]]] = []
 

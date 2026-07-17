@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import AmapRouteMap from './components/AmapRouteMap.vue';
 import EvidenceGallery from './components/EvidenceGallery.vue';
 import FallbackRouteMap from './components/FallbackRouteMap.vue';
@@ -7,13 +7,6 @@ import FallbackRouteMap from './components/FallbackRouteMap.vue';
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
 
-const startOptions = [{ label: '师大苑大学城西路入口', value: '师大苑大学城西路入口' }];
-const endOptions = [
-  { label: '荷塘水景休息区', value: '师大苑荷塘水景休息区' },
-  { label: '楼栋组团A', value: '师大苑楼栋组团A' },
-  { label: '楼栋组团B', value: '师大苑楼栋组团B' },
-  { label: '外部商业街人行道', value: '师大苑外部商业街人行道' },
-];
 const profileOptions = [
   { label: '轮椅老人', value: 'WHEELCHAIR', hint: '不走台阶，优先坡道、宽路和无障碍路段' },
   { label: '拐杖老人', value: 'CANE', hint: '台阶惩罚很高，优先扶手、平缓、安全路线' },
@@ -31,8 +24,11 @@ const strategyOptions = [
 ];
 
 const activeMode = ref('recommend');
-const startName = ref(startOptions[0].value);
-const endName = ref(endOptions[0].value);
+const routeEndpointOptions = ref([]);
+const routeEndpointLoading = ref(false);
+const routeEndpointError = ref('');
+const startName = ref('');
+const endName = ref('');
 const mobilityType = ref('WHEELCHAIR');
 const routeStrategy = ref('BALANCED');
 const routes = ref([]);
@@ -87,7 +83,15 @@ const selectedProfile = computed(() =>
 const selectedStrategy = computed(() =>
   strategyOptions.find((item) => item.value === routeStrategy.value)
 );
-const selectedEnd = computed(() => endOptions.find((item) => item.value === endName.value));
+const availableStartOptions = computed(() =>
+  routeEndpointOptions.value.filter((item) => item.value !== endName.value)
+);
+const availableEndOptions = computed(() =>
+  routeEndpointOptions.value.filter((item) => item.value !== startName.value)
+);
+const selectedEnd = computed(() =>
+  routeEndpointOptions.value.find((item) => item.value === endName.value)
+);
 const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
 const selectedCollectionSegment = computed(() =>
   collectionSegments.value.find((segment) => segment.segment_code === collectionForm.value.segment_code)
@@ -118,12 +122,72 @@ const nextStepText = computed(() => {
 });
 
 onMounted(() => {
+  fetchRouteEndpoints();
   fetchPilotArea();
   fetchMapData();
   fetchDiagnostics();
   fetchCollectionSegments();
   fetchPendingCollectionRecords();
 });
+
+watch(startName, () => {
+  ensureDistinctEndpoint('start');
+});
+
+watch(endName, () => {
+  ensureDistinctEndpoint('end');
+});
+
+function ensureDistinctEndpoint(changedField) {
+  if (routeEndpointOptions.value.length < 2 || startName.value !== endName.value) return;
+  const replacement = routeEndpointOptions.value.find((item) => item.value !== startName.value);
+  if (!replacement) return;
+  if (changedField === 'start') {
+    endName.value = replacement.value;
+  } else {
+    startName.value = replacement.value;
+  }
+}
+
+async function fetchRouteEndpoints() {
+  routeEndpointLoading.value = true;
+  routeEndpointError.value = '';
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/routes/endpoints?area_code=SHIDAYUAN`);
+    const payload = await response.json().catch(() => []);
+    if (!response.ok) throw new Error(formatApiError(payload.detail, 'Route endpoints unavailable.'));
+    const nextOptions = Array.isArray(payload)
+      ? payload.map((item) => ({
+          label: item.name,
+          value: item.name,
+          poiType: item.poi_type,
+          linkedNodeCode: item.linked_node_code,
+        }))
+      : [];
+    if (nextOptions.length < 2) {
+      throw new Error('At least two route endpoints are required.');
+    }
+    routeEndpointOptions.value = nextOptions;
+    const preferredStart = nextOptions.find((item) => item.poiType === 'ENTRANCE') ?? nextOptions[0];
+    if (!nextOptions.some((item) => item.value === startName.value)) {
+      startName.value = preferredStart.value;
+    }
+    if (
+      !nextOptions.some((item) => item.value === endName.value) ||
+      endName.value === startName.value
+    ) {
+      endName.value = nextOptions.find((item) => item.value !== startName.value)?.value ?? '';
+    }
+  } catch (error) {
+    routeEndpointOptions.value = [];
+    startName.value = '';
+    endName.value = '';
+    routeEndpointError.value =
+      error instanceof Error ? error.message : 'Route endpoints unavailable.';
+  } finally {
+    routeEndpointLoading.value = false;
+  }
+}
 
 async function fetchPilotArea() {
   try {
@@ -314,6 +378,12 @@ function formatApiError(detail, fallback = '采集记录提交失败。') {
 }
 
 async function fetchRoutes() {
+  if (!startName.value || !endName.value || startName.value === endName.value) {
+    routes.value = [];
+    selectedRouteIndex.value = 0;
+    errorMessage.value = 'Please select two different route endpoints.';
+    return;
+  }
   loading.value = true;
   errorMessage.value = '';
   avoidedSegments.value = [];
@@ -498,7 +568,7 @@ async function sendSos() {
         <label class="field-block">
           <span>起点</span>
           <select v-model="startName">
-            <option v-for="option in startOptions" :key="option.value" :value="option.value">
+            <option v-for="option in availableStartOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </option>
           </select>
@@ -507,17 +577,22 @@ async function sendSos() {
         <label class="field-block">
           <span>目的地</span>
           <select v-model="endName">
-            <option v-for="option in endOptions" :key="option.value" :value="option.value">
+            <option v-for="option in availableEndOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </option>
           </select>
         </label>
 
-        <button class="primary-action" type="submit" :disabled="loading">
-          {{ loading ? '正在计算...' : '生成适老路线' }}
+        <button
+          class="primary-action"
+          type="submit"
+          :disabled="loading || routeEndpointLoading || routeEndpointOptions.length < 2 || startName === endName"
+        >
+          {{ loading || routeEndpointLoading ? '正在计算...' : '生成适老路线' }}
         </button>
 
         <p class="status-line">{{ actionStatus }}</p>
+        <p v-if="routeEndpointError" class="error-line">{{ routeEndpointError }}</p>
         <p v-if="errorMessage" class="error-line">{{ errorMessage }}</p>
       </form>
 

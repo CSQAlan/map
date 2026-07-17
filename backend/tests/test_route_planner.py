@@ -201,6 +201,29 @@ def test_dijkstra_path_selects_lowest_cost_route_not_first_route() -> None:
     assert [segment["segment_code"] for segment in path] == ["A_C", "C_D"]
 
 
+def test_dijkstra_path_can_traverse_pedestrian_segments_in_reverse() -> None:
+    base = {
+        "length_m": 50,
+        "slope_percent": 1,
+        "surface_level": 4,
+        "safety_level": 4,
+        "barrier_free_level": 4,
+        "rest_facility_score": 3,
+        "width_m": 1.5,
+        "wheelchair_accessible": True,
+    }
+    segments = [
+        {**base, "segment_code": "A_B", "start_node_code": "A", "end_node_code": "B"},
+        {**base, "segment_code": "B_C", "start_node_code": "B", "end_node_code": "C"},
+    ]
+
+    path = dijkstra_path(segments, "C", "A", "WHEELCHAIR")
+
+    assert [segment["segment_code"] for segment in path] == ["B_C", "A_B"]
+    assert path[0]["start_node_code"] == "C"
+    assert path[-1]["end_node_code"] == "A"
+
+
 def test_dijkstra_path_respects_blocked_edges_for_spur_routes() -> None:
     base = {
         "length_m": 50,
