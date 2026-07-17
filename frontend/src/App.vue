@@ -37,6 +37,17 @@ const strategyOptions = [
   { label: '最短距离', value: 'SHORTEST', hint: '距离优先，但仍遵守老人画像硬约束' },
 ];
 
+const databasePoiOptions = [
+  { label: '师大苑大学城西路入口', value: '师大苑大学城西路入口' },
+  { label: '师大苑荷塘水景休息区', value: '师大苑荷塘水景休息区' },
+  { label: '师大苑楼栋组团A', value: '师大苑楼栋组团A' },
+  { label: '师大苑楼栋组团B', value: '师大苑楼栋组团B' },
+  { label: '师大苑林下休闲步道', value: '师大苑林下休闲步道' },
+  { label: '师大苑外部商业街人行道', value: '师大苑外部商业街人行道' },
+];
+startOptions.splice(0, startOptions.length, ...databasePoiOptions.map((option) => ({ ...option })));
+endOptions.splice(0, endOptions.length, ...databasePoiOptions.map((option) => ({ ...option })));
+
 const activeMode = ref('login');
 const currentUser = ref(null);
 const isGuest = ref(false);
@@ -150,11 +161,36 @@ onMounted(() => {
   }
 
   fetchPilotArea();
+  fetchPoiOptions();
   fetchMapData();
   fetchDiagnostics();
   fetchCollectionSegments();
   fetchPendingCollectionRecords();
 });
+
+async function fetchPoiOptions() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/map-data/pois?area_code=SHIDAYUAN`);
+    if (!response.ok) throw new Error('地点列表接口不可用');
+    const pois = await response.json();
+    const options = pois
+      .filter((poi) => poi?.name)
+      .map((poi) => ({ label: poi.name, value: poi.name }));
+
+    if (!options.length) throw new Error('地点列表为空');
+    startOptions.splice(0, startOptions.length, ...options);
+    endOptions.splice(0, endOptions.length, ...options);
+
+    if (!options.some((option) => option.value === startName.value)) {
+      startName.value = options[0].value;
+    }
+    if (!options.some((option) => option.value === endName.value)) {
+      endName.value = options[Math.min(1, options.length - 1)].value;
+    }
+  } catch (error) {
+    console.warn('使用内置地点列表：', error);
+  }
+}
 
 async function fetchPilotArea() {
   try {
@@ -360,6 +396,9 @@ async function fetchRoutes(returnToHome = false) {
     const resolvedEnd = resolvePilotLocation(endName.value, endOptions);
     if (!resolvedStart || !resolvedEnd) {
       throw new Error('请从输入框提示的试点地点中选择起点和目的地。');
+    }
+    if (resolvedStart === resolvedEnd) {
+      throw new Error('起点和目的地不能相同，请选择不同地点后再生成路线。');
     }
     startName.value = resolvedStart;
     endName.value = resolvedEnd;

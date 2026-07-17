@@ -40,13 +40,15 @@ onBeforeUnmount(() => recognition?.abort());
   <label class="location-input">
     <span class="location-input-label"><i>{{ icon }}</i>{{ label }}</span>
     <div class="location-input-control">
-      <input
+      <select
         :value="modelValue"
-        :list="`${label}-options`"
-        :placeholder="`请输入${label}`"
-        autocomplete="off"
-        @input="updateValue($event.target.value)"
-      />
+        :aria-label="`选择${label}`"
+        @change="updateValue($event.target.value)"
+      >
+        <option v-for="option in options" :key="option.value" :value="option.value">
+          {{ option.label }}
+        </option>
+      </select>
       <button
         v-if="speechSupported"
         class="voice-button"
@@ -58,8 +60,5 @@ onBeforeUnmount(() => recognition?.abort());
         {{ listening ? '正在听' : '语音' }}
       </button>
     </div>
-    <datalist :id="`${label}-options`">
-      <option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option>
-    </datalist>
   </label>
 </template>

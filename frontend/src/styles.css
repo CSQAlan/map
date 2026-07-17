@@ -1237,7 +1237,8 @@ dd,
 .location-input-label { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 900; }
 .location-input-label i { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; color: #fff; background: var(--leaf); font-style: normal; font-size: 14px; }
 .location-input-control { display: flex; gap: 8px; }
-.location-input-control input { min-height: 58px; border-width: 2px; font-size: 19px; font-weight: 700; }
+.location-input-control input, .location-input-control select { min-height: 58px; border-width: 2px; font-size: 19px; font-weight: 700; }
+.location-input-control select { width: 100%; padding: 0 42px 0 15px; color: var(--ink); background: #fffdf7; }
 .voice-button { min-width: 72px; min-height: 58px; border: 0; border-radius: 18px; color: var(--leaf-dark); background: #dcefe4; font-weight: 900; }
 .voice-button.listening { color: #fff; background: var(--danger); animation: voice-pulse 1s ease-in-out infinite; }
 @keyframes voice-pulse { 50% { transform: scale(1.04); } }
