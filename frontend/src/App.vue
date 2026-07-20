@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import PageNavigation from './components/PageNavigation.vue';
 import RecommendPage from './pages/RecommendPage.vue';
 import ElderPage from './pages/ElderPage.vue';
@@ -9,7 +9,11 @@ import ProfilePage from './pages/ProfilePage.vue';
 import GuestProfilePage from './pages/GuestProfilePage.vue';
 import NavigationPage from './pages/NavigationPage.vue';
 import ProfilePrompt from './components/ProfilePrompt.vue';
-import HealthReminder from './components/HealthReminder.vue';
+import HealthQuestionnaire from './components/HealthQuestionnaire.vue';
+import FamilyPage from './pages/FamilyPage.vue';
+import FamilyBindingPage from './pages/FamilyBindingPage.vue';
+import AdminLoginPage from './pages/AdminLoginPage.vue';
+import AdminPage from './pages/AdminPage.vue';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
@@ -51,9 +55,20 @@ endOptions.splice(0, endOptions.length, ...databasePoiOptions.map((option) => ({
 const activeMode = ref('login');
 const currentUser = ref(null);
 const isGuest = ref(false);
+const questionnairePending = ref(false);
+const adminUser = ref(null);
+const adminCredentials = ref({ username: 'admin', password: 'admin123' });
+const adminUsers = ref([]);
+const loginError = ref('');
+const familyBindingError = ref('');
+const boundElder = ref(null);
+const familyMonitor = ref({ navigation: { status: 'IDLE' } });
+let familyMonitorTimer = null;
+const adminLoginError = ref('');
+const adminActionError = ref('');
 const profileSaving = ref(false);
-const startName = ref(startOptions[0].value);
-const endName = ref(endOptions[0].value);
+const startName = ref('');
+const endName = ref('');
 const mobilityType = ref('WHEELCHAIR');
 const routeStrategy = ref('BALANCED');
 const routes = ref([]);
@@ -73,9 +88,7 @@ const diagnosticsLoading = ref(false);
 const profilePromptOpen = computed(
   () => activeMode.value === 'elder' && !isGuest.value && Boolean(currentUser.value) && !currentUser.value.profileComplete
 );
-const healthReminderOpen = computed(
-  () => activeMode.value === 'elder' && !isGuest.value && Boolean(currentUser.value?.profileComplete) && !currentUser.value?.healthConditions && !currentUser.value?.healthReminderDismissed
-);
+const questionnaireOpen = computed(() => activeMode.value === 'elder' && questionnairePending.value);
 const sosSubmitting = ref(false);
 const collectionSegments = ref([]);
 const pendingCollectionRecords = ref([]);
@@ -144,9 +157,18 @@ const nextStepText = computed(() => {
   return `第一步：沿“${firstSegmentName}”方向慢慢前进，注意观察地面和台阶。`;
 });
 
+function syncAdminRoute() {
+  if (window.location.hash === '#/admin' && activeMode.value !== 'admin') {
+    activeMode.value = 'admin-login';
+  }
+}
+
 onMounted(() => {
+  syncAdminRoute();
+  window.addEventListener('hashchange', syncAdminRoute);
   // Check for saved user session
-  const savedUser = localStorage.getItem('elderMapUser');
+  const lastRole = localStorage.getItem('mapLastLoginRole') ?? 'elder';
+  const savedUser = localStorage.getItem(lastRole === 'family' ? 'familyMapUser' : 'elderMapUser');
   if (savedUser) {
     try {
       currentUser.value = JSON.parse(savedUser);
@@ -154,10 +176,19 @@ onMounted(() => {
       if (currentUser.value?.mobilityType) {
         mobilityType.value = currentUser.value.mobilityType;
       }
+      if (currentUser.value?.role !== 'family' && !currentUser.value?.familyBindingCode) {
+        currentUser.value = { ...currentUser.value, familyBindingCode: String(Math.floor(100000 + Math.random() * 900000)) };
+        localStorage.setItem('elderMapUser', JSON.stringify(currentUser.value));
+      }
     } catch (e) {
       console.error('Failed to parse saved user data');
       localStorage.removeItem('elderMapUser');
     }
+  }
+
+  const savedAdminCredentials = localStorage.getItem('adminMapCredentials');
+  if (savedAdminCredentials) {
+    try { adminCredentials.value = JSON.parse(savedAdminCredentials); } catch { localStorage.removeItem('adminMapCredentials'); }
   }
 
   fetchPilotArea();
@@ -166,6 +197,10 @@ onMounted(() => {
   fetchDiagnostics();
   fetchCollectionSegments();
   fetchPendingCollectionRecords();
+});
+
+onBeforeUnmount(() => {
+  if (familyMonitorTimer) window.clearInterval(familyMonitorTimer);
 });
 
 async function fetchPoiOptions() {
@@ -181,12 +216,6 @@ async function fetchPoiOptions() {
     startOptions.splice(0, startOptions.length, ...options);
     endOptions.splice(0, endOptions.length, ...options);
 
-    if (!options.some((option) => option.value === startName.value)) {
-      startName.value = options[0].value;
-    }
-    if (!options.some((option) => option.value === endName.value)) {
-      endName.value = options[Math.min(1, options.length - 1)].value;
-    }
   } catch (error) {
     console.warn('使用内置地点列表：', error);
   }
@@ -447,6 +476,7 @@ async function fetchRoutes(returnToHome = false) {
 function selectRoute(index) {
   selectedRouteIndex.value = index;
   selectedSegmentCode.value = routes.value[index]?.segment_codes?.[0] ?? null;
+  if (activeMode.value === 'navigation') publishNavigationStatus();
   actionStatus.value = `已选择推荐路线 ${index + 1}。`;
 }
 
@@ -460,7 +490,7 @@ function selectStrategy(strategyValue) {
   actionStatus.value = `已切换为“${selectedStrategy.value?.label}”，请重新生成路线。`;
 }
 
-function startNavigation() {
+function legacyStartNavigation() {
   if (selectedRoute.value) activeMode.value = 'navigation';
   if (!selectedRoute.value) {
     activeMode.value = 'recommend';
@@ -474,7 +504,7 @@ function reroute() {
   activeMode.value = 'recommend';
 }
 
-async function planRouteFromElderHome() {
+async function legacyPlanRouteFromElderHome() {
   await fetchRoutes(false);
   if (routes.value.length) activeMode.value = 'navigation';
 }
@@ -491,6 +521,7 @@ async function sendSos() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        elder_user_id: currentUser.value?.role === 'elder' ? currentUser.value.id : null,
         elder_name: currentUser.value?.realName || (isGuest.value ? '访客' : '演示老人'),
         mobility_type: mobilityType.value,
         route_summary: selectedRoute.value?.summary ?? null,
@@ -514,31 +545,47 @@ async function sendSos() {
   }
 }
 
-function handleLogin(credentials) {
+function handleLegacyLogin(credentials) {
   // Simulate login/register - in production this would call an API
   isGuest.value = false;
+  const isFamily = credentials.role === 'family';
+  let existingUser = {};
+  try {
+    existingUser = JSON.parse(localStorage.getItem(isFamily ? 'familyMapUser' : 'elderMapUser') || '{}');
+  } catch { existingUser = {}; }
   const userData = {
+    ...existingUser,
     username: credentials.username,
+    role: isFamily ? 'family' : 'elder',
     realName: '',
     age: '',
-    phone: '',
+    phone: credentials.phone || existingUser.phone || '',
     mobilityType: 'INDEPENDENT',
     hasWheelchair: false,
     hasCane: false,
     healthConditions: '',
     emergencyContact: '',
     emergencyPhone: '',
+    familyBindingCode: isFamily ? null : String(Math.floor(100000 + Math.random() * 900000)),
     profileComplete: false,
     password: credentials.password,
     createdAt: new Date().toISOString()
   };
 
   currentUser.value = userData;
-  localStorage.setItem('elderMapUser', JSON.stringify(userData));
-  activeMode.value = 'elder';
+  localStorage.setItem(isFamily ? 'familyMapUser' : 'elderMapUser', JSON.stringify(userData));
+  localStorage.setItem('mapLastLoginRole', isFamily ? 'family' : 'elder');
+  activeMode.value = isFamily ? 'family-binding' : 'elder';
 }
 
 function handleSkipLogin() {
+  // Guest mode is intentionally anonymous: never reuse or persist a registered account session.
+  currentUser.value = null;
+  isGuest.value = true;
+  questionnairePending.value = false;
+  boundElder.value = null;
+  stopFamilyMonitoring();
+  localStorage.removeItem('mapLastLoginRole');
   activeMode.value = 'guest-profile';
 }
 
@@ -546,6 +593,7 @@ function enterGuestMode(profile) {
   isGuest.value = true;
   currentUser.value = null;
   mobilityType.value = profile.mobilityType;
+  questionnairePending.value = true;
   actionStatus.value = profile.healthCondition
     ? '已按本次出行情况为您调整推荐。'
     : '请选择起点和目的地，系统会为您推荐路线。';
@@ -553,9 +601,14 @@ function enterGuestMode(profile) {
 }
 
 function handleLogout() {
+  const lastRole = currentUser.value?.role;
+  stopFamilyMonitoring();
   currentUser.value = null;
   isGuest.value = false;
-  localStorage.removeItem('elderMapUser');
+  localStorage.removeItem('mapLastLoginRole');
+  if (lastRole === 'elder') localStorage.removeItem('elderMapUser');
+  if (lastRole === 'family') localStorage.removeItem('familyMapUser');
+  if (lastRole === 'family') boundElder.value = null;
   activeMode.value = 'login';
 }
 
@@ -590,7 +643,7 @@ function handleSaveProfile(profileData) {
 function loginWithSavedAccount() {
   if (!currentUser.value) return;
   isGuest.value = false;
-  activeMode.value = 'elder';
+  activeMode.value = currentUser.value.role === 'family' ? 'family' : 'elder';
 }
 
 function selectInitialProfile(profileValue) {
@@ -603,21 +656,236 @@ function selectInitialProfile(profileValue) {
   };
   currentUser.value = updatedUser;
   localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+  questionnairePending.value = true;
   actionStatus.value = '已按您的出行情况选择推荐路线。';
 }
 
-function openHealthProfile() {
-  activeMode.value = 'profile';
-}
-
-function skipHealthReminder() {
+function saveHealthQuestionnaire(answers) {
+  questionnairePending.value = false;
+  const notes = answers.concerns?.length ? `重点关注：${answers.concerns.join('、')}` : '已完成出行偏好问卷。';
+  if (isGuest.value) {
+    actionStatus.value = '已根据您的回答优化本次路线推荐。';
+    return;
+  }
   const updatedUser = {
     ...currentUser.value,
-    healthReminderDismissed: true,
+    healthProfile: answers,
+    healthConditions: currentUser.value?.healthConditions || notes,
+    questionnaireComplete: true,
     updatedAt: new Date().toISOString(),
   };
   currentUser.value = updatedUser;
   localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+  actionStatus.value = '出行画像已完善，路线会更贴合您的需要。';
+}
+
+function skipHealthQuestionnaire() {
+  questionnairePending.value = false;
+  if (!isGuest.value && currentUser.value) {
+    const updatedUser = { ...currentUser.value, questionnaireSkipped: true, updatedAt: new Date().toISOString() };
+    currentUser.value = updatedUser;
+    localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+  }
+}
+
+function legacyLoginAdmin(payload) {
+  if (payload.username !== adminCredentials.value.username || payload.password !== adminCredentials.value.password) {
+    adminLoginError.value = '账号或密码不正确。';
+    return;
+  }
+  adminLoginError.value = '';
+  adminUser.value = { username: payload.username, role: 'admin' };
+  activeMode.value = 'admin';
+}
+
+function openAdminLogin() {
+  window.location.hash = '/admin';
+  activeMode.value = 'admin-login';
+}
+
+function legacyUpdateAdminCredentials(payload) {
+  if (!payload.username?.trim() || !payload.password?.trim()) return;
+  adminCredentials.value = { username: payload.username.trim(), password: payload.password };
+  localStorage.setItem('adminMapCredentials', JSON.stringify(adminCredentials.value));
+  adminUser.value = { username: adminCredentials.value.username, role: 'admin' };
+}
+
+function legacyBindFamilyToElder(payload) {
+  const elderRaw = localStorage.getItem('elderMapUser');
+  if (!elderRaw) {
+    familyBindingError.value = '尚未找到老人账号，请先让老人完成注册。';
+    return;
+  }
+  try {
+    const elder = JSON.parse(elderRaw);
+    if (elder.username !== payload.elderUsername || elder.familyBindingCode !== payload.bindingCode) {
+      familyBindingError.value = '老人账号或关联码不正确，请核对后重试。';
+      return;
+    }
+    const updatedFamily = { ...currentUser.value, boundElder: { username: elder.username, realName: elder.realName || elder.username }, bindingStatus: 'ACTIVE' };
+    currentUser.value = updatedFamily;
+    boundElder.value = updatedFamily.boundElder;
+    localStorage.setItem('familyMapUser', JSON.stringify(updatedFamily));
+    familyBindingError.value = '';
+    beginFamilyMonitoring();
+    activeMode.value = 'family';
+  } catch {
+    familyBindingError.value = '关联信息读取失败，请重新注册后再试。';
+  }
+}
+
+function exitAdmin() {
+  adminUser.value = null;
+  window.location.hash = '';
+  activeMode.value = 'login';
+}
+
+async function publishNavigationStatus() {
+  if (isGuest.value || currentUser.value?.role !== 'elder' || !currentUser.value?.id || !selectedRoute.value) return;
+  const route = selectedRoute.value;
+  const status = {
+    start_name: startName.value,
+    end_name: endName.value,
+    distance_m: Number(route.distance_m || 0),
+    remaining_m: Number(route.distance_m || 0),
+    estimated_minutes: Number(route.estimated_minutes || 0),
+    current_step: nextStepText.value,
+    route_summary: route.summary || '',
+    status: 'NAVIGATING',
+  };
+  try {
+    await fetch(`${API_BASE_URL}/api/auth/elder/${currentUser.value.id}/navigation`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(status) });
+  } catch { /* monitoring update should not interrupt elder navigation */ }
+}
+
+async function refreshFamilyMonitor() {
+  if (!currentUser.value?.id || currentUser.value.role !== 'family') return;
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/family/${currentUser.value.id}/monitor`);
+    if (!response.ok) return;
+    const payload = await response.json();
+    familyMonitor.value = payload;
+    boundElder.value = payload.elder;
+  } catch { /* retain the previous permitted snapshot */ }
+}
+
+function beginFamilyMonitoring() {
+  if (familyMonitorTimer) window.clearInterval(familyMonitorTimer);
+  refreshFamilyMonitor();
+  familyMonitorTimer = window.setInterval(refreshFamilyMonitor, 5000);
+}
+
+function stopFamilyMonitoring() {
+  if (familyMonitorTimer) window.clearInterval(familyMonitorTimer);
+  familyMonitorTimer = null;
+}
+
+function startNavigation() {
+  if (!selectedRoute.value) { activeMode.value = 'recommend'; return; }
+  activeMode.value = 'navigation';
+  actionStatus.value = '导航已开始，请按语音提示慢行。';
+  publishNavigationStatus();
+}
+
+async function planRouteFromElderHome() {
+  await fetchRoutes(false);
+  if (routes.value.length) {
+    activeMode.value = 'navigation';
+    publishNavigationStatus();
+  }
+}
+
+async function handleLogin(credentials) {
+  loading.value = true;
+  loginError.value = '';
+  try {
+    const isFamily = credentials.role === 'family';
+    const response = await fetch(`${API_BASE_URL}/api/auth/${isFamily ? 'family' : 'elder'}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(isFamily ? { phone: credentials.phone } : { nickname: credentials.nickname, password: credentials.password }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(formatApiError(payload.detail, '登录失败，请稍后重试'));
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(isFamily ? 'familyMapUser' : 'elderMapUser') || '{}'); } catch { saved = {}; }
+    // A different family phone is a different account: never inherit another family's binding.
+    if (isFamily && saved.phone !== payload.phone) saved = {};
+    if (!isFamily && saved.account && saved.account !== payload.account) saved = {};
+    const databaseBinding = payload.binding;
+    const user = { ...saved, ...payload, role: isFamily ? 'family' : 'elder', password: isFamily ? '' : credentials.password, mobilityType: saved.mobilityType || 'INDEPENDENT', profileComplete: isFamily ? true : false, questionnaireSkipped: false, createdAt: saved.createdAt || new Date().toISOString(), familyBindingCode: payload.family_binding_code ?? null, bindingStatus: databaseBinding?.status || null, boundElder: databaseBinding?.elder || null };
+    currentUser.value = user;
+    isGuest.value = false;
+    if (isFamily && user.bindingStatus !== 'ACTIVE') {
+      boundElder.value = null;
+      familyMonitor.value = { navigation: { status: 'IDLE' } };
+      stopFamilyMonitoring();
+    }
+    localStorage.setItem(isFamily ? 'familyMapUser' : 'elderMapUser', JSON.stringify(user));
+    localStorage.setItem('mapLastLoginRole', user.role);
+    if (isFamily && user.bindingStatus === 'ACTIVE') {
+      boundElder.value = databaseBinding?.elder || null;
+      beginFamilyMonitoring();
+      activeMode.value = 'family';
+    } else {
+      activeMode.value = isFamily ? 'family-binding' : 'elder';
+    }
+  } catch (error) {
+    loginError.value = error instanceof Error ? error.message : '登录失败，请重试';
+  } finally { loading.value = false; }
+}
+
+function handleRoleChange(nextRole) {
+  if (currentUser.value?.role && currentUser.value.role !== nextRole) currentUser.value = null;
+  loginError.value = '';
+}
+
+async function fetchAdminUsers() {
+  const response = await fetch(`${API_BASE_URL}/api/auth/admin/users`);
+  if (!response.ok) throw new Error('用户数据读取失败');
+  adminUsers.value = await response.json();
+}
+
+async function loginAdmin(payload) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const admin = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(formatApiError(admin.detail, '管理员登录失败'));
+    adminUser.value = admin;
+    adminLoginError.value = '';
+    await fetchAdminUsers();
+    activeMode.value = 'admin';
+  } catch (error) { adminLoginError.value = error instanceof Error ? error.message : '管理员登录失败'; }
+}
+
+async function updateAdminUserStatus({ id, status }) {
+  adminActionError.value = '';
+  const previousUsers = adminUsers.value;
+  adminUsers.value = adminUsers.value.map((user) => user.id === id ? { ...user, status } : user);
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/admin/users/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(formatApiError(payload.detail, '账号状态更新失败'));
+    adminUsers.value = adminUsers.value.map((user) => user.id === id ? { ...user, ...payload } : user);
+    await fetchAdminUsers();
+  } catch (error) {
+    adminUsers.value = previousUsers;
+    adminActionError.value = error instanceof Error ? error.message : '账号状态更新失败';
+  }
+}
+
+async function bindFamilyToElder(payload) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/family/bind`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ family_user_id: currentUser.value.id, elder_account: payload.elderAccount, binding_code: payload.bindingCode }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(formatApiError(result.detail, '关联失败'));
+    const updatedFamily = { ...currentUser.value, boundElder: result.elder, bindingStatus: 'ACTIVE' };
+    currentUser.value = updatedFamily;
+    boundElder.value = result.elder;
+    localStorage.setItem('familyMapUser', JSON.stringify(updatedFamily));
+    familyBindingError.value = '';
+    beginFamilyMonitoring();
+    activeMode.value = 'family';
+  } catch (error) { familyBindingError.value = error instanceof Error ? error.message : '关联失败，请重试'; }
 }
 </script>
 
@@ -634,9 +902,49 @@ function skipHealthReminder() {
       v-if="activeMode === 'login'"
       :loading="loading"
       :saved-user="currentUser"
+      :error="loginError"
       @login="handleLogin"
+      @role-change="handleRoleChange"
       @quick-login="loginWithSavedAccount"
       @skip="handleSkipLogin"
+      @admin="openAdminLogin"
+    />
+
+    <AdminLoginPage
+      v-else-if="activeMode === 'admin-login'"
+      :default-username="adminCredentials.username"
+      :error-message="adminLoginError"
+      @login="loginAdmin"
+      @back="exitAdmin"
+    />
+
+    <AdminPage
+      v-else-if="activeMode === 'admin'"
+      :pending-records="pendingCollectionRecords"
+      :collection-segments="collectionSegments"
+      :users="adminUsers"
+      :action-error="adminActionError"
+      @audit="auditCollection($event.record, $event.result)"
+      @update-user-status="updateAdminUserStatus"
+      @open-collect="activeMode = 'admin-collect'"
+      @logout="exitAdmin"
+    />
+
+    <FamilyBindingPage
+      v-else-if="activeMode === 'family-binding'"
+      :error-message="familyBindingError"
+      @bind="bindFamilyToElder"
+      @back="activeMode = currentUser?.role === 'family' ? 'family' : 'login'"
+    />
+
+    <FamilyPage
+      v-else-if="activeMode === 'family'"
+      :user="currentUser"
+      :elder="currentUser?.boundElder || boundElder"
+      :monitor="familyMonitor"
+      @refresh="refreshFamilyMonitor"
+      @manage-binding="familyBindingError = ''; activeMode = 'family-binding'"
+      @logout="handleLogout"
     />
 
     <ProfilePage
@@ -742,8 +1050,9 @@ function skipHealthReminder() {
       @open-profile="openProfile"
     />
 
+    <section v-else-if="activeMode === 'admin-collect'" class="admin-collection-workspace">
+      <div class="admin-collection-topbar"><div><p class="section-kicker">管理员后台 / 现场采集</p><h1>路段适老数据采集</h1></div><button class="secondary-action" type="button" @click="activeMode = 'admin'">返回管理后台</button></div>
     <CollectPage
-      v-else
       :collection-segments="collectionSegments"
       :collection-form="collectionForm"
       :selected-collection-segment="selectedCollectionSegment"
@@ -776,6 +1085,7 @@ function skipHealthReminder() {
       @submit-collection="submitCollection"
       @audit-collection="auditCollection"
     />
+    </section>
 
     <ProfilePrompt
       v-if="profilePromptOpen"
@@ -783,10 +1093,10 @@ function skipHealthReminder() {
       @select="selectInitialProfile"
     />
 
-    <HealthReminder
-      v-if="healthReminderOpen"
-      @go-profile="openHealthProfile"
-      @skip="skipHealthReminder"
+    <HealthQuestionnaire
+      v-if="questionnaireOpen"
+      @submit="saveHealthQuestionnaire"
+      @skip="skipHealthQuestionnaire"
     />
   </main>
 </template>

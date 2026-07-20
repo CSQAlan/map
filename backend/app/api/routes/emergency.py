@@ -26,7 +26,9 @@ def create_sos_event(
     payload: SosEventCreateRequest,
     db: Session = Depends(get_db),
 ) -> SosEventResponse:
-    user_id = ensure_demo_elder_user(db, payload.elder_name)
+    user_id = resolve_elder_user(db, payload)
+    is_demo_event = payload.elder_user_id is None
+    contacts = load_family_contacts(db, user_id) if not is_demo_event else SIMULATED_CONTACTS
     description = build_sos_description(payload)
     row = insert_sos_event(db, user_id, payload, description)
     db.commit()
@@ -34,8 +36,12 @@ def create_sos_event(
         id=int(row["id"]),
         event_type=row["event_type"],
         event_status=row["event_status"],
-        message=f"SOS 已记录为事件 #{row['id']}，已模拟通知 {len(SIMULATED_CONTACTS)} 个联系人。",
-        notified_contacts=SIMULATED_CONTACTS,
+        message=(
+            f"SOS 已记录为事件 #{row['id']}，已模拟通知 {len(contacts)} 位联系人。"
+            if is_demo_event
+            else f"SOS 已记录为事件 #{row['id']}，已通知 {len(contacts)} 位已关联家属。"
+        ),
+        notified_contacts=contacts,
         created_at=row.get("created_at"),
     )
 
@@ -69,6 +75,17 @@ def list_emergency_events(
     return [EmergencyEventListItemResponse(**normalize_event_row(dict(row))) for row in rows]
 
 
+def resolve_elder_user(db: Session, payload: SosEventCreateRequest) -> int:
+    if payload.elder_user_id:
+        existing = db.execute(
+            text("SELECT id FROM app_user WHERE id = :id AND role = 'ELDER' AND status = 'ACTIVE'"),
+            {"id": payload.elder_user_id},
+        ).scalar_one_or_none()
+        if existing:
+            return int(existing)
+    return ensure_demo_elder_user(db, payload.elder_name)
+
+
 def ensure_demo_elder_user(db: Session, elder_name: str) -> int:
     return int(
         db.execute(
@@ -85,6 +102,20 @@ def ensure_demo_elder_user(db: Session, elder_name: str) -> int:
             {"username": DEMO_ELDER_USERNAME, "display_name": elder_name.strip()},
         ).scalar_one()
     )
+
+
+def load_family_contacts(db: Session, elder_user_id: int) -> list[dict]:
+    rows = db.execute(
+        text("""SELECT au.display_name, au.phone, au.username
+        FROM family_binding fb JOIN app_user au ON au.id = fb.family_user_id
+        WHERE fb.elder_user_id = :elder_id AND fb.status = 'ACTIVE' AND au.status = 'ACTIVE'"""),
+        {"elder_id": elder_user_id},
+    ).mappings().all()
+    contacts = [
+        {"name": row["display_name"], "channel": "FAMILY_APP", "target": row["phone"] or row["username"]}
+        for row in rows
+    ]
+    return contacts or SIMULATED_CONTACTS
 
 
 def insert_sos_event(

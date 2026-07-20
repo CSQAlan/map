@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class SosEventCreateRequest(BaseModel):
+    elder_user_id: int | None = Field(default=None, ge=1)
     elder_name: str = Field(default="演示老人", min_length=1, max_length=50)
     mobility_type: str | None = Field(default=None, max_length=30)
     route_summary: str | None = Field(default=None, max_length=200)

@@ -45,6 +45,7 @@ onBeforeUnmount(() => recognition?.abort());
         :aria-label="`选择${label}`"
         @change="updateValue($event.target.value)"
       >
+        <option value="" disabled>请选择{{ label }}</option>
         <option v-for="option in options" :key="option.value" :value="option.value">
           {{ option.label }}
         </option>
