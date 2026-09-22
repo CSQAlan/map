@@ -16,12 +16,9 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
-    # Vite 会在 5173 被占用时顺延端口；本地手机调试也需要允许局域网地址。
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+):\d+",
+    allow_origins=settings.allowed_cors_origins,
+    # 开发环境可保留局域网调试；生产环境请在 .env 中设为空并只列出正式来源。
+    allow_origin_regex=settings.allowed_cors_origin_regex or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

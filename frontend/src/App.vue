@@ -14,9 +14,8 @@ import FamilyPage from './pages/FamilyPage.vue';
 import FamilyBindingPage from './pages/FamilyBindingPage.vue';
 import AdminLoginPage from './pages/AdminLoginPage.vue';
 import AdminPage from './pages/AdminPage.vue';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
+import { API_BASE_URL, apiConfigurationError } from './config/api';
+import { getCurrentCoordinates } from './services/deviceLocation';
 
 const startOptions = [{ label: '师大苑大学城西路入口', value: '师大苑大学城西路入口' }];
 const endOptions = [
@@ -166,6 +165,11 @@ function syncAdminRoute() {
 onMounted(() => {
   syncAdminRoute();
   window.addEventListener('hashchange', syncAdminRoute);
+  if (apiConfigurationError) {
+    errorMessage.value = apiConfigurationError;
+    mapFailure.value = apiConfigurationError;
+    return;
+  }
   // Check for saved user session
   const lastRole = localStorage.getItem('mapLastLoginRole') ?? 'elder';
   const savedUser = localStorage.getItem(lastRole === 'family' ? 'familyMapUser' : 'elderMapUser');
@@ -319,22 +323,16 @@ function useCollectionSegment(segmentCode) {
 
 function captureCurrentLocation() {
   collectionError.value = '';
-  if (!navigator.geolocation) {
-    collectionError.value = '当前浏览器不支持定位，可以先手动提交采集数据。';
-    return;
-  }
   collectionMessage.value = '正在读取手机定位，请稍等。';
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      collectionForm.value.location_lat = Number(position.coords.latitude.toFixed(6));
-      collectionForm.value.location_lon = Number(position.coords.longitude.toFixed(6));
+  getCurrentCoordinates()
+    .then(({ latitude, longitude }) => {
+      collectionForm.value.location_lat = latitude;
+      collectionForm.value.location_lon = longitude;
       collectionMessage.value = '已记录当前位置，会随采集备注一起提交。';
-    },
-    () => {
-      collectionError.value = '定位失败，可以检查浏览器权限，或先不带定位提交。';
-    },
-    { enableHighAccuracy: true, timeout: 8000 }
-  );
+    })
+    .catch(() => {
+      collectionError.value = '定位失败，请检查定位权限，或先不带定位提交。';
+    });
 }
 
 async function submitCollection() {
