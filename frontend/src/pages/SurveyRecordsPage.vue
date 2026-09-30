@@ -10,6 +10,7 @@ const selectedRecordCode = ref(null);
 const selectedPhotoIndex = ref(0);
 const loading = ref(false);
 const errorMessage = ref('');
+const siteError = ref('');
 const mapFailure = ref('');
 const lightboxPhoto = ref(null);
 
@@ -43,7 +44,7 @@ async function loadSites() {
     if (!response.ok) throw new Error('踩点地点暂时无法读取。');
     sites.value = await response.json();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '踩点地点暂时无法读取。';
+    siteError.value = error instanceof Error ? error.message : '踩点地点暂时无法读取。';
   }
 }
 
@@ -102,6 +103,7 @@ function movePhoto(step) {
     </div>
 
     <p v-if="errorMessage" class="survey-error" role="alert">{{ errorMessage }}</p>
+    <p v-if="siteError" class="survey-error" role="alert">{{ siteError }}</p>
     <p v-if="mapFailure" class="survey-map-warning" role="status">底图暂不可用，照片资料仍可查看：{{ mapFailure }}</p>
     <div v-if="loading" class="survey-loading" role="status">正在读取踩点记录…</div>
 

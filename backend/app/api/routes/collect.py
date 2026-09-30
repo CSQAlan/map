@@ -14,6 +14,7 @@ from app.schemas.collect import (
     SegmentCollectionSubmitResponse,
 )
 from app.services.segment_collection_importer import ensure_collector_user
+from app.services.admin_tokens import require_admin_id
 
 
 router = APIRouter()
@@ -155,7 +156,10 @@ def submit_collection_record(
 
 
 @router.get("/pending", response_model=list[PendingCollectionRecordResponse])
-def list_pending_collection_records(db: Session = Depends(get_db)) -> list[PendingCollectionRecordResponse]:
+def list_pending_collection_records(
+    admin_id: int = Depends(require_admin_id), db: Session = Depends(get_db)
+) -> list[PendingCollectionRecordResponse]:
+    del admin_id
     rows = db.execute(
         text(
             """
@@ -198,8 +202,10 @@ def list_pending_collection_records(db: Session = Depends(get_db)) -> list[Pendi
 def audit_collection_record(
     record_id: int,
     payload: SegmentAuditRequest,
+    admin_id: int = Depends(require_admin_id),
     db: Session = Depends(get_db),
 ) -> SegmentAuditResponse:
+    del admin_id
     record = get_collection_record_for_audit(db, record_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Collection record not found: {record_id}")

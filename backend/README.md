@@ -85,6 +85,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/routes/recommend?start_name=重庆�
 - HMAC 管理员会话保护的踩点位置更新接口
 
 生产环境必须设置足够随机的 `ADMIN_TOKEN_SECRET`；开发环境仅使用代码内的开发专用默认密钥。不要把开发密钥用于公开部署。
+生产环境不会创建开发用的 `admin/admin123` 账号，也会拒绝该默认凭据；管理员账号需由受控数据库运维流程提前创建。
 
 ## 下一步
 

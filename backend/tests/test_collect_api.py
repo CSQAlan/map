@@ -7,9 +7,14 @@ from fastapi.testclient import TestClient
 
 from app.core.database import get_db
 from app.main import app
+from app.services.admin_tokens import issue_admin_token, token_secret
 
 
 client = TestClient(app)
+
+
+def admin_headers() -> dict[str, str]:
+    return {"Authorization": f"Bearer {issue_admin_token(42, token_secret())}"}
 
 
 class FakeResult:
@@ -17,8 +22,17 @@ class FakeResult:
         self._rows = rows or []
         self._scalar = scalar
 
-    def mappings(self) -> list[dict[str, Any]]:
+    def mappings(self) -> "FakeResult":
+        return self
+
+    def first(self) -> dict[str, Any] | None:
+        return self._rows[0] if self._rows else None
+
+    def all(self) -> list[dict[str, Any]]:
         return self._rows
+
+    def __iter__(self):
+        return iter(self._rows)
 
     def scalar_one_or_none(self) -> Any:
         if self._scalar is not None:
@@ -67,6 +81,8 @@ class FakeSession:
             if params and params.get("segment_code") == "S_UNKNOWN":
                 return FakeResult()
             return FakeResult(scalar=1)
+        if "SELECT id FROM app_user WHERE id =" in sql:
+            return FakeResult([{"id": 42}])
         if "SELECT id FROM app_user" in sql:
             return FakeResult()
         if "INSERT INTO app_user" in sql:
@@ -278,7 +294,7 @@ def test_submit_collection_record_rejects_invalid_surface_type() -> None:
 
 
 def test_list_pending_collection_records() -> None:
-    response = client.get("/api/collect/pending")
+    response = client.get("/api/collect/pending", headers=admin_headers())
     assert response.status_code == 200
     data = response.json()
     assert data[0]["id"] == 42
@@ -286,10 +302,16 @@ def test_list_pending_collection_records() -> None:
     assert data[0]["width_m"] == 1.6
 
 
+def test_list_pending_collection_records_requires_admin() -> None:
+    response = client.get("/api/collect/pending")
+    assert response.status_code == 401
+
+
 def test_approve_collection_record_updates_road_segment(fake_session: FakeSession) -> None:
     response = client.post(
         "/api/collect/segments/42/audit",
         json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": "\u901a\u8fc7"},
+        headers=admin_headers(),
     )
     assert response.status_code == 200
     assert response.json()["audit_result"] == "APPROVED"
@@ -307,10 +329,21 @@ def test_approve_collection_record_updates_road_segment(fake_session: FakeSessio
     assert fake_session.committed is True
 
 
+def test_audit_collection_record_requires_admin(fake_session: FakeSession) -> None:
+    response = client.post(
+        "/api/collect/segments/42/audit",
+        json={"audit_result": "APPROVED", "auditor": "guest", "audit_comment": ""},
+    )
+    assert response.status_code == 401
+    assert fake_session.updated_road_segment is False
+    assert fake_session.inserted_audit is False
+
+
 def test_reject_collection_record_does_not_update_road_segment(fake_session: FakeSession) -> None:
     response = client.post(
         "/api/collect/segments/42/audit",
         json={"audit_result": "REJECTED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": "\u9700\u91cd\u65b0\u91c7\u96c6"},
+        headers=admin_headers(),
     )
     assert response.status_code == 200
     assert response.json()["audit_result"] == "REJECTED"
@@ -327,6 +360,7 @@ def test_audit_collection_record_rejects_non_pending_record(fake_session: FakeSe
     response = client.post(
         "/api/collect/segments/42/audit",
         json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": ""},
+        headers=admin_headers(),
     )
     assert response.status_code == 409
     assert fake_session.updated_road_segment is False
@@ -339,6 +373,7 @@ def test_audit_collection_record_rolls_back_on_database_error(fake_session: Fake
         client.post(
             "/api/collect/segments/42/audit",
             json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": ""},
+            headers=admin_headers(),
         )
     assert fake_session.rolled_back is True
 
@@ -347,5 +382,6 @@ def test_audit_collection_record_returns_404_for_missing_record() -> None:
     response = client.post(
         "/api/collect/segments/404/audit",
         json={"audit_result": "APPROVED", "auditor": "\u7ba1\u7406\u5458", "audit_comment": ""},
+        headers=admin_headers(),
     )
     assert response.status_code == 404

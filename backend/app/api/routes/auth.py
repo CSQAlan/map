@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.schemas.auth import (
     AdminLoginRequest,
@@ -15,7 +16,7 @@ from app.schemas.auth import (
     NavigationStatusRequest,
     UserStatusRequest,
 )
-from app.services.admin_tokens import issue_admin_token, token_secret
+from app.services.admin_tokens import issue_admin_token, require_admin_id, token_secret
 
 
 router = APIRouter()
@@ -134,18 +135,30 @@ def bind_family(payload: FamilyBindRequest, db: Session = Depends(get_db)) -> di
 
 @router.post("/admin/login")
 def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)) -> dict:
+    settings = get_settings()
     row = db.execute(
         text("SELECT * FROM app_user WHERE username = :username AND role = 'ADMIN'"),
         {"username": payload.username},
     ).mappings().first()
-    if row is None and payload.username == "admin" and payload.password == "admin123":
+    if (
+        row is None
+        and not settings.is_production
+        and payload.username == "admin"
+        and payload.password == "admin123"
+    ):
         row = db.execute(
             text("""INSERT INTO app_user (username, password_hash, role, display_name, status)
             VALUES ('admin', :password_hash, 'ADMIN', '系统管理员', 'ACTIVE') RETURNING *"""),
             {"password_hash": password_hash("admin123")},
         ).mappings().one()
         db.commit()
-    if not row or row["password_hash"] != password_hash(payload.password) or row["status"] != "ACTIVE":
+    is_default_credential = payload.username == "admin" and payload.password == "admin123"
+    if (
+        not row
+        or row["password_hash"] != password_hash(payload.password)
+        or row["status"] != "ACTIVE"
+        or (settings.is_production and is_default_credential)
+    ):
         raise HTTPException(status_code=401, detail="管理员账号或密码不正确")
     response = user_response(row)
     response["access_token"] = issue_admin_token(int(row["id"]), token_secret())
@@ -154,7 +167,10 @@ def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)) -> di
 
 
 @router.get("/admin/users")
-def list_users(db: Session = Depends(get_db)) -> list[dict]:
+def list_users(
+    admin_id: int = Depends(require_admin_id), db: Session = Depends(get_db)
+) -> list[dict]:
+    del admin_id
     rows = db.execute(
         text("SELECT id, username, display_name, role, phone, status FROM app_user ORDER BY id DESC")
     ).mappings().all()
@@ -213,7 +229,14 @@ def family_monitor(family_user_id: int, db: Session = Depends(get_db)) -> dict:
 
 
 @router.patch("/admin/users/{user_id}/status")
-def update_user_status(user_id: int, payload: UserStatusRequest, db: Session = Depends(get_db)) -> dict:
+def update_user_status(
+    user_id: int,
+    payload: UserStatusRequest,
+    admin_id: int = Depends(require_admin_id),
+    db: Session = Depends(get_db),
+) -> dict:
+    if user_id == admin_id and payload.status == "INACTIVE":
+        raise HTTPException(status_code=400, detail="不能停用当前管理员账号")
     row = db.execute(
         text("UPDATE app_user SET status = :status WHERE id = :id RETURNING id, username, display_name, role, phone, status"),
         {"id": user_id, "status": payload.status},
@@ -221,7 +244,4 @@ def update_user_status(user_id: int, payload: UserStatusRequest, db: Session = D
     if not row:
         raise HTTPException(status_code=404, detail="用户不存在")
     db.commit()
-    response = user_response(row)
-    response["access_token"] = issue_admin_token(int(row["id"]), token_secret())
-    response["token_type"] = "bearer"
-    return response
+    return user_response(row)

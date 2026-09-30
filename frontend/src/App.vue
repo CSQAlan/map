@@ -202,7 +202,6 @@ onMounted(() => {
   fetchMapData();
   fetchDiagnostics();
   fetchCollectionSegments();
-  fetchPendingCollectionRecords();
 });
 
 onBeforeUnmount(() => {
@@ -307,7 +306,9 @@ async function fetchCollectionSegments() {
 
 async function fetchPendingCollectionRecords() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/collect/pending`);
+    const response = await fetch(`${API_BASE_URL}/api/collect/pending`, {
+      headers: { Authorization: `Bearer ${adminUser.value?.access_token ?? ''}` },
+    });
     pendingCollectionRecords.value = response.ok ? await response.json() : [];
   } catch {
     pendingCollectionRecords.value = [];
@@ -355,7 +356,6 @@ async function submitCollection() {
     collectionForm.value.remark = '';
     collectionForm.value.location_lat = null;
     collectionForm.value.location_lon = null;
-    await fetchPendingCollectionRecords();
   } catch (error) {
     collectionError.value = error instanceof Error ? error.message : '采集记录提交失败。';
     collectionMessage.value = '提交没有成功，请检查字段后再试一次。';
@@ -373,7 +373,10 @@ async function auditCollection(record, auditResult) {
   try {
     const response = await fetch(`${API_BASE_URL}/api/collect/segments/${record.id}/audit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminUser.value?.access_token ?? ''}`,
+      },
       body: JSON.stringify({
         audit_result: auditResult,
         auditor: '系统管理员',
@@ -840,7 +843,9 @@ function handleRoleChange(nextRole) {
 }
 
 async function fetchAdminUsers() {
-  const response = await fetch(`${API_BASE_URL}/api/auth/admin/users`);
+  const response = await fetch(`${API_BASE_URL}/api/auth/admin/users`, {
+    headers: { Authorization: `Bearer ${adminUser.value?.access_token ?? ''}` },
+  });
   if (!response.ok) throw new Error('用户数据读取失败');
   adminUsers.value = await response.json();
 }
@@ -852,7 +857,7 @@ async function loginAdmin(payload) {
     if (!response.ok) throw new Error(formatApiError(admin.detail, '管理员登录失败'));
     adminUser.value = admin;
     adminLoginError.value = '';
-    await fetchAdminUsers();
+    await Promise.all([fetchAdminUsers(), fetchPendingCollectionRecords()]);
     activeMode.value = 'admin';
   } catch (error) { adminLoginError.value = error instanceof Error ? error.message : '管理员登录失败'; }
 }
@@ -862,7 +867,14 @@ async function updateAdminUserStatus({ id, status }) {
   const previousUsers = adminUsers.value;
   adminUsers.value = adminUsers.value.map((user) => user.id === id ? { ...user, status } : user);
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/admin/users/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    const response = await fetch(`${API_BASE_URL}/api/auth/admin/users/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminUser.value?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ status }),
+    });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(formatApiError(payload.detail, '账号状态更新失败'));
     adminUsers.value = adminUsers.value.map((user) => user.id === id ? { ...user, ...payload } : user);

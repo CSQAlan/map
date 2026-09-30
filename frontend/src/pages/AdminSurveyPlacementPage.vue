@@ -16,6 +16,7 @@ const saving = ref(false);
 const loading = ref(false);
 const message = ref('');
 const errorMessage = ref('');
+const siteError = ref('');
 const mapFailure = ref('');
 const lightboxPhoto = ref(null);
 
@@ -44,7 +45,7 @@ async function loadSites() {
     if (!response.ok) throw new Error('地点列表读取失败。');
     sites.value = await response.json();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '地点列表读取失败。';
+    siteError.value = error instanceof Error ? error.message : '地点列表读取失败。';
   }
 }
 
@@ -120,6 +121,7 @@ async function saveLocation() {
     <label class="survey-site-select admin-survey-site"><span>地点筛选</span><select v-model="selectedSiteCode"><option value="">全部 7 个地点</option><option v-for="site in sites" :key="site.site_code" :value="site.site_code">{{ site.name }}</option></select></label>
     <p v-if="loading" class="survey-loading" role="status">正在读取记录…</p>
     <p v-if="errorMessage" class="survey-error" role="alert">{{ errorMessage }}</p>
+    <p v-if="siteError" class="survey-error" role="alert">{{ siteError }}</p>
     <p v-if="mapFailure" class="survey-map-warning" role="status">地图暂不可用：{{ mapFailure }}</p>
     <div v-if="message" class="survey-success" role="status">{{ message }}</div>
 
