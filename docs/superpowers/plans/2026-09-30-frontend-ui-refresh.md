@@ -476,7 +476,7 @@ Set-Location F:\items\map\backend
 
 本轮检查没有 `frontend/.env.production`，因此未执行 Android WebView 同步；APK 未重建。静态预览仍在 `http://localhost:4173/`。
 
-- [ ] **Step 7: 做最终差异检查并提交**
+- [x] **Step 7: 做最终差异检查并提交**
 
 运行 `git diff --check`；确认本次暂存内容不含 `.env`、原始照片或 `map.zip`（这些用户数据可继续保持未跟踪）；确认没有服务端/路线接口变更。提交：
 
