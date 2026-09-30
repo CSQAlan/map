@@ -16,7 +16,6 @@ from app.schemas.auth import (
     UserStatusRequest,
 )
 from app.services.admin_tokens import issue_admin_token, token_secret
-from app.services.admin_tokens import issue_admin_token, token_secret
 
 
 router = APIRouter()
