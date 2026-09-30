@@ -1,0 +1,3327 @@
+{
+  "sites": [
+    {
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部"
+    },
+    {
+      "site_code": "UC_CUCA",
+      "site_name": "川美"
+    },
+    {
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城"
+    },
+    {
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站"
+    },
+    {
+      "site_code": "UC_JINKE",
+      "site_name": "金科天宸2、3街区"
+    },
+    {
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街"
+    },
+    {
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区"
+    }
+  ],
+  "records": [
+    {
+      "record_code": "SURVEY_6D9FAEE549BB31C6",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "台阶1",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_BD062DFF64C0D9FD",
+        "SURVEY_EEB8F00EF6809D4B"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_BD062DFF64C0D9FD",
+          "original_name": "台阶1.jpg",
+          "caption": "台阶1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BD062DFF64C0D9FD.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_BD062DFF64C0D9FD.webp"
+        },
+        {
+          "photo_id": "SURVEY_EEB8F00EF6809D4B",
+          "original_name": "台阶1地图.jpg",
+          "caption": "台阶1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_EEB8F00EF6809D4B.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_EEB8F00EF6809D4B.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_57A6652D87981C7F",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "台阶2",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_2784A634BAEC6B57",
+        "SURVEY_C6F5AFFA94FB43BF"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_2784A634BAEC6B57",
+          "original_name": "台阶2.jpg",
+          "caption": "台阶2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2784A634BAEC6B57.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_2784A634BAEC6B57.webp"
+        },
+        {
+          "photo_id": "SURVEY_C6F5AFFA94FB43BF",
+          "original_name": "台阶2地图.jpg",
+          "caption": "台阶2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_C6F5AFFA94FB43BF.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_C6F5AFFA94FB43BF.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_4E6965086191519F",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "台阶3",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_1FC9830407006317",
+        "SURVEY_74378A407AD2C950"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_1FC9830407006317",
+          "original_name": "台阶3.jpg",
+          "caption": "台阶3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1FC9830407006317.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_1FC9830407006317.webp"
+        },
+        {
+          "photo_id": "SURVEY_74378A407AD2C950",
+          "original_name": "台阶3地图.jpg",
+          "caption": "台阶3地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_74378A407AD2C950.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_74378A407AD2C950.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_35B8D01ABEF00315",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "台阶4",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_3DEBB8BB7B935A5E",
+        "SURVEY_09F15670933536F8"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_3DEBB8BB7B935A5E",
+          "original_name": "台阶4.jpg",
+          "caption": "台阶4",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_3DEBB8BB7B935A5E.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_3DEBB8BB7B935A5E.webp"
+        },
+        {
+          "photo_id": "SURVEY_09F15670933536F8",
+          "original_name": "台阶4地图.jpg",
+          "caption": "台阶4地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_09F15670933536F8.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_09F15670933536F8.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_088349481AE73BCE",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "台阶5",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_66F1AAB0AD8A685E",
+        "SURVEY_679EBB886275690C"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_66F1AAB0AD8A685E",
+          "original_name": "台阶5.jpg",
+          "caption": "台阶5",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_66F1AAB0AD8A685E.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_66F1AAB0AD8A685E.webp"
+        },
+        {
+          "photo_id": "SURVEY_679EBB886275690C",
+          "original_name": "台阶5地图.jpg",
+          "caption": "台阶5地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_679EBB886275690C.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_679EBB886275690C.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_768AB968033C0A9E",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "台阶6",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_2C9DC3B346C64001",
+        "SURVEY_DBBFCD4C37D87EC7"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_2C9DC3B346C64001",
+          "original_name": "台阶6.jpg",
+          "caption": "台阶6",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2C9DC3B346C64001.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_2C9DC3B346C64001.webp"
+        },
+        {
+          "photo_id": "SURVEY_DBBFCD4C37D87EC7",
+          "original_name": "台阶6地图.jpg",
+          "caption": "台阶6地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DBBFCD4C37D87EC7.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_DBBFCD4C37D87EC7.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_7DD8F30464FF703C",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "坡路2",
+      "issue_tags": [
+        "坡",
+        "坡路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_70629CEBB7EED874",
+        "SURVEY_9B0518C811109A46"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_70629CEBB7EED874",
+          "original_name": "坡路2.jpg",
+          "caption": "坡路2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_70629CEBB7EED874.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_70629CEBB7EED874.webp"
+        },
+        {
+          "photo_id": "SURVEY_9B0518C811109A46",
+          "original_name": "坡路2地图.jpg",
+          "caption": "坡路2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9B0518C811109A46.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_9B0518C811109A46.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_2741D34294107077",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "坡道1",
+      "issue_tags": [
+        "坡",
+        "坡道"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_86CDE72DC49D2E65",
+        "SURVEY_D36BFAAE21AAEA9E"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_86CDE72DC49D2E65",
+          "original_name": "坡道1.jpg",
+          "caption": "坡道1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_86CDE72DC49D2E65.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_86CDE72DC49D2E65.webp"
+        },
+        {
+          "photo_id": "SURVEY_D36BFAAE21AAEA9E",
+          "original_name": "坡道1地图.jpg",
+          "caption": "坡道1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D36BFAAE21AAEA9E.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_D36BFAAE21AAEA9E.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_6EED0096A6348984",
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部",
+      "title": "破路1",
+      "issue_tags": [
+        "破路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_12EF8138BC474093",
+        "SURVEY_2E85FC4B7FA56286"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_12EF8138BC474093",
+          "original_name": "破路1.jpg",
+          "caption": "破路1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_12EF8138BC474093.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_12EF8138BC474093.webp"
+        },
+        {
+          "photo_id": "SURVEY_2E85FC4B7FA56286",
+          "original_name": "破路1地图.jpg",
+          "caption": "破路1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2E85FC4B7FA56286.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_2E85FC4B7FA56286.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_7A01014E398F4168",
+      "site_code": "UC_CUCA",
+      "site_name": "川美",
+      "title": "台阶1",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_601696A4B16916DA",
+        "SURVEY_786E8B75290561D9"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_601696A4B16916DA",
+          "original_name": "台阶1.jpg",
+          "caption": "台阶1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_601696A4B16916DA.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_601696A4B16916DA.webp"
+        },
+        {
+          "photo_id": "SURVEY_786E8B75290561D9",
+          "original_name": "台阶1地图.jpg",
+          "caption": "台阶1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_786E8B75290561D9.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_786E8B75290561D9.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_659A54F49D62B579",
+      "site_code": "UC_CUCA",
+      "site_name": "川美",
+      "title": "坡路1",
+      "issue_tags": [
+        "坡",
+        "坡路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_25E579C2ACCD12FB",
+        "SURVEY_8BF366CC52244BF6"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_25E579C2ACCD12FB",
+          "original_name": "坡路1.jpg",
+          "caption": "坡路1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_25E579C2ACCD12FB.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_25E579C2ACCD12FB.webp"
+        },
+        {
+          "photo_id": "SURVEY_8BF366CC52244BF6",
+          "original_name": "坡路1地图.jpg",
+          "caption": "坡路1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8BF366CC52244BF6.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_8BF366CC52244BF6.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_7B2943FB4A6A2331",
+      "site_code": "UC_CUCA",
+      "site_name": "川美",
+      "title": "坡路2",
+      "issue_tags": [
+        "坡",
+        "坡路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_ABC7CA6B0A19318A",
+        "SURVEY_7C53EF4751D15BE4"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_ABC7CA6B0A19318A",
+          "original_name": "坡路2.jpg",
+          "caption": "坡路2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_ABC7CA6B0A19318A.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_ABC7CA6B0A19318A.webp"
+        },
+        {
+          "photo_id": "SURVEY_7C53EF4751D15BE4",
+          "original_name": "坡路2地图.jpg",
+          "caption": "坡路2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7C53EF4751D15BE4.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_7C53EF4751D15BE4.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_94137EE44D0B2558",
+      "site_code": "UC_CUCA",
+      "site_name": "川美",
+      "title": "桥路段1",
+      "issue_tags": [
+        "桥"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_6AF892E7FDA5D694",
+        "SURVEY_D0F87B3D5288050D"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_6AF892E7FDA5D694",
+          "original_name": "桥路段1.jpg",
+          "caption": "桥路段1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6AF892E7FDA5D694.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_6AF892E7FDA5D694.webp"
+        },
+        {
+          "photo_id": "SURVEY_D0F87B3D5288050D",
+          "original_name": "桥路段1地图.jpg",
+          "caption": "桥路段1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D0F87B3D5288050D.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_D0F87B3D5288050D.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_58493B62EBB36108",
+      "site_code": "UC_CUCA",
+      "site_name": "川美",
+      "title": "路线昏暗路段1",
+      "issue_tags": [
+        "昏暗"
+      ],
+      "notes": [
+        "备注：川美整体路线昏暗，部分地方尤其昏暗"
+      ],
+      "media_refs": [
+        "SURVEY_7FD08717E848B1D0",
+        "SURVEY_EF11A4C86A01317D",
+        "SURVEY_D2A18AC7A4091AEC"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_7FD08717E848B1D0",
+          "original_name": "路线昏暗路段1.jpg",
+          "caption": "路线昏暗路段1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7FD08717E848B1D0.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_7FD08717E848B1D0.webp"
+        },
+        {
+          "photo_id": "SURVEY_EF11A4C86A01317D",
+          "original_name": "路线昏暗路段1起点.jpg",
+          "caption": "路线昏暗路段1起点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_EF11A4C86A01317D.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_EF11A4C86A01317D.webp"
+        },
+        {
+          "photo_id": "SURVEY_D2A18AC7A4091AEC",
+          "original_name": "路线昏暗路段1重点（备注：川美整体路线昏暗，部分地方尤其昏暗）.jpg",
+          "caption": "路线昏暗路段1重点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D2A18AC7A4091AEC.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_D2A18AC7A4091AEC.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_75299A88E56FCB6C",
+      "site_code": "UC_CUCA",
+      "site_name": "川美",
+      "title": "路线昏暗路段2",
+      "issue_tags": [
+        "昏暗"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_7BE366D7926CEA3C",
+        "SURVEY_2C35B60037206E70",
+        "SURVEY_83E411232022BBE1"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_7BE366D7926CEA3C",
+          "original_name": "路线昏暗路段2.jpg",
+          "caption": "路线昏暗路段2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7BE366D7926CEA3C.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_7BE366D7926CEA3C.webp"
+        },
+        {
+          "photo_id": "SURVEY_2C35B60037206E70",
+          "original_name": "路线昏暗路段2终点.jpg",
+          "caption": "路线昏暗路段2终点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2C35B60037206E70.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_2C35B60037206E70.webp"
+        },
+        {
+          "photo_id": "SURVEY_83E411232022BBE1",
+          "original_name": "路线昏暗路段2起点.jpg",
+          "caption": "路线昏暗路段2起点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_83E411232022BBE1.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_83E411232022BBE1.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_455DF4C0006E156B",
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城",
+      "title": "坡度1",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_22EED417CCFA3965",
+        "SURVEY_494FAEA0F02EB5E8"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_22EED417CCFA3965",
+          "original_name": "坡度1.jpg",
+          "caption": "坡度1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_22EED417CCFA3965.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_22EED417CCFA3965.webp"
+        },
+        {
+          "photo_id": "SURVEY_494FAEA0F02EB5E8",
+          "original_name": "坡度1地图.jpg",
+          "caption": "坡度1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_494FAEA0F02EB5E8.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_494FAEA0F02EB5E8.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.30439299999999,
+        "latitude": 29.610181
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_D7007EDAFC01BE31",
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城",
+      "title": "坡度2",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_539A668A1B9A7C31",
+        "SURVEY_9E64DBBDF07CDCD8"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_539A668A1B9A7C31",
+          "original_name": "坡度2.jpg",
+          "caption": "坡度2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_539A668A1B9A7C31.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_539A668A1B9A7C31.webp"
+        },
+        {
+          "photo_id": "SURVEY_9E64DBBDF07CDCD8",
+          "original_name": "坡度2地图.jpg",
+          "caption": "坡度2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9E64DBBDF07CDCD8.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_9E64DBBDF07CDCD8.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.308623,
+        "latitude": 29.610264
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_6CA94A21CEEC44A9",
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城",
+      "title": "坡度3",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_F7B7828097FADCA7",
+        "SURVEY_968EF8CC1B79A0AE"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_F7B7828097FADCA7",
+          "original_name": "坡度3.jpg",
+          "caption": "坡度3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_F7B7828097FADCA7.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_F7B7828097FADCA7.webp"
+        },
+        {
+          "photo_id": "SURVEY_968EF8CC1B79A0AE",
+          "original_name": "坡度3地图.jpg",
+          "caption": "坡度3地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_968EF8CC1B79A0AE.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_968EF8CC1B79A0AE.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.309697,
+        "latitude": 29.61043
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_EA369786AC9008DC",
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城",
+      "title": "坡度4",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_54257C5C9F3F8E79",
+        "SURVEY_1D3B46173E0FFD48"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_54257C5C9F3F8E79",
+          "original_name": "坡度4.jpg",
+          "caption": "坡度4",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_54257C5C9F3F8E79.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_54257C5C9F3F8E79.webp"
+        },
+        {
+          "photo_id": "SURVEY_1D3B46173E0FFD48",
+          "original_name": "坡度4地图.jpg",
+          "caption": "坡度4地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1D3B46173E0FFD48.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_1D3B46173E0FFD48.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.309044,
+        "latitude": 29.611944
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_BFD2AF5A68D04B48",
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城",
+      "title": "坡度5",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_8EC9482623C5ECB2",
+        "SURVEY_8921FA0838A9517E"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_8EC9482623C5ECB2",
+          "original_name": "坡度5.jpg",
+          "caption": "坡度5",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8EC9482623C5ECB2.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_8EC9482623C5ECB2.webp"
+        },
+        {
+          "photo_id": "SURVEY_8921FA0838A9517E",
+          "original_name": "坡度5地图.jpg",
+          "caption": "坡度5地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8921FA0838A9517E.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_8921FA0838A9517E.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.30828199999999,
+        "latitude": 29.613704000000002
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_37809A01F53E6FCC",
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城",
+      "title": "坡度6",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_BE2DD417BA698134",
+        "SURVEY_C226431F67FC3570"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_BE2DD417BA698134",
+          "original_name": "坡度6.jpg",
+          "caption": "坡度6",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BE2DD417BA698134.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_BE2DD417BA698134.webp"
+        },
+        {
+          "photo_id": "SURVEY_C226431F67FC3570",
+          "original_name": "坡度6地图.jpg",
+          "caption": "坡度6地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_C226431F67FC3570.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_C226431F67FC3570.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.305613,
+        "latitude": 29.614502
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_614B4240F076C731",
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城",
+      "title": "坡度7",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_13F7724973996321",
+        "SURVEY_6A2109932F6898D2"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_13F7724973996321",
+          "original_name": "坡度7.jpg",
+          "caption": "坡度7",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_13F7724973996321.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_13F7724973996321.webp"
+        },
+        {
+          "photo_id": "SURVEY_6A2109932F6898D2",
+          "original_name": "坡度7地图.jpg",
+          "caption": "坡度7地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6A2109932F6898D2.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_6A2109932F6898D2.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.304982,
+        "latitude": 29.614657
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_1A1513DCAFC785BE",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "人行道1",
+      "issue_tags": [
+        "人行道"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_83B01CFB802517FB",
+        "SURVEY_3A5EEAA1CBF46431"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_83B01CFB802517FB",
+          "original_name": "人行道1.jpg",
+          "caption": "人行道1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_83B01CFB802517FB.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_83B01CFB802517FB.webp"
+        },
+        {
+          "photo_id": "SURVEY_3A5EEAA1CBF46431",
+          "original_name": "人行道1地图.jpg",
+          "caption": "人行道1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_3A5EEAA1CBF46431.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_3A5EEAA1CBF46431.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.30354799999999,
+        "latitude": 29.605748000000002
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_426A69033C7F7D86",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度1",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_334CB7756A2F26E7",
+        "SURVEY_F06CF24ED5FBB70C"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_334CB7756A2F26E7",
+          "original_name": "坡度1.jpg",
+          "caption": "坡度1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_334CB7756A2F26E7.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_334CB7756A2F26E7.webp"
+        },
+        {
+          "photo_id": "SURVEY_F06CF24ED5FBB70C",
+          "original_name": "坡度1地图.jpg",
+          "caption": "坡度1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_F06CF24ED5FBB70C.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_F06CF24ED5FBB70C.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_88A8EAB66C35020A",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度10",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_E0E8B9005E562D10",
+        "SURVEY_58608AE2E97F5ACF"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_E0E8B9005E562D10",
+          "original_name": "坡度10.jpg",
+          "caption": "坡度10",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_E0E8B9005E562D10.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_E0E8B9005E562D10.webp"
+        },
+        {
+          "photo_id": "SURVEY_58608AE2E97F5ACF",
+          "original_name": "坡度10地图.jpg",
+          "caption": "坡度10地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_58608AE2E97F5ACF.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_58608AE2E97F5ACF.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.30360399999999,
+        "latitude": 29.605517000000003
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_45E5240302B1762A",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度2",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_44885484421255C8"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_44885484421255C8",
+          "original_name": "坡度2.jpg",
+          "caption": "坡度2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_44885484421255C8.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_44885484421255C8.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.304863,
+        "latitude": 29.607694000000002
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_7E53A8AA625C6A34",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度2和3地图",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_56E6F878DDED8A07"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_56E6F878DDED8A07",
+          "original_name": "坡度2和3地图.jpg",
+          "caption": "坡度2和3地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_56E6F878DDED8A07.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_56E6F878DDED8A07.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_D2BF51ABB38078A7",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度3",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_4BDA6CA3842813AD"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_4BDA6CA3842813AD",
+          "original_name": "坡度3.jpg",
+          "caption": "坡度3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_4BDA6CA3842813AD.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_4BDA6CA3842813AD.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.306343,
+        "latitude": 29.607818
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_6398C93105705A21",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度4",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_935CD74088EB816C",
+        "SURVEY_05312BC7A809577E"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_935CD74088EB816C",
+          "original_name": "坡度4.jpg",
+          "caption": "坡度4",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_935CD74088EB816C.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_935CD74088EB816C.webp"
+        },
+        {
+          "photo_id": "SURVEY_05312BC7A809577E",
+          "original_name": "坡度4地图.jpg",
+          "caption": "坡度4地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_05312BC7A809577E.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_05312BC7A809577E.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.306401,
+        "latitude": 29.606718
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_427F3458AE0811F6",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度5",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_3B5A538CB9A42073",
+        "SURVEY_A0DF76F188AD39DC"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_3B5A538CB9A42073",
+          "original_name": "坡度5.jpg",
+          "caption": "坡度5",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_3B5A538CB9A42073.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_3B5A538CB9A42073.webp"
+        },
+        {
+          "photo_id": "SURVEY_A0DF76F188AD39DC",
+          "original_name": "坡度5地图.jpg",
+          "caption": "坡度5地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A0DF76F188AD39DC.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_A0DF76F188AD39DC.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.30689,
+        "latitude": 29.606856
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_C43C36397AA756D7",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度6",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_E6A9F9EE98D30222",
+        "SURVEY_4F73550A5BFBA587"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_E6A9F9EE98D30222",
+          "original_name": "坡度6.jpg",
+          "caption": "坡度6",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_E6A9F9EE98D30222.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_E6A9F9EE98D30222.webp"
+        },
+        {
+          "photo_id": "SURVEY_4F73550A5BFBA587",
+          "original_name": "坡度6地图.jpg",
+          "caption": "坡度6地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_4F73550A5BFBA587.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_4F73550A5BFBA587.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.306562,
+        "latitude": 29.607852
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_126954B34F96CAB2",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度7",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_8AFFCB4C5A92D3BA",
+        "SURVEY_86498C9DBF12B83D"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_8AFFCB4C5A92D3BA",
+          "original_name": "坡度7.jpg",
+          "caption": "坡度7",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8AFFCB4C5A92D3BA.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_8AFFCB4C5A92D3BA.webp"
+        },
+        {
+          "photo_id": "SURVEY_86498C9DBF12B83D",
+          "original_name": "坡度7地图.jpg",
+          "caption": "坡度7地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_86498C9DBF12B83D.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_86498C9DBF12B83D.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.304959,
+        "latitude": 29.607839000000002
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_086D1000DA37EEEB",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度8",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_DE2E2A04F13E5F37",
+        "SURVEY_16F9F71B59BC45D0"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_DE2E2A04F13E5F37",
+          "original_name": "坡度8.jpg",
+          "caption": "坡度8",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DE2E2A04F13E5F37.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_DE2E2A04F13E5F37.webp"
+        },
+        {
+          "photo_id": "SURVEY_16F9F71B59BC45D0",
+          "original_name": "坡度8地图.jpg",
+          "caption": "坡度8地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_16F9F71B59BC45D0.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_16F9F71B59BC45D0.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.30484,
+        "latitude": 29.607850000000003
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_6D11C34F4952BB96",
+      "site_code": "UC_FULICHENG_STATION",
+      "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站",
+      "title": "坡度9",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_C3CA7E053A73DDA8",
+        "SURVEY_DDF5B7A39A4DEC5D"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_C3CA7E053A73DDA8",
+          "original_name": "坡度9.jpg",
+          "caption": "坡度9",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_C3CA7E053A73DDA8.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_C3CA7E053A73DDA8.webp"
+        },
+        {
+          "photo_id": "SURVEY_DDF5B7A39A4DEC5D",
+          "original_name": "坡度9地图.jpg",
+          "caption": "坡度9地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DDF5B7A39A4DEC5D.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_DDF5B7A39A4DEC5D.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.304267,
+        "latitude": 29.606814
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_26D1A1EE74676F28",
+      "site_code": "UC_JINKE",
+      "site_name": "金科天宸2、3街区",
+      "title": "地图1",
+      "issue_tags": [],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_60F2F18EA2D09E46"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_60F2F18EA2D09E46",
+          "original_name": "地图1.HEIC",
+          "caption": "地图1",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_60F2F18EA2D09E46.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_60F2F18EA2D09E46.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_282FA741BB85D637",
+      "site_code": "UC_JINKE",
+      "site_name": "金科天宸2、3街区",
+      "title": "地图2",
+      "issue_tags": [],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_805BB970AEDA4F82"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_805BB970AEDA4F82",
+          "original_name": "地图2.HEIC",
+          "caption": "地图2",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_805BB970AEDA4F82.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_805BB970AEDA4F82.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_5F2B8BCDD7FB34AB",
+      "site_code": "UC_JINKE",
+      "site_name": "金科天宸2、3街区",
+      "title": "坡度",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_AD47181B94E5E7D4"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_AD47181B94E5E7D4",
+          "original_name": "坡度.HEIC",
+          "caption": "坡度",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_AD47181B94E5E7D4.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_AD47181B94E5E7D4.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.35885555555555,
+        "latitude": 29.619830555555556
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_F173EC11911C6D80",
+      "site_code": "UC_JINKE",
+      "site_name": "金科天宸2、3街区",
+      "title": "坡度1",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_AB7EE0E0A7E7B8CB"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_AB7EE0E0A7E7B8CB",
+          "original_name": "坡度1.HEIC",
+          "caption": "坡度1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_AB7EE0E0A7E7B8CB.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_AB7EE0E0A7E7B8CB.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.35855,
+        "latitude": 29.618627777777778
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_4712369B54A24ADF",
+      "site_code": "UC_JINKE",
+      "site_name": "金科天宸2、3街区",
+      "title": "坡度2",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_7502627324B52E6F",
+        "SURVEY_30C03CB4DC3A0231"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_7502627324B52E6F",
+          "original_name": "坡度2.HEIC",
+          "caption": "坡度2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7502627324B52E6F.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_7502627324B52E6F.webp"
+        },
+        {
+          "photo_id": "SURVEY_30C03CB4DC3A0231",
+          "original_name": "坡度2.HEIC",
+          "caption": "坡度2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_30C03CB4DC3A0231.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_30C03CB4DC3A0231.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.35887777777778,
+        "latitude": 29.619572222222224
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_05E2B045D8E57062",
+      "site_code": "UC_JINKE",
+      "site_name": "金科天宸2、3街区",
+      "title": "坡度3",
+      "issue_tags": [
+        "坡"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_2843EA177773BEFF"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_2843EA177773BEFF",
+          "original_name": "坡度3.png",
+          "caption": "坡度3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2843EA177773BEFF.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_2843EA177773BEFF.webp"
+        }
+      ],
+      "initial_location": {
+        "longitude": 106.35891666666666,
+        "latitude": 29.619755555555557
+      },
+      "initial_location_source": "EXIF",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_0D31BE1E61A00575",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "人行道1",
+      "issue_tags": [
+        "人行道"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_0651F55001DE82A9",
+        "SURVEY_D749157F03EFA423"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_0651F55001DE82A9",
+          "original_name": "人行道1.jpg",
+          "caption": "人行道1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0651F55001DE82A9.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_0651F55001DE82A9.webp"
+        },
+        {
+          "photo_id": "SURVEY_D749157F03EFA423",
+          "original_name": "人行道1地图.jpg",
+          "caption": "人行道1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D749157F03EFA423.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_D749157F03EFA423.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_93D79B0696D8B124",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "人行道2",
+      "issue_tags": [
+        "人行道"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_A4A307E8D25529A6",
+        "SURVEY_992E002FA26BB8F5"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_A4A307E8D25529A6",
+          "original_name": "人行道2.jpg",
+          "caption": "人行道2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A4A307E8D25529A6.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_A4A307E8D25529A6.webp"
+        },
+        {
+          "photo_id": "SURVEY_992E002FA26BB8F5",
+          "original_name": "人行道2地图.jpg",
+          "caption": "人行道2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_992E002FA26BB8F5.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_992E002FA26BB8F5.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_4A6B077180AA5945",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "人行道3",
+      "issue_tags": [
+        "人行道"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_7CEA2CD221C3AA35",
+        "SURVEY_CA645781F7934F47"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_7CEA2CD221C3AA35",
+          "original_name": "人行道3.jpg",
+          "caption": "人行道3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7CEA2CD221C3AA35.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_7CEA2CD221C3AA35.webp"
+        },
+        {
+          "photo_id": "SURVEY_CA645781F7934F47",
+          "original_name": "人行道3地图.jpg",
+          "caption": "人行道3地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_CA645781F7934F47.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_CA645781F7934F47.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_934DEE1AA9F4EE1D",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "占道1",
+      "issue_tags": [
+        "占道"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_0E3FFD5F0CC650B1",
+        "SURVEY_6C85465E0642377F"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_0E3FFD5F0CC650B1",
+          "original_name": "占道1.jpg",
+          "caption": "占道1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0E3FFD5F0CC650B1.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_0E3FFD5F0CC650B1.webp"
+        },
+        {
+          "photo_id": "SURVEY_6C85465E0642377F",
+          "original_name": "占道1地图.jpg",
+          "caption": "占道1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6C85465E0642377F.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_6C85465E0642377F.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_67C8F8BF4DF53234",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "台阶1",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_8A8F94EA12B17A76"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_8A8F94EA12B17A76",
+          "original_name": "台阶1.jpg",
+          "caption": "台阶1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8A8F94EA12B17A76.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_8A8F94EA12B17A76.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_240FD2C7BFDF90F8",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "台阶2",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_1EC54FFB0DE26449",
+        "SURVEY_01E93F65F3248199"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_1EC54FFB0DE26449",
+          "original_name": "台阶2.jpg",
+          "caption": "台阶2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1EC54FFB0DE26449.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_1EC54FFB0DE26449.webp"
+        },
+        {
+          "photo_id": "SURVEY_01E93F65F3248199",
+          "original_name": "台阶2地图.jpg",
+          "caption": "台阶2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_01E93F65F3248199.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_01E93F65F3248199.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_4D22C35A1B44DCDA",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "台阶3",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_187AEEAD0D117E83",
+        "SURVEY_9FFC0E4D1976D9EE"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_187AEEAD0D117E83",
+          "original_name": "台阶3.jpg",
+          "caption": "台阶3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_187AEEAD0D117E83.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_187AEEAD0D117E83.webp"
+        },
+        {
+          "photo_id": "SURVEY_9FFC0E4D1976D9EE",
+          "original_name": "台阶3地图.jpg",
+          "caption": "台阶3地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9FFC0E4D1976D9EE.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_9FFC0E4D1976D9EE.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_14EF0519069A2FE9",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "台阶4",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_58B391F9E46CB0E1",
+        "SURVEY_1575BB48B0BB1220"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_58B391F9E46CB0E1",
+          "original_name": "台阶4.jpg",
+          "caption": "台阶4",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_58B391F9E46CB0E1.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_58B391F9E46CB0E1.webp"
+        },
+        {
+          "photo_id": "SURVEY_1575BB48B0BB1220",
+          "original_name": "台阶4地图.jpg",
+          "caption": "台阶4地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1575BB48B0BB1220.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_1575BB48B0BB1220.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_8B0E9E7415336CC3",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "台阶5",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_FCE437F1112ACF77",
+        "SURVEY_52EF9461400362E9"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_FCE437F1112ACF77",
+          "original_name": "台阶5.jpg",
+          "caption": "台阶5",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_FCE437F1112ACF77.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_FCE437F1112ACF77.webp"
+        },
+        {
+          "photo_id": "SURVEY_52EF9461400362E9",
+          "original_name": "台阶5地图.jpg",
+          "caption": "台阶5地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_52EF9461400362E9.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_52EF9461400362E9.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_1FBD995DA93CEC84",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "坡路1",
+      "issue_tags": [
+        "坡",
+        "坡路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_075CE05AC668A9DE"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_075CE05AC668A9DE",
+          "original_name": "坡路1.jpg",
+          "caption": "坡路1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_075CE05AC668A9DE.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_075CE05AC668A9DE.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_7BACF19036F62940",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "坡路1台阶1地图",
+      "issue_tags": [
+        "台阶",
+        "坡",
+        "坡路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_0DBC46AD976B18D5"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_0DBC46AD976B18D5",
+          "original_name": "坡路1台阶1地图.jpg",
+          "caption": "坡路1台阶1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0DBC46AD976B18D5.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_0DBC46AD976B18D5.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_F0B5A27FE45137B7",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "坡路3地图",
+      "issue_tags": [
+        "坡",
+        "坡路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_CDC7119E5692FCA7"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_CDC7119E5692FCA7",
+          "original_name": "坡路3地图.jpg",
+          "caption": "坡路3地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_CDC7119E5692FCA7.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_CDC7119E5692FCA7.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_ACF92CE99D9F99FA",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "坡路5地图",
+      "issue_tags": [
+        "坡",
+        "坡路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_92B063E78CCE807F"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_92B063E78CCE807F",
+          "original_name": "坡路5地图.jpg",
+          "caption": "坡路5地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_92B063E78CCE807F.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_92B063E78CCE807F.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_F16FEB43AFEE79BD",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "坡道1",
+      "issue_tags": [
+        "坡",
+        "坡道"
+      ],
+      "notes": [
+        "备注，此处有内外两条线路，里面那条多台阶，路稳，外面那条路破少台阶"
+      ],
+      "media_refs": [
+        "SURVEY_A0718826667AA172",
+        "SURVEY_0E49EB2DAC898ED5"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_A0718826667AA172",
+          "original_name": "坡道1.jpg",
+          "caption": "坡道1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A0718826667AA172.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_A0718826667AA172.webp"
+        },
+        {
+          "photo_id": "SURVEY_0E49EB2DAC898ED5",
+          "original_name": "坡道1地图（备注，此处有内外两条线路，里面那条多台阶，路稳，外面那条路破少台阶）.jpg",
+          "caption": "坡道1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0E49EB2DAC898ED5.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_0E49EB2DAC898ED5.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_D9EDAAE063BA9F68",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "坡道2",
+      "issue_tags": [
+        "坡",
+        "坡道"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_32A621F75A7A7580",
+        "SURVEY_BC24FF243016CBFA"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_32A621F75A7A7580",
+          "original_name": "坡道2.jpg",
+          "caption": "坡道2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_32A621F75A7A7580.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_32A621F75A7A7580.webp"
+        },
+        {
+          "photo_id": "SURVEY_BC24FF243016CBFA",
+          "original_name": "坡道2地图.jpg",
+          "caption": "坡道2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BC24FF243016CBFA.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_BC24FF243016CBFA.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_295EF72D59C5AF0F",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "无灯光线路1",
+      "issue_tags": [
+        "灯光"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_086406430EB9419D",
+        "SURVEY_EA7E8EEF671FDBB9",
+        "SURVEY_4C8B65CF8EEB6E6D"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_086406430EB9419D",
+          "original_name": "无灯光线路1.jpg",
+          "caption": "无灯光线路1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_086406430EB9419D.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_086406430EB9419D.webp"
+        },
+        {
+          "photo_id": "SURVEY_EA7E8EEF671FDBB9",
+          "original_name": "无灯光线路1地图起点.jpg",
+          "caption": "无灯光线路1地图起点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_EA7E8EEF671FDBB9.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_EA7E8EEF671FDBB9.webp"
+        },
+        {
+          "photo_id": "SURVEY_4C8B65CF8EEB6E6D",
+          "original_name": "无灯光线路1地图重点.jpg",
+          "caption": "无灯光线路1地图重点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_4C8B65CF8EEB6E6D.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_4C8B65CF8EEB6E6D.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_40473235F0FC3C16",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "破路2",
+      "issue_tags": [
+        "破路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_BBFB0F27C0F71674",
+        "SURVEY_A2A036FB73FF6221"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_BBFB0F27C0F71674",
+          "original_name": "破路2.jpg",
+          "caption": "破路2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BBFB0F27C0F71674.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_BBFB0F27C0F71674.webp"
+        },
+        {
+          "photo_id": "SURVEY_A2A036FB73FF6221",
+          "original_name": "破路2地图.jpg",
+          "caption": "破路2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A2A036FB73FF6221.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_A2A036FB73FF6221.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_340D2BB6D14524CC",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "破路3",
+      "issue_tags": [
+        "破路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_9F38778483AE6B2A"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_9F38778483AE6B2A",
+          "original_name": "破路3.jpg",
+          "caption": "破路3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9F38778483AE6B2A.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_9F38778483AE6B2A.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_CD7DA1CD2FF50558",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "破路4",
+      "issue_tags": [
+        "破路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_A5C64F38A4F5BA1A",
+        "SURVEY_73F7BA5B44417F3A"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_A5C64F38A4F5BA1A",
+          "original_name": "破路4.jpg",
+          "caption": "破路4",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A5C64F38A4F5BA1A.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_A5C64F38A4F5BA1A.webp"
+        },
+        {
+          "photo_id": "SURVEY_73F7BA5B44417F3A",
+          "original_name": "破路4地图.jpg",
+          "caption": "破路4地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_73F7BA5B44417F3A.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_73F7BA5B44417F3A.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_3A2DBBBCBE7AA02F",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "破路5",
+      "issue_tags": [
+        "破路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_12FF916370FB5531"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_12FF916370FB5531",
+          "original_name": "破路5.jpg",
+          "caption": "破路5",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_12FF916370FB5531.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_12FF916370FB5531.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_397FAE31A5407FB6",
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街",
+      "title": "破路6",
+      "issue_tags": [
+        "破路"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_AC02B05AF7328FE2",
+        "SURVEY_9FE40E144E2CAA0F"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_AC02B05AF7328FE2",
+          "original_name": "破路6.jpg",
+          "caption": "破路6",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_AC02B05AF7328FE2.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_AC02B05AF7328FE2.webp"
+        },
+        {
+          "photo_id": "SURVEY_9FE40E144E2CAA0F",
+          "original_name": "破路6地图.jpg",
+          "caption": "破路6地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9FE40E144E2CAA0F.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_9FE40E144E2CAA0F.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_0F4B6987D885E97A",
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区",
+      "title": "台阶1",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_42F1DF30E2EEF57A",
+        "SURVEY_47598826095BE4A1"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_42F1DF30E2EEF57A",
+          "original_name": "台阶1.jpg",
+          "caption": "台阶1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_42F1DF30E2EEF57A.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_42F1DF30E2EEF57A.webp"
+        },
+        {
+          "photo_id": "SURVEY_47598826095BE4A1",
+          "original_name": "台阶1地图.jpg",
+          "caption": "台阶1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_47598826095BE4A1.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_47598826095BE4A1.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_FFB44F6AC30223E0",
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区",
+      "title": "台阶2",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_8B283E0425C94E9E",
+        "SURVEY_416755E3D7E377C5"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_8B283E0425C94E9E",
+          "original_name": "台阶2.jpg",
+          "caption": "台阶2",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8B283E0425C94E9E.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_8B283E0425C94E9E.webp"
+        },
+        {
+          "photo_id": "SURVEY_416755E3D7E377C5",
+          "original_name": "台阶2地图.jpg",
+          "caption": "台阶2地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_416755E3D7E377C5.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_416755E3D7E377C5.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_12CA785D4EEBD88D",
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区",
+      "title": "台阶3",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_DDCAB0B65ACEC6C1",
+        "SURVEY_2A65C8ACCD00766C"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_DDCAB0B65ACEC6C1",
+          "original_name": "台阶3.jpg",
+          "caption": "台阶3",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DDCAB0B65ACEC6C1.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_DDCAB0B65ACEC6C1.webp"
+        },
+        {
+          "photo_id": "SURVEY_2A65C8ACCD00766C",
+          "original_name": "台阶3地图.jpg",
+          "caption": "台阶3地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2A65C8ACCD00766C.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_2A65C8ACCD00766C.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_3D61D8619DD3E3B0",
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区",
+      "title": "右侧台阶路段1",
+      "issue_tags": [
+        "台阶"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_6B6A29D7571DD6CD"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_6B6A29D7571DD6CD",
+          "original_name": "右侧台阶路段1.jpg",
+          "caption": "右侧台阶路段1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6B6A29D7571DD6CD.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_6B6A29D7571DD6CD.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_0DAD682585566812",
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区",
+      "title": "天桥路段1",
+      "issue_tags": [
+        "桥",
+        "天桥"
+      ],
+      "notes": [],
+      "media_refs": [
+        "SURVEY_0B00B92DF2663594",
+        "SURVEY_70D4E1D3A780D960"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_0B00B92DF2663594",
+          "original_name": "天桥路段1.jpg",
+          "caption": "天桥路段1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0B00B92DF2663594.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_0B00B92DF2663594.webp"
+        },
+        {
+          "photo_id": "SURVEY_70D4E1D3A780D960",
+          "original_name": "天桥路段1地图.jpg",
+          "caption": "天桥路段1地图",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_70D4E1D3A780D960.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_70D4E1D3A780D960.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    },
+    {
+      "record_code": "SURVEY_77A3296F31D854A2",
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区",
+      "title": "电瓶车拥挤路段+光线昏暗路段1",
+      "issue_tags": [
+        "昏暗",
+        "电瓶车"
+      ],
+      "notes": [
+        "备注：路线分为左右两侧，左侧昏暗+电瓶车，右侧有台阶但光线好，路平无电瓶车"
+      ],
+      "media_refs": [
+        "SURVEY_A1D60CEDF0AA094E",
+        "SURVEY_613BD86C2F506F6B",
+        "SURVEY_1A0EC9EACAEED5F5"
+      ],
+      "media": [
+        {
+          "photo_id": "SURVEY_A1D60CEDF0AA094E",
+          "original_name": "电瓶车拥挤路段+光线昏暗路段1.jpg",
+          "caption": "电瓶车拥挤路段+光线昏暗路段1",
+          "kind": "scene",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A1D60CEDF0AA094E.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_A1D60CEDF0AA094E.webp"
+        },
+        {
+          "photo_id": "SURVEY_613BD86C2F506F6B",
+          "original_name": "电瓶车拥挤路段+光线昏暗路段1地图终点（备注：路线分为左右两侧，左侧昏暗+电瓶车，右侧有台阶但光线好，路平无电瓶车）.jpg",
+          "caption": "电瓶车拥挤路段+光线昏暗路段1地图终点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_613BD86C2F506F6B.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_613BD86C2F506F6B.webp"
+        },
+        {
+          "photo_id": "SURVEY_1A0EC9EACAEED5F5",
+          "original_name": "电瓶车拥挤路段+光线昏暗路段1地图起点（备注：路线分为左右两侧，左侧昏暗+电瓶车，右侧有台阶但光线好，路平无电瓶车）.jpg",
+          "caption": "电瓶车拥挤路段+光线昏暗路段1地图起点",
+          "kind": "map_reference",
+          "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1A0EC9EACAEED5F5.webp",
+          "display_url": "/media/evidence/survey/display/SURVEY_1A0EC9EACAEED5F5.webp"
+        }
+      ],
+      "initial_location": null,
+      "initial_location_source": "NONE",
+      "review_status": "PENDING_REVIEW"
+    }
+  ],
+  "media": [
+    {
+      "photo_id": "SURVEY_BD062DFF64C0D9FD",
+      "original_name": "台阶1.jpg",
+      "caption": "台阶1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BD062DFF64C0D9FD.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_BD062DFF64C0D9FD.webp"
+    },
+    {
+      "photo_id": "SURVEY_EEB8F00EF6809D4B",
+      "original_name": "台阶1地图.jpg",
+      "caption": "台阶1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_EEB8F00EF6809D4B.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_EEB8F00EF6809D4B.webp"
+    },
+    {
+      "photo_id": "SURVEY_2784A634BAEC6B57",
+      "original_name": "台阶2.jpg",
+      "caption": "台阶2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2784A634BAEC6B57.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_2784A634BAEC6B57.webp"
+    },
+    {
+      "photo_id": "SURVEY_C6F5AFFA94FB43BF",
+      "original_name": "台阶2地图.jpg",
+      "caption": "台阶2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_C6F5AFFA94FB43BF.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_C6F5AFFA94FB43BF.webp"
+    },
+    {
+      "photo_id": "SURVEY_1FC9830407006317",
+      "original_name": "台阶3.jpg",
+      "caption": "台阶3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1FC9830407006317.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_1FC9830407006317.webp"
+    },
+    {
+      "photo_id": "SURVEY_74378A407AD2C950",
+      "original_name": "台阶3地图.jpg",
+      "caption": "台阶3地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_74378A407AD2C950.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_74378A407AD2C950.webp"
+    },
+    {
+      "photo_id": "SURVEY_3DEBB8BB7B935A5E",
+      "original_name": "台阶4.jpg",
+      "caption": "台阶4",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_3DEBB8BB7B935A5E.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_3DEBB8BB7B935A5E.webp"
+    },
+    {
+      "photo_id": "SURVEY_09F15670933536F8",
+      "original_name": "台阶4地图.jpg",
+      "caption": "台阶4地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_09F15670933536F8.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_09F15670933536F8.webp"
+    },
+    {
+      "photo_id": "SURVEY_66F1AAB0AD8A685E",
+      "original_name": "台阶5.jpg",
+      "caption": "台阶5",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_66F1AAB0AD8A685E.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_66F1AAB0AD8A685E.webp"
+    },
+    {
+      "photo_id": "SURVEY_679EBB886275690C",
+      "original_name": "台阶5地图.jpg",
+      "caption": "台阶5地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_679EBB886275690C.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_679EBB886275690C.webp"
+    },
+    {
+      "photo_id": "SURVEY_2C9DC3B346C64001",
+      "original_name": "台阶6.jpg",
+      "caption": "台阶6",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2C9DC3B346C64001.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_2C9DC3B346C64001.webp"
+    },
+    {
+      "photo_id": "SURVEY_DBBFCD4C37D87EC7",
+      "original_name": "台阶6地图.jpg",
+      "caption": "台阶6地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DBBFCD4C37D87EC7.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_DBBFCD4C37D87EC7.webp"
+    },
+    {
+      "photo_id": "SURVEY_70629CEBB7EED874",
+      "original_name": "坡路2.jpg",
+      "caption": "坡路2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_70629CEBB7EED874.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_70629CEBB7EED874.webp"
+    },
+    {
+      "photo_id": "SURVEY_9B0518C811109A46",
+      "original_name": "坡路2地图.jpg",
+      "caption": "坡路2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9B0518C811109A46.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_9B0518C811109A46.webp"
+    },
+    {
+      "photo_id": "SURVEY_86CDE72DC49D2E65",
+      "original_name": "坡道1.jpg",
+      "caption": "坡道1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_86CDE72DC49D2E65.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_86CDE72DC49D2E65.webp"
+    },
+    {
+      "photo_id": "SURVEY_D36BFAAE21AAEA9E",
+      "original_name": "坡道1地图.jpg",
+      "caption": "坡道1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D36BFAAE21AAEA9E.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_D36BFAAE21AAEA9E.webp"
+    },
+    {
+      "photo_id": "SURVEY_12EF8138BC474093",
+      "original_name": "破路1.jpg",
+      "caption": "破路1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_12EF8138BC474093.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_12EF8138BC474093.webp"
+    },
+    {
+      "photo_id": "SURVEY_2E85FC4B7FA56286",
+      "original_name": "破路1地图.jpg",
+      "caption": "破路1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2E85FC4B7FA56286.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_2E85FC4B7FA56286.webp"
+    },
+    {
+      "photo_id": "SURVEY_601696A4B16916DA",
+      "original_name": "台阶1.jpg",
+      "caption": "台阶1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_601696A4B16916DA.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_601696A4B16916DA.webp"
+    },
+    {
+      "photo_id": "SURVEY_786E8B75290561D9",
+      "original_name": "台阶1地图.jpg",
+      "caption": "台阶1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_786E8B75290561D9.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_786E8B75290561D9.webp"
+    },
+    {
+      "photo_id": "SURVEY_25E579C2ACCD12FB",
+      "original_name": "坡路1.jpg",
+      "caption": "坡路1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_25E579C2ACCD12FB.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_25E579C2ACCD12FB.webp"
+    },
+    {
+      "photo_id": "SURVEY_8BF366CC52244BF6",
+      "original_name": "坡路1地图.jpg",
+      "caption": "坡路1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8BF366CC52244BF6.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_8BF366CC52244BF6.webp"
+    },
+    {
+      "photo_id": "SURVEY_ABC7CA6B0A19318A",
+      "original_name": "坡路2.jpg",
+      "caption": "坡路2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_ABC7CA6B0A19318A.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_ABC7CA6B0A19318A.webp"
+    },
+    {
+      "photo_id": "SURVEY_7C53EF4751D15BE4",
+      "original_name": "坡路2地图.jpg",
+      "caption": "坡路2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7C53EF4751D15BE4.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_7C53EF4751D15BE4.webp"
+    },
+    {
+      "photo_id": "SURVEY_6AF892E7FDA5D694",
+      "original_name": "桥路段1.jpg",
+      "caption": "桥路段1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6AF892E7FDA5D694.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_6AF892E7FDA5D694.webp"
+    },
+    {
+      "photo_id": "SURVEY_D0F87B3D5288050D",
+      "original_name": "桥路段1地图.jpg",
+      "caption": "桥路段1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D0F87B3D5288050D.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_D0F87B3D5288050D.webp"
+    },
+    {
+      "photo_id": "SURVEY_7FD08717E848B1D0",
+      "original_name": "路线昏暗路段1.jpg",
+      "caption": "路线昏暗路段1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7FD08717E848B1D0.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_7FD08717E848B1D0.webp"
+    },
+    {
+      "photo_id": "SURVEY_EF11A4C86A01317D",
+      "original_name": "路线昏暗路段1起点.jpg",
+      "caption": "路线昏暗路段1起点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_EF11A4C86A01317D.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_EF11A4C86A01317D.webp"
+    },
+    {
+      "photo_id": "SURVEY_D2A18AC7A4091AEC",
+      "original_name": "路线昏暗路段1重点（备注：川美整体路线昏暗，部分地方尤其昏暗）.jpg",
+      "caption": "路线昏暗路段1重点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D2A18AC7A4091AEC.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_D2A18AC7A4091AEC.webp"
+    },
+    {
+      "photo_id": "SURVEY_7BE366D7926CEA3C",
+      "original_name": "路线昏暗路段2.jpg",
+      "caption": "路线昏暗路段2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7BE366D7926CEA3C.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_7BE366D7926CEA3C.webp"
+    },
+    {
+      "photo_id": "SURVEY_2C35B60037206E70",
+      "original_name": "路线昏暗路段2终点.jpg",
+      "caption": "路线昏暗路段2终点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2C35B60037206E70.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_2C35B60037206E70.webp"
+    },
+    {
+      "photo_id": "SURVEY_83E411232022BBE1",
+      "original_name": "路线昏暗路段2起点.jpg",
+      "caption": "路线昏暗路段2起点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_83E411232022BBE1.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_83E411232022BBE1.webp"
+    },
+    {
+      "photo_id": "SURVEY_22EED417CCFA3965",
+      "original_name": "坡度1.jpg",
+      "caption": "坡度1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_22EED417CCFA3965.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_22EED417CCFA3965.webp"
+    },
+    {
+      "photo_id": "SURVEY_494FAEA0F02EB5E8",
+      "original_name": "坡度1地图.jpg",
+      "caption": "坡度1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_494FAEA0F02EB5E8.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_494FAEA0F02EB5E8.webp"
+    },
+    {
+      "photo_id": "SURVEY_539A668A1B9A7C31",
+      "original_name": "坡度2.jpg",
+      "caption": "坡度2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_539A668A1B9A7C31.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_539A668A1B9A7C31.webp"
+    },
+    {
+      "photo_id": "SURVEY_9E64DBBDF07CDCD8",
+      "original_name": "坡度2地图.jpg",
+      "caption": "坡度2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9E64DBBDF07CDCD8.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_9E64DBBDF07CDCD8.webp"
+    },
+    {
+      "photo_id": "SURVEY_F7B7828097FADCA7",
+      "original_name": "坡度3.jpg",
+      "caption": "坡度3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_F7B7828097FADCA7.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_F7B7828097FADCA7.webp"
+    },
+    {
+      "photo_id": "SURVEY_968EF8CC1B79A0AE",
+      "original_name": "坡度3地图.jpg",
+      "caption": "坡度3地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_968EF8CC1B79A0AE.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_968EF8CC1B79A0AE.webp"
+    },
+    {
+      "photo_id": "SURVEY_54257C5C9F3F8E79",
+      "original_name": "坡度4.jpg",
+      "caption": "坡度4",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_54257C5C9F3F8E79.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_54257C5C9F3F8E79.webp"
+    },
+    {
+      "photo_id": "SURVEY_1D3B46173E0FFD48",
+      "original_name": "坡度4地图.jpg",
+      "caption": "坡度4地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1D3B46173E0FFD48.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_1D3B46173E0FFD48.webp"
+    },
+    {
+      "photo_id": "SURVEY_8EC9482623C5ECB2",
+      "original_name": "坡度5.jpg",
+      "caption": "坡度5",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8EC9482623C5ECB2.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_8EC9482623C5ECB2.webp"
+    },
+    {
+      "photo_id": "SURVEY_8921FA0838A9517E",
+      "original_name": "坡度5地图.jpg",
+      "caption": "坡度5地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8921FA0838A9517E.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_8921FA0838A9517E.webp"
+    },
+    {
+      "photo_id": "SURVEY_BE2DD417BA698134",
+      "original_name": "坡度6.jpg",
+      "caption": "坡度6",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BE2DD417BA698134.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_BE2DD417BA698134.webp"
+    },
+    {
+      "photo_id": "SURVEY_C226431F67FC3570",
+      "original_name": "坡度6地图.jpg",
+      "caption": "坡度6地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_C226431F67FC3570.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_C226431F67FC3570.webp"
+    },
+    {
+      "photo_id": "SURVEY_13F7724973996321",
+      "original_name": "坡度7.jpg",
+      "caption": "坡度7",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_13F7724973996321.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_13F7724973996321.webp"
+    },
+    {
+      "photo_id": "SURVEY_6A2109932F6898D2",
+      "original_name": "坡度7地图.jpg",
+      "caption": "坡度7地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6A2109932F6898D2.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_6A2109932F6898D2.webp"
+    },
+    {
+      "photo_id": "SURVEY_83B01CFB802517FB",
+      "original_name": "人行道1.jpg",
+      "caption": "人行道1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_83B01CFB802517FB.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_83B01CFB802517FB.webp"
+    },
+    {
+      "photo_id": "SURVEY_3A5EEAA1CBF46431",
+      "original_name": "人行道1地图.jpg",
+      "caption": "人行道1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_3A5EEAA1CBF46431.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_3A5EEAA1CBF46431.webp"
+    },
+    {
+      "photo_id": "SURVEY_334CB7756A2F26E7",
+      "original_name": "坡度1.jpg",
+      "caption": "坡度1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_334CB7756A2F26E7.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_334CB7756A2F26E7.webp"
+    },
+    {
+      "photo_id": "SURVEY_F06CF24ED5FBB70C",
+      "original_name": "坡度1地图.jpg",
+      "caption": "坡度1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_F06CF24ED5FBB70C.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_F06CF24ED5FBB70C.webp"
+    },
+    {
+      "photo_id": "SURVEY_E0E8B9005E562D10",
+      "original_name": "坡度10.jpg",
+      "caption": "坡度10",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_E0E8B9005E562D10.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_E0E8B9005E562D10.webp"
+    },
+    {
+      "photo_id": "SURVEY_58608AE2E97F5ACF",
+      "original_name": "坡度10地图.jpg",
+      "caption": "坡度10地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_58608AE2E97F5ACF.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_58608AE2E97F5ACF.webp"
+    },
+    {
+      "photo_id": "SURVEY_44885484421255C8",
+      "original_name": "坡度2.jpg",
+      "caption": "坡度2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_44885484421255C8.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_44885484421255C8.webp"
+    },
+    {
+      "photo_id": "SURVEY_56E6F878DDED8A07",
+      "original_name": "坡度2和3地图.jpg",
+      "caption": "坡度2和3地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_56E6F878DDED8A07.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_56E6F878DDED8A07.webp"
+    },
+    {
+      "photo_id": "SURVEY_4BDA6CA3842813AD",
+      "original_name": "坡度3.jpg",
+      "caption": "坡度3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_4BDA6CA3842813AD.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_4BDA6CA3842813AD.webp"
+    },
+    {
+      "photo_id": "SURVEY_935CD74088EB816C",
+      "original_name": "坡度4.jpg",
+      "caption": "坡度4",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_935CD74088EB816C.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_935CD74088EB816C.webp"
+    },
+    {
+      "photo_id": "SURVEY_05312BC7A809577E",
+      "original_name": "坡度4地图.jpg",
+      "caption": "坡度4地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_05312BC7A809577E.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_05312BC7A809577E.webp"
+    },
+    {
+      "photo_id": "SURVEY_3B5A538CB9A42073",
+      "original_name": "坡度5.jpg",
+      "caption": "坡度5",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_3B5A538CB9A42073.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_3B5A538CB9A42073.webp"
+    },
+    {
+      "photo_id": "SURVEY_A0DF76F188AD39DC",
+      "original_name": "坡度5地图.jpg",
+      "caption": "坡度5地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A0DF76F188AD39DC.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_A0DF76F188AD39DC.webp"
+    },
+    {
+      "photo_id": "SURVEY_E6A9F9EE98D30222",
+      "original_name": "坡度6.jpg",
+      "caption": "坡度6",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_E6A9F9EE98D30222.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_E6A9F9EE98D30222.webp"
+    },
+    {
+      "photo_id": "SURVEY_4F73550A5BFBA587",
+      "original_name": "坡度6地图.jpg",
+      "caption": "坡度6地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_4F73550A5BFBA587.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_4F73550A5BFBA587.webp"
+    },
+    {
+      "photo_id": "SURVEY_8AFFCB4C5A92D3BA",
+      "original_name": "坡度7.jpg",
+      "caption": "坡度7",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8AFFCB4C5A92D3BA.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_8AFFCB4C5A92D3BA.webp"
+    },
+    {
+      "photo_id": "SURVEY_86498C9DBF12B83D",
+      "original_name": "坡度7地图.jpg",
+      "caption": "坡度7地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_86498C9DBF12B83D.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_86498C9DBF12B83D.webp"
+    },
+    {
+      "photo_id": "SURVEY_DE2E2A04F13E5F37",
+      "original_name": "坡度8.jpg",
+      "caption": "坡度8",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DE2E2A04F13E5F37.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_DE2E2A04F13E5F37.webp"
+    },
+    {
+      "photo_id": "SURVEY_16F9F71B59BC45D0",
+      "original_name": "坡度8地图.jpg",
+      "caption": "坡度8地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_16F9F71B59BC45D0.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_16F9F71B59BC45D0.webp"
+    },
+    {
+      "photo_id": "SURVEY_C3CA7E053A73DDA8",
+      "original_name": "坡度9.jpg",
+      "caption": "坡度9",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_C3CA7E053A73DDA8.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_C3CA7E053A73DDA8.webp"
+    },
+    {
+      "photo_id": "SURVEY_DDF5B7A39A4DEC5D",
+      "original_name": "坡度9地图.jpg",
+      "caption": "坡度9地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DDF5B7A39A4DEC5D.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_DDF5B7A39A4DEC5D.webp"
+    },
+    {
+      "photo_id": "SURVEY_60F2F18EA2D09E46",
+      "original_name": "地图1.HEIC",
+      "caption": "地图1",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_60F2F18EA2D09E46.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_60F2F18EA2D09E46.webp"
+    },
+    {
+      "photo_id": "SURVEY_805BB970AEDA4F82",
+      "original_name": "地图2.HEIC",
+      "caption": "地图2",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_805BB970AEDA4F82.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_805BB970AEDA4F82.webp"
+    },
+    {
+      "photo_id": "SURVEY_AD47181B94E5E7D4",
+      "original_name": "坡度.HEIC",
+      "caption": "坡度",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_AD47181B94E5E7D4.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_AD47181B94E5E7D4.webp"
+    },
+    {
+      "photo_id": "SURVEY_AB7EE0E0A7E7B8CB",
+      "original_name": "坡度1.HEIC",
+      "caption": "坡度1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_AB7EE0E0A7E7B8CB.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_AB7EE0E0A7E7B8CB.webp"
+    },
+    {
+      "photo_id": "SURVEY_7502627324B52E6F",
+      "original_name": "坡度2.HEIC",
+      "caption": "坡度2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7502627324B52E6F.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_7502627324B52E6F.webp"
+    },
+    {
+      "photo_id": "SURVEY_30C03CB4DC3A0231",
+      "original_name": "坡度2.HEIC",
+      "caption": "坡度2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_30C03CB4DC3A0231.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_30C03CB4DC3A0231.webp"
+    },
+    {
+      "photo_id": "SURVEY_2843EA177773BEFF",
+      "original_name": "坡度3.png",
+      "caption": "坡度3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2843EA177773BEFF.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_2843EA177773BEFF.webp"
+    },
+    {
+      "photo_id": "SURVEY_0651F55001DE82A9",
+      "original_name": "人行道1.jpg",
+      "caption": "人行道1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0651F55001DE82A9.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_0651F55001DE82A9.webp"
+    },
+    {
+      "photo_id": "SURVEY_D749157F03EFA423",
+      "original_name": "人行道1地图.jpg",
+      "caption": "人行道1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_D749157F03EFA423.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_D749157F03EFA423.webp"
+    },
+    {
+      "photo_id": "SURVEY_A4A307E8D25529A6",
+      "original_name": "人行道2.jpg",
+      "caption": "人行道2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A4A307E8D25529A6.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_A4A307E8D25529A6.webp"
+    },
+    {
+      "photo_id": "SURVEY_992E002FA26BB8F5",
+      "original_name": "人行道2地图.jpg",
+      "caption": "人行道2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_992E002FA26BB8F5.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_992E002FA26BB8F5.webp"
+    },
+    {
+      "photo_id": "SURVEY_7CEA2CD221C3AA35",
+      "original_name": "人行道3.jpg",
+      "caption": "人行道3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_7CEA2CD221C3AA35.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_7CEA2CD221C3AA35.webp"
+    },
+    {
+      "photo_id": "SURVEY_CA645781F7934F47",
+      "original_name": "人行道3地图.jpg",
+      "caption": "人行道3地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_CA645781F7934F47.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_CA645781F7934F47.webp"
+    },
+    {
+      "photo_id": "SURVEY_0E3FFD5F0CC650B1",
+      "original_name": "占道1.jpg",
+      "caption": "占道1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0E3FFD5F0CC650B1.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_0E3FFD5F0CC650B1.webp"
+    },
+    {
+      "photo_id": "SURVEY_6C85465E0642377F",
+      "original_name": "占道1地图.jpg",
+      "caption": "占道1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6C85465E0642377F.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_6C85465E0642377F.webp"
+    },
+    {
+      "photo_id": "SURVEY_8A8F94EA12B17A76",
+      "original_name": "台阶1.jpg",
+      "caption": "台阶1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8A8F94EA12B17A76.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_8A8F94EA12B17A76.webp"
+    },
+    {
+      "photo_id": "SURVEY_1EC54FFB0DE26449",
+      "original_name": "台阶2.jpg",
+      "caption": "台阶2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1EC54FFB0DE26449.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_1EC54FFB0DE26449.webp"
+    },
+    {
+      "photo_id": "SURVEY_01E93F65F3248199",
+      "original_name": "台阶2地图.jpg",
+      "caption": "台阶2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_01E93F65F3248199.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_01E93F65F3248199.webp"
+    },
+    {
+      "photo_id": "SURVEY_187AEEAD0D117E83",
+      "original_name": "台阶3.jpg",
+      "caption": "台阶3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_187AEEAD0D117E83.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_187AEEAD0D117E83.webp"
+    },
+    {
+      "photo_id": "SURVEY_9FFC0E4D1976D9EE",
+      "original_name": "台阶3地图.jpg",
+      "caption": "台阶3地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9FFC0E4D1976D9EE.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_9FFC0E4D1976D9EE.webp"
+    },
+    {
+      "photo_id": "SURVEY_58B391F9E46CB0E1",
+      "original_name": "台阶4.jpg",
+      "caption": "台阶4",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_58B391F9E46CB0E1.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_58B391F9E46CB0E1.webp"
+    },
+    {
+      "photo_id": "SURVEY_1575BB48B0BB1220",
+      "original_name": "台阶4地图.jpg",
+      "caption": "台阶4地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1575BB48B0BB1220.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_1575BB48B0BB1220.webp"
+    },
+    {
+      "photo_id": "SURVEY_FCE437F1112ACF77",
+      "original_name": "台阶5.jpg",
+      "caption": "台阶5",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_FCE437F1112ACF77.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_FCE437F1112ACF77.webp"
+    },
+    {
+      "photo_id": "SURVEY_52EF9461400362E9",
+      "original_name": "台阶5地图.jpg",
+      "caption": "台阶5地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_52EF9461400362E9.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_52EF9461400362E9.webp"
+    },
+    {
+      "photo_id": "SURVEY_075CE05AC668A9DE",
+      "original_name": "坡路1.jpg",
+      "caption": "坡路1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_075CE05AC668A9DE.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_075CE05AC668A9DE.webp"
+    },
+    {
+      "photo_id": "SURVEY_0DBC46AD976B18D5",
+      "original_name": "坡路1台阶1地图.jpg",
+      "caption": "坡路1台阶1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0DBC46AD976B18D5.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_0DBC46AD976B18D5.webp"
+    },
+    {
+      "photo_id": "SURVEY_CDC7119E5692FCA7",
+      "original_name": "坡路3地图.jpg",
+      "caption": "坡路3地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_CDC7119E5692FCA7.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_CDC7119E5692FCA7.webp"
+    },
+    {
+      "photo_id": "SURVEY_92B063E78CCE807F",
+      "original_name": "坡路5地图.jpg",
+      "caption": "坡路5地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_92B063E78CCE807F.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_92B063E78CCE807F.webp"
+    },
+    {
+      "photo_id": "SURVEY_A0718826667AA172",
+      "original_name": "坡道1.jpg",
+      "caption": "坡道1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A0718826667AA172.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_A0718826667AA172.webp"
+    },
+    {
+      "photo_id": "SURVEY_0E49EB2DAC898ED5",
+      "original_name": "坡道1地图（备注，此处有内外两条线路，里面那条多台阶，路稳，外面那条路破少台阶）.jpg",
+      "caption": "坡道1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0E49EB2DAC898ED5.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_0E49EB2DAC898ED5.webp"
+    },
+    {
+      "photo_id": "SURVEY_32A621F75A7A7580",
+      "original_name": "坡道2.jpg",
+      "caption": "坡道2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_32A621F75A7A7580.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_32A621F75A7A7580.webp"
+    },
+    {
+      "photo_id": "SURVEY_BC24FF243016CBFA",
+      "original_name": "坡道2地图.jpg",
+      "caption": "坡道2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BC24FF243016CBFA.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_BC24FF243016CBFA.webp"
+    },
+    {
+      "photo_id": "SURVEY_086406430EB9419D",
+      "original_name": "无灯光线路1.jpg",
+      "caption": "无灯光线路1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_086406430EB9419D.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_086406430EB9419D.webp"
+    },
+    {
+      "photo_id": "SURVEY_EA7E8EEF671FDBB9",
+      "original_name": "无灯光线路1地图起点.jpg",
+      "caption": "无灯光线路1地图起点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_EA7E8EEF671FDBB9.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_EA7E8EEF671FDBB9.webp"
+    },
+    {
+      "photo_id": "SURVEY_4C8B65CF8EEB6E6D",
+      "original_name": "无灯光线路1地图重点.jpg",
+      "caption": "无灯光线路1地图重点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_4C8B65CF8EEB6E6D.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_4C8B65CF8EEB6E6D.webp"
+    },
+    {
+      "photo_id": "SURVEY_BBFB0F27C0F71674",
+      "original_name": "破路2.jpg",
+      "caption": "破路2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_BBFB0F27C0F71674.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_BBFB0F27C0F71674.webp"
+    },
+    {
+      "photo_id": "SURVEY_A2A036FB73FF6221",
+      "original_name": "破路2地图.jpg",
+      "caption": "破路2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A2A036FB73FF6221.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_A2A036FB73FF6221.webp"
+    },
+    {
+      "photo_id": "SURVEY_9F38778483AE6B2A",
+      "original_name": "破路3.jpg",
+      "caption": "破路3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9F38778483AE6B2A.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_9F38778483AE6B2A.webp"
+    },
+    {
+      "photo_id": "SURVEY_A5C64F38A4F5BA1A",
+      "original_name": "破路4.jpg",
+      "caption": "破路4",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A5C64F38A4F5BA1A.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_A5C64F38A4F5BA1A.webp"
+    },
+    {
+      "photo_id": "SURVEY_73F7BA5B44417F3A",
+      "original_name": "破路4地图.jpg",
+      "caption": "破路4地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_73F7BA5B44417F3A.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_73F7BA5B44417F3A.webp"
+    },
+    {
+      "photo_id": "SURVEY_12FF916370FB5531",
+      "original_name": "破路5.jpg",
+      "caption": "破路5",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_12FF916370FB5531.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_12FF916370FB5531.webp"
+    },
+    {
+      "photo_id": "SURVEY_AC02B05AF7328FE2",
+      "original_name": "破路6.jpg",
+      "caption": "破路6",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_AC02B05AF7328FE2.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_AC02B05AF7328FE2.webp"
+    },
+    {
+      "photo_id": "SURVEY_9FE40E144E2CAA0F",
+      "original_name": "破路6地图.jpg",
+      "caption": "破路6地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_9FE40E144E2CAA0F.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_9FE40E144E2CAA0F.webp"
+    },
+    {
+      "photo_id": "SURVEY_42F1DF30E2EEF57A",
+      "original_name": "台阶1.jpg",
+      "caption": "台阶1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_42F1DF30E2EEF57A.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_42F1DF30E2EEF57A.webp"
+    },
+    {
+      "photo_id": "SURVEY_47598826095BE4A1",
+      "original_name": "台阶1地图.jpg",
+      "caption": "台阶1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_47598826095BE4A1.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_47598826095BE4A1.webp"
+    },
+    {
+      "photo_id": "SURVEY_8B283E0425C94E9E",
+      "original_name": "台阶2.jpg",
+      "caption": "台阶2",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_8B283E0425C94E9E.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_8B283E0425C94E9E.webp"
+    },
+    {
+      "photo_id": "SURVEY_416755E3D7E377C5",
+      "original_name": "台阶2地图.jpg",
+      "caption": "台阶2地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_416755E3D7E377C5.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_416755E3D7E377C5.webp"
+    },
+    {
+      "photo_id": "SURVEY_DDCAB0B65ACEC6C1",
+      "original_name": "台阶3.jpg",
+      "caption": "台阶3",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_DDCAB0B65ACEC6C1.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_DDCAB0B65ACEC6C1.webp"
+    },
+    {
+      "photo_id": "SURVEY_2A65C8ACCD00766C",
+      "original_name": "台阶3地图.jpg",
+      "caption": "台阶3地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_2A65C8ACCD00766C.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_2A65C8ACCD00766C.webp"
+    },
+    {
+      "photo_id": "SURVEY_6B6A29D7571DD6CD",
+      "original_name": "右侧台阶路段1.jpg",
+      "caption": "右侧台阶路段1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_6B6A29D7571DD6CD.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_6B6A29D7571DD6CD.webp"
+    },
+    {
+      "photo_id": "SURVEY_0B00B92DF2663594",
+      "original_name": "天桥路段1.jpg",
+      "caption": "天桥路段1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_0B00B92DF2663594.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_0B00B92DF2663594.webp"
+    },
+    {
+      "photo_id": "SURVEY_70D4E1D3A780D960",
+      "original_name": "天桥路段1地图.jpg",
+      "caption": "天桥路段1地图",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_70D4E1D3A780D960.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_70D4E1D3A780D960.webp"
+    },
+    {
+      "photo_id": "SURVEY_A1D60CEDF0AA094E",
+      "original_name": "电瓶车拥挤路段+光线昏暗路段1.jpg",
+      "caption": "电瓶车拥挤路段+光线昏暗路段1",
+      "kind": "scene",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_A1D60CEDF0AA094E.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_A1D60CEDF0AA094E.webp"
+    },
+    {
+      "photo_id": "SURVEY_613BD86C2F506F6B",
+      "original_name": "电瓶车拥挤路段+光线昏暗路段1地图终点（备注：路线分为左右两侧，左侧昏暗+电瓶车，右侧有台阶但光线好，路平无电瓶车）.jpg",
+      "caption": "电瓶车拥挤路段+光线昏暗路段1地图终点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_613BD86C2F506F6B.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_613BD86C2F506F6B.webp"
+    },
+    {
+      "photo_id": "SURVEY_1A0EC9EACAEED5F5",
+      "original_name": "电瓶车拥挤路段+光线昏暗路段1地图起点（备注：路线分为左右两侧，左侧昏暗+电瓶车，右侧有台阶但光线好，路平无电瓶车）.jpg",
+      "caption": "电瓶车拥挤路段+光线昏暗路段1地图起点",
+      "kind": "map_reference",
+      "thumbnail_url": "/media/evidence/survey/thumb/SURVEY_1A0EC9EACAEED5F5.webp",
+      "display_url": "/media/evidence/survey/display/SURVEY_1A0EC9EACAEED5F5.webp"
+    }
+  ]
+}
