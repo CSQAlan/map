@@ -38,6 +38,7 @@ frontend/android/app/src/main/assets/capacitor.config.json
 # Logs and runtime artifacts
 .logs/
 *.log
+.superpowers/
 
 # IDE / OS
 .idea/
