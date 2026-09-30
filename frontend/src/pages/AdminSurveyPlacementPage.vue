@@ -1,113 +1,30 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import SurveyRecordsMap from '../components/SurveyRecordsMap.vue';
+import { useSurveyRecords } from '../composables/useSurveyRecords.js';
 
 const props = defineProps({
   apiBaseUrl: { type: String, required: true },
   accessToken: { type: String, required: true },
 });
 const emit = defineEmits(['back']);
-const sites = ref([]);
-const features = ref([]);
-const selectedSiteCode = ref('');
-const selectedRecordCode = ref(null);
-const pendingCoordinate = ref(null);
-const saving = ref(false);
-const loading = ref(false);
-const message = ref('');
-const errorMessage = ref('');
-const siteError = ref('');
+const {
+  sites, features, selectedSiteCode, selectedRecordCode, pendingCoordinate, saving, loading,
+  message, errorMessage, siteError, selectedFeature, selectedPhotos: selectedMedia,
+  allLocatedCenter, loadSites, loadRecords, selectRecord, saveLocation,
+} = useSurveyRecords({ apiBaseUrl: props.apiBaseUrl, accessToken: () => props.accessToken });
 const mapFailure = ref('');
 const lightboxPhoto = ref(null);
 
-const selectedFeature = computed(() =>
-  features.value.find((feature) => feature.properties.record_code === selectedRecordCode.value) ?? null
-);
-const allLocatedCenter = computed(() => {
-  const points = features.value.map((feature) => feature.geometry?.coordinates).filter(Boolean);
-  if (!points.length) return [];
-  return [
-    points.reduce((sum, point) => sum + point[0], 0) / points.length,
-    points.reduce((sum, point) => sum + point[1], 0) / points.length,
-  ];
-});
-const selectedMedia = computed(() => selectedFeature.value?.properties.evidence_photos ?? []);
-
 onMounted(async () => {
+  window.addEventListener('keydown', handleLightboxKeydown);
   await loadSites();
   await loadRecords();
 });
-watch(selectedSiteCode, loadRecords);
+onBeforeUnmount(() => window.removeEventListener('keydown', handleLightboxKeydown));
 
-async function loadSites() {
-  try {
-    const response = await fetch(`${props.apiBaseUrl}/api/survey-records/sites`);
-    if (!response.ok) throw new Error('地点列表读取失败。');
-    sites.value = await response.json();
-  } catch (error) {
-    siteError.value = error instanceof Error ? error.message : '地点列表读取失败。';
-  }
-}
-
-async function loadRecords() {
-  loading.value = true;
-  errorMessage.value = '';
-  const query = new URLSearchParams({ coordinate_system: 'GCJ02' });
-  if (selectedSiteCode.value) query.set('site_code', selectedSiteCode.value);
-  try {
-    const response = await fetch(`${props.apiBaseUrl}/api/survey-records?${query}`);
-    if (!response.ok) throw new Error('踩点记录读取失败，请确认数据库已初始化。');
-    const payload = await response.json();
-    features.value = payload.features ?? [];
-    if (!features.value.some((feature) => feature.properties.record_code === selectedRecordCode.value)) {
-      selectedRecordCode.value = features.value[0]?.properties.record_code ?? null;
-    }
-    pendingCoordinate.value = selectedFeature.value?.geometry?.coordinates ?? null;
-  } catch (error) {
-    features.value = [];
-    errorMessage.value = error instanceof Error ? error.message : '踩点记录读取失败。';
-  } finally {
-    loading.value = false;
-  }
-}
-
-function selectRecord(recordCode) {
-  selectedRecordCode.value = recordCode;
-  pendingCoordinate.value = selectedFeature.value?.geometry?.coordinates ?? null;
-  message.value = '';
-  errorMessage.value = '';
-}
-
-async function saveLocation() {
-  if (!selectedFeature.value || !pendingCoordinate.value || saving.value) return;
-  saving.value = true;
-  message.value = '';
-  errorMessage.value = '';
-  try {
-    const response = await fetch(
-      `${props.apiBaseUrl}/api/survey-records/${encodeURIComponent(selectedFeature.value.properties.record_code)}/location`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${props.accessToken}`,
-        },
-        body: JSON.stringify({
-          longitude: pendingCoordinate.value[0],
-          latitude: pendingCoordinate.value[1],
-          coordinate_system: 'GCJ02',
-        }),
-      }
-    );
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.detail || '位置保存失败，请重新登录后再试。');
-    message.value = '位置已保存；记录仍处于待核查状态，不会用于路线推荐。';
-    await loadRecords();
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '位置保存失败。';
-  } finally {
-    saving.value = false;
-  }
+function handleLightboxKeydown(event) {
+  if (event.key === 'Escape') lightboxPhoto.value = null;
 }
 </script>
 

@@ -8,9 +8,10 @@ const props = defineProps({
   selectedProfile: Object, mapFeatures: { type: Array, default: () => [] }, pilotArea: Object, mapFailure: String,
   mapRetrying: Boolean, selectedSegmentCode: String, sosSubmitting: Boolean,
 });
-const emit = defineEmits(['select-route', 'open-routes', 'retry-map', 'select-segment', 'map-error', 'send-sos']);
+const emit = defineEmits(['open-routes', 'end-navigation', 'retry-map', 'select-segment', 'map-error', 'send-sos']);
 const navigating = ref(false);
 const routeSegmentCodes = computed(() => new Set(props.selectedRoute?.segment_codes ?? []));
+const routeSegments = computed(() => props.selectedRoute?.segments ?? []);
 function navigationText() {
   const segment = props.selectedRoute?.segments?.[0];
   if (!segment) return '请先选择一条路线。';
@@ -36,15 +37,24 @@ onBeforeUnmount(() => window.speechSynthesis?.cancel());
       <p class="section-kicker">正在为您导航</p>
       <h1>{{ selectedRoute ? `${selectedRoute.distance_m} 米 · 约 ${selectedRoute.estimated_minutes} 分钟` : '请选择路线' }}</h1>
       <p class="navigation-profile">已按{{ selectedProfile?.label || '当前出行情况' }}优先安排</p>
-      <div class="navigation-route-options">
-        <button v-for="(route, index) in routes" :key="`${route.rank}-${route.route_score}`" :class="{ selected: selectedRouteIndex === index }" type="button" @click="$emit('select-route', index)">
-          <span>方案 {{ index + 1 }}</span><strong>{{ route.distance_m }} 米 · {{ route.estimated_minutes }} 分钟</strong><small>{{ route.summary }}</small>
-        </button>
-      </div>
+      <p v-if="mapFailure" class="map-fallback-notice" role="status">地图暂不可用：{{ mapFailure }}。下面的文字指引仍可使用。</p>
+      <section class="navigation-text-directions" aria-label="逐段文字指引">
+        <h2>沿途指引</h2>
+        <ol v-if="routeSegments.length">
+          <li v-for="(segment, index) in routeSegments" :key="segment.segment_code">
+            <strong>第 {{ index + 1 }} 段：{{ segment.name }}</strong>
+            <span>{{ segment.explanation || `沿${segment.name}方向慢行。` }}</span>
+            <span v-if="segment.step_count > 0" class="route-direction-warning">有 {{ segment.step_count }} 级台阶，请注意脚下。</span>
+            <span v-if="segment.risk_tags?.length" class="route-direction-warning">注意：{{ segment.risk_tags.join('、') }}</span>
+          </li>
+        </ol>
+        <p v-else>请先返回路线方案并选择一条路线。</p>
+      </section>
       <div class="navigation-controls">
         <button class="navigation-start" type="button" @click="startVoiceNavigation">{{ navigating ? '导航已开始' : '开始语音导航' }}</button>
         <button class="navigation-repeat" type="button" @click="speak">播报提示</button>
-        <button class="navigation-routes" type="button" @click="$emit('open-routes')">查看路线</button>
+        <button class="navigation-routes" type="button" @click="$emit('open-routes')">返回路线方案</button>
+        <button class="navigation-routes" type="button" @click="$emit('end-navigation')">结束导航</button>
         <button class="navigation-sos" type="button" :disabled="sosSubmitting" @click="$emit('send-sos')">紧急求助</button>
       </div>
       <p v-if="navigating" class="navigation-reminder">{{ navigationText() }}</p>

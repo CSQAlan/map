@@ -26,11 +26,12 @@ test('family routes require a restored family role', () => {
 
 test('every existing App mode has a stable hash route', () => {
   const modes = [
-    'login', 'guest-profile', 'elder', 'recommend', 'navigation',
+    'login', 'guest-profile', 'elder', 'route-options', 'recommend', 'navigation',
     'survey-records', 'profile', 'family', 'family-binding',
     'admin-login', 'admin', 'admin-collect', 'admin-survey',
   ];
   assert.deepEqual(LEGACY_MODE_ROUTES.map(({ mode }) => mode), modes);
   assert.equal(pathForLegacyMode('admin-collect'), '/admin/collect');
+  assert.equal(pathForLegacyMode('route-options'), '/elder/routes');
   assert.equal(pathForLegacyMode('not-a-mode'), null);
 });

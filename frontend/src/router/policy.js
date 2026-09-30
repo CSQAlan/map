@@ -2,6 +2,7 @@ export const LEGACY_MODE_ROUTES = [
   { path: '/login', mode: 'login' },
   { path: '/guest/profile', mode: 'guest-profile' },
   { path: '/elder/home', mode: 'elder' },
+  { path: '/elder/routes', mode: 'route-options' },
   { path: '/elder/plan', mode: 'recommend' },
   { path: '/elder/navigation', mode: 'navigation', hidePrimaryNav: true },
   { path: '/elder/survey', mode: 'survey-records' },

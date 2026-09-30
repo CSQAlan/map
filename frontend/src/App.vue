@@ -1,7 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import PageNavigation from './components/PageNavigation.vue';
 import RecommendPage from './pages/RecommendPage.vue';
 import ElderPage from './pages/ElderPage.vue';
 import CollectPage from './pages/CollectPage.vue';
@@ -9,6 +8,7 @@ import LoginPage from './pages/LoginPage.vue';
 import ProfilePage from './pages/ProfilePage.vue';
 import GuestProfilePage from './pages/GuestProfilePage.vue';
 import NavigationPage from './pages/NavigationPage.vue';
+import RouteOptionsPage from './pages/RouteOptionsPage.vue';
 import ProfilePrompt from './components/ProfilePrompt.vue';
 import HealthQuestionnaire from './components/HealthQuestionnaire.vue';
 import FamilyPage from './pages/FamilyPage.vue';
@@ -17,19 +17,22 @@ import AdminLoginPage from './pages/AdminLoginPage.vue';
 import AdminPage from './pages/AdminPage.vue';
 import SurveyRecordsPage from './pages/SurveyRecordsPage.vue';
 import AdminSurveyPlacementPage from './pages/AdminSurveyPlacementPage.vue';
+import AuthLayout from './layouts/AuthLayout.vue';
+import ElderLayout from './layouts/ElderLayout.vue';
+import FamilyLayout from './layouts/FamilyLayout.vue';
+import AdminLayout from './layouts/AdminLayout.vue';
+import PassthroughLayout from './layouts/PassthroughLayout.vue';
 import { API_BASE_URL, apiConfigurationError } from './config/api';
-import { getCurrentCoordinates } from './services/deviceLocation';
 import { apiRequest } from './services/apiClient.js';
 import { useAuthSession } from './composables/useAuthSession.js';
+import { useRoutePlanner } from './composables/useRoutePlanner.js';
+import { useMapData } from './composables/useMapData.js';
+import { useFamilyMonitor } from './composables/useFamilyMonitor.js';
+import { useCollectionWorkflow } from './composables/useCollectionWorkflow.js';
 import { pathForLegacyMode } from './router/policy.js';
+import { findOptionByValue } from './utils/options.js';
+import { buildSosPayload } from './services/emergency.js';
 
-const startOptions = [{ label: '师大苑大学城西路入口', value: '师大苑大学城西路入口' }];
-const endOptions = [
-  { label: '荷塘水景休息区', value: '师大苑荷塘水景休息区' },
-  { label: '楼栋组团A', value: '师大苑楼栋组团A' },
-  { label: '楼栋组团B', value: '师大苑楼栋组团B' },
-  { label: '外部商业街人行道', value: '师大苑外部商业街人行道' },
-];
 const profileOptions = [
   { label: '轮椅老人', value: 'WHEELCHAIR', hint: '不走台阶，优先坡道、宽路和无障碍路段' },
   { label: '拐杖老人', value: 'CANE', hint: '台阶惩罚很高，优先扶手、平缓、安全路线' },
@@ -46,20 +49,37 @@ const strategyOptions = [
   { label: '最短距离', value: 'SHORTEST', hint: '距离优先，但仍遵守老人画像硬约束' },
 ];
 
-const databasePoiOptions = [
-  { label: '师大苑大学城西路入口', value: '师大苑大学城西路入口' },
-  { label: '师大苑荷塘水景休息区', value: '师大苑荷塘水景休息区' },
-  { label: '师大苑楼栋组团A', value: '师大苑楼栋组团A' },
-  { label: '师大苑楼栋组团B', value: '师大苑楼栋组团B' },
-  { label: '师大苑林下休闲步道', value: '师大苑林下休闲步道' },
-  { label: '师大苑外部商业街人行道', value: '师大苑外部商业街人行道' },
-];
-startOptions.splice(0, startOptions.length, ...databasePoiOptions.map((option) => ({ ...option })));
-endOptions.splice(0, endOptions.length, ...databasePoiOptions.map((option) => ({ ...option })));
-
 const activeMode = ref('login');
+const activeLayout = computed(() => {
+  if (['login', 'guest-profile', 'admin-login'].includes(activeMode.value)) return AuthLayout;
+  if (['family', 'family-binding'].includes(activeMode.value)) return FamilyLayout;
+  if (activeMode.value === 'admin') return PassthroughLayout;
+  if (['admin-collect', 'admin-survey'].includes(activeMode.value)) return AdminLayout;
+  return ElderLayout;
+});
 const route = useRoute();
 const router = useRouter();
+const {
+  startOptions, endOptions, mapFeatures, pilotArea, mapFailure, mapLoading,
+  mapRetrying,
+  loadPoiOptions, loadPilotArea, loadMapData, loadDiagnostics, retryMapData,
+} = useMapData({ apiBaseUrl: API_BASE_URL });
+const routePlanner = useRoutePlanner({
+  getStartOptions: () => startOptions.value,
+  getEndOptions: () => endOptions.value,
+  profileOptions,
+  strategyOptions,
+  apiBaseUrl: API_BASE_URL,
+  router,
+});
+const {
+  startName, endName, mobilityType, routeStrategy, routes, avoidedSegments,
+  selectedRouteIndex, selectedSegmentCode, loading, errorMessage, actionStatus,
+  selectedProfile, selectedRoute,
+  planRoutes, selectRoute: setSelectedRoute, selectSegment: setSelectedSegment,
+  selectStrategy: setRouteStrategy, selectMobility: setMobilityType, startNavigation: beginRouteNavigation,
+  returnToOptions,
+} = routePlanner;
 const {
   currentUser,
   isGuest,
@@ -92,80 +112,44 @@ watch(activeMode, (mode) => {
 const adminUsers = ref([]);
 const loginError = ref('');
 const familyBindingError = ref('');
-const boundElder = ref(null);
-const familyMonitor = ref({ navigation: { status: 'IDLE' } });
-let familyMonitorTimer = null;
+const { monitor: familyMonitor, elder: boundElder, refresh: refreshFamilyMonitor, start: beginFamilyMonitoring, stop: stopFamilyMonitoring, reset: resetFamilyMonitor } = useFamilyMonitor({
+  currentUser,
+  activeMode,
+  apiBaseUrl: API_BASE_URL,
+});
 const adminLoginError = ref('');
 const adminActionError = ref('');
 const profileSaving = ref(false);
-const startName = ref('');
-const endName = ref('');
-const mobilityType = ref('WHEELCHAIR');
-const routeStrategy = ref('BALANCED');
-const routes = ref([]);
-const avoidedSegments = ref([]);
-const selectedRouteIndex = ref(0);
-const loading = ref(false);
-const mapLoading = ref(false);
-const errorMessage = ref('');
-const actionStatus = ref('尚未开始导航，请先确认路线。');
-const mapFeatures = ref([]);
-const pilotArea = ref(null);
-const mapFailure = ref('');
-const mapRetrying = ref(false);
-const selectedSegmentCode = ref(null);
-const diagnosticSuggestions = ref([]);
-const diagnosticsLoading = ref(false);
 const profilePromptOpen = computed(
   () => activeMode.value === 'elder' && !isGuest.value && Boolean(currentUser.value) && !currentUser.value.profileComplete
 );
 const questionnaireOpen = computed(() => activeMode.value === 'elder' && questionnairePending.value);
 const sosSubmitting = ref(false);
-const collectionSegments = ref([]);
-const pendingCollectionRecords = ref([]);
-const collectionLoading = ref(false);
-const collectionSubmitting = ref(false);
-const auditLoadingIds = ref(new Set());
-const collectionMessage = ref('手机端采集表已准备好，选择路段后即可提交待审核数据。');
-const collectionError = ref('');
-const collectionForm = ref({
-  segment_code: '',
-  collector: '采集员A',
-  surface_type: 'CONCRETE',
-  surface_level: 4,
-  safety_level: 4,
-  barrier_free_level: 4,
-  rest_facility_score: 3,
-  lighting_level: 4,
-  crossing_safety_level: 4,
-  width_m: 1.5,
-  wheelchair_accessible: true,
-  has_handrail: false,
-  has_ramp: true,
-  shade_coverage_percent: 30,
-  bench_count: 0,
-  step_count: 0,
-  step_height_cm: 0,
-  location_lat: null,
-  location_lon: null,
-  photo_urls: [],
-  remark: '',
+const {
+  collectionSegments,
+  pendingCollectionRecords,
+  collectionLoading,
+  collectionSubmitting,
+  auditLoadingIds,
+  collectionMessage,
+  collectionError,
+  collectionForm,
+  selectedCollectionSegment,
+  loadSegments: fetchCollectionSegments,
+  loadPendingReviewList: fetchPendingCollectionRecords,
+  selectSegment: useCollectionSegment,
+  captureGeolocation: captureCurrentLocation,
+  submitCollection,
+  auditCollection,
+} = useCollectionWorkflow({
+  apiBaseUrl: API_BASE_URL,
+  adminAccessToken: () => adminAccessToken.value,
+  auditAccessToken: () => adminUser.value?.access_token ?? '',
+  loadMapData,
 });
 
-const selectedProfile = computed(() =>
-  profileOptions.find((item) => item.value === mobilityType.value)
-);
-const selectedStrategy = computed(() =>
-  strategyOptions.find((item) => item.value === routeStrategy.value)
-);
-const selectedEnd = computed(() => endOptions.find((item) => item.value === endName.value));
-const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
-const selectedCollectionSegment = computed(() =>
-  collectionSegments.value.find((segment) => segment.segment_code === collectionForm.value.segment_code)
-);
-const hasRoutes = computed(() => routes.value.length > 0);
+const selectedEnd = computed(() => findOptionByValue(endOptions.value, endName.value));
 const selectedSegments = computed(() => selectedRoute.value?.segments ?? []);
-const routeSegmentCodes = computed(() => new Set(selectedRoute.value?.segment_codes ?? []));
 const roadFeatures = computed(() =>
   mapFeatures.value.filter((feature) => feature.properties?.kind === 'segment')
 );
@@ -184,220 +168,34 @@ const routeEvidenceFeatures = computed(() => {
 });
 const nextStepText = computed(() => {
   const firstSegmentName = selectedSegments.value[0]?.name ?? selectedRoute.value?.segment_names?.[0];
-  if (!firstSegmentName) return '请先在推荐模式生成一条路线。';
+  if (!firstSegmentName) return '请先生成并选择一条路线。';
   return `第一步：沿“${firstSegmentName}”方向慢慢前进，注意观察地面和台阶。`;
 });
 
 onMounted(() => {
   restoreSession();
-  if (currentUser.value?.mobilityType) mobilityType.value = currentUser.value.mobilityType;
+  if (currentUser.value?.mobilityType) setMobilityType(currentUser.value.mobilityType);
   if (apiConfigurationError) {
     errorMessage.value = apiConfigurationError;
     mapFailure.value = apiConfigurationError;
     return;
   }
-  fetchPilotArea();
-  fetchPoiOptions();
-  fetchMapData();
-  fetchDiagnostics();
+  loadPilotArea();
+  loadPoiOptions();
+  loadMapData();
+  loadDiagnostics();
   fetchCollectionSegments();
   if (adminAccessToken.value) {
     Promise.allSettled([fetchAdminUsers(), fetchPendingCollectionRecords()]);
   }
 });
 
-onBeforeUnmount(() => {
-  if (familyMonitorTimer) window.clearInterval(familyMonitorTimer);
-});
-
-async function fetchPoiOptions() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/map-data/pois?area_code=SHIDAYUAN`);
-    if (!response.ok) throw new Error('地点列表接口不可用');
-    const pois = await response.json();
-    const options = pois
-      .filter((poi) => poi?.name)
-      .map((poi) => ({ label: poi.name, value: poi.name }));
-
-    if (!options.length) throw new Error('地点列表为空');
-    startOptions.splice(0, startOptions.length, ...options);
-    endOptions.splice(0, endOptions.length, ...options);
-
-  } catch (error) {
-    console.warn('使用内置地点列表：', error);
-  }
-}
-
-async function fetchPilotArea() {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/pilot-areas/SHIDAYUAN?coordinate_system=GCJ02`
-    );
-    if (!response.ok) throw new Error('无法读取师大苑试点边界');
-    pilotArea.value = await response.json();
-  } catch (error) {
-    mapFailure.value = `试点边界加载失败：${error instanceof Error ? error.message : '未知错误'}`;
-  }
-}
-
-
-async function fetchMapData() {
-  mapLoading.value = true;
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/map-data/geojson?area_code=SHIDAYUAN&coordinate_system=GCJ02`
-    );
-    if (!response.ok) throw new Error('无法读取师大苑地图数据');
-    const payload = await response.json();
-    mapFeatures.value = payload.features ?? [];
-  } catch (error) {
-    mapFeatures.value = [];
-    mapFailure.value = `地图数据加载失败：${error instanceof Error ? error.message : '未知错误'}`;
-  } finally {
-    mapLoading.value = false;
-  }
-}
-
-async function retryRealMap() {
-  mapRetrying.value = true;
-  mapFailure.value = '';
-  pilotArea.value = null;
-  await Promise.all([fetchPilotArea(), fetchMapData()]);
-  mapRetrying.value = false;
-}
-
 function selectMapSegment(segmentCode) {
-  selectedSegmentCode.value = segmentCode;
+  setSelectedSegment(segmentCode);
   const feature = roadFeatures.value.find(
     (item) => item.properties.segment_code === segmentCode
   );
   if (feature) actionStatus.value = `正在查看“${feature.properties.name}”的现场信息。`;
-}
-
-async function fetchDiagnostics() {
-  diagnosticsLoading.value = true;
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/diagnostics/segments?limit=5`);
-    const payload = await response.json().catch(() => ({}));
-    diagnosticSuggestions.value = response.ok ? payload.suggestions ?? [] : [];
-  } catch {
-    diagnosticSuggestions.value = [];
-  } finally {
-    diagnosticsLoading.value = false;
-  }
-}
-
-async function fetchCollectionSegments() {
-  collectionLoading.value = true;
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/collect/segments`);
-    if (!response.ok) {
-      throw new Error('路段列表接口暂时不可用。');
-    }
-    const payload = await response.json();
-    collectionSegments.value = Array.isArray(payload) ? payload : [];
-    if (!collectionForm.value.segment_code && collectionSegments.value.length) {
-      useCollectionSegment(collectionSegments.value[0].segment_code);
-    }
-  } catch {
-    collectionError.value = '无法加载可采集路段，请确认后端服务已启动。';
-  } finally {
-    collectionLoading.value = false;
-  }
-}
-
-async function fetchPendingCollectionRecords() {
-  try {
-    pendingCollectionRecords.value = await apiRequest('/api/collect/pending', {
-      token: adminAccessToken.value,
-    });
-  } catch {
-    pendingCollectionRecords.value = [];
-    collectionError.value = '待审核列表暂时无法加载，但不影响提交采集记录。';
-  }
-}
-
-function useCollectionSegment(segmentCode) {
-  collectionForm.value.segment_code = segmentCode;
-  const segment = collectionSegments.value.find((item) => item.segment_code === segmentCode);
-  if (!segment) return;
-  collectionForm.value.width_m = Number(segment.width_m ?? collectionForm.value.width_m);
-  collectionForm.value.surface_type = segment.surface_type ?? 'CONCRETE';
-}
-
-function captureCurrentLocation() {
-  collectionError.value = '';
-  collectionMessage.value = '正在读取手机定位，请稍等。';
-  getCurrentCoordinates()
-    .then(({ latitude, longitude }) => {
-      collectionForm.value.location_lat = latitude;
-      collectionForm.value.location_lon = longitude;
-      collectionMessage.value = '已记录当前位置，会随采集备注一起提交。';
-    })
-    .catch(() => {
-      collectionError.value = '定位失败，请检查定位权限，或先不带定位提交。';
-    });
-}
-
-async function submitCollection() {
-  collectionSubmitting.value = true;
-  collectionError.value = '';
-  collectionMessage.value = '正在提交采集记录...';
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/collect/segments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(collectionForm.value),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(formatApiError(payload.detail));
-    }
-    collectionMessage.value = `已提交记录 #${payload.id}，状态：${payload.status}，等待管理员审核。`;
-    collectionForm.value.remark = '';
-    collectionForm.value.location_lat = null;
-    collectionForm.value.location_lon = null;
-  } catch (error) {
-    collectionError.value = error instanceof Error ? error.message : '采集记录提交失败。';
-    collectionMessage.value = '提交没有成功，请检查字段后再试一次。';
-  } finally {
-    collectionSubmitting.value = false;
-  }
-}
-
-async function auditCollection(record, auditResult) {
-  const nextLoadingIds = new Set(auditLoadingIds.value);
-  nextLoadingIds.add(record.id);
-  auditLoadingIds.value = nextLoadingIds;
-  collectionError.value = '';
-  collectionMessage.value = auditResult === 'APPROVED' ? '正在通过采集记录...' : '正在驳回采集记录...';
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/collect/segments/${record.id}/audit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminUser.value?.access_token ?? ''}`,
-      },
-      body: JSON.stringify({
-        audit_result: auditResult,
-        auditor: '系统管理员',
-        audit_comment: auditResult === 'APPROVED' ? '现场采集数据通过审核' : '演示驳回，需重新采集',
-      }),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(formatApiError(payload.detail));
-    }
-    collectionMessage.value = payload.message ?? '审核操作已完成。';
-    await Promise.all([fetchPendingCollectionRecords(), fetchMapData()]);
-  } catch (error) {
-    collectionError.value = error instanceof Error ? error.message : '审核操作失败。';
-    collectionMessage.value = '审核没有成功，请稍后再试。';
-  } finally {
-    const updatedLoadingIds = new Set(auditLoadingIds.value);
-    updatedLoadingIds.delete(record.id);
-    auditLoadingIds.value = updatedLoadingIds;
-  }
 }
 
 function formatApiError(detail, fallback = '采集记录提交失败。') {
@@ -408,109 +206,13 @@ function formatApiError(detail, fallback = '采集记录提交失败。') {
   return fallback;
 }
 
-function resolvePilotLocation(input, options) {
-  const normalizedInput = input.trim();
-  const exact = options.find((option) => option.value === normalizedInput || option.label === normalizedInput);
-  if (exact) return exact.value;
-  const fuzzy = options.find(
-    (option) => option.label.includes(normalizedInput) || normalizedInput.includes(option.label)
-  );
-  return fuzzy?.value ?? null;
-}
-
-async function fetchRoutes(returnToHome = false) {
-  loading.value = true;
-  errorMessage.value = '';
-  avoidedSegments.value = [];
-  actionStatus.value = '正在根据老人画像重新计算适老路线。';
-
-  try {
-    const resolvedStart = resolvePilotLocation(startName.value, startOptions);
-    const resolvedEnd = resolvePilotLocation(endName.value, endOptions);
-    if (!resolvedStart || !resolvedEnd) {
-      throw new Error('请从输入框提示的试点地点中选择起点和目的地。');
-    }
-    if (resolvedStart === resolvedEnd) {
-      throw new Error('起点和目的地不能相同，请选择不同地点后再生成路线。');
-    }
-    startName.value = resolvedStart;
-    endName.value = resolvedEnd;
-    const params = new URLSearchParams({
-      start_name: resolvedStart,
-      end_name: resolvedEnd,
-      mobility_type: mobilityType.value,
-      strategy: routeStrategy.value,
-    });
-    const response = await fetch(`${API_BASE_URL}/api/routes/recommend?${params.toString()}`);
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const detail = payload.detail;
-      if (detail?.avoided_segments) {
-        avoidedSegments.value = detail.avoided_segments;
-      }
-      throw new Error(
-        typeof detail === 'string'
-          ? detail
-          : detail?.message ?? '路线接口暂时不可用'
-      );
-    }
-
-    routes.value = payload.routes ?? [];
-    avoidedSegments.value = payload.avoided_segments ?? [];
-    selectedRouteIndex.value = 0;
-    selectedSegmentCode.value = routes.value[0]?.segment_codes?.[0] ?? null;
-    actionStatus.value = routes.value.length
-      ? `已按“${selectedProfile.value?.label}”生成路线，可切换到老人模式演示。`
-      : '没有找到可用路线，请更换目的地或老人画像。';
-    if (returnToHome && routes.value.length) activeMode.value = 'elder';
-  } catch (error) {
-    routes.value = [];
-    selectedRouteIndex.value = 0;
-    errorMessage.value =
-      error instanceof Error
-        ? error.message
-        : '无法连接后端服务，请确认 FastAPI 已启动。';
-    actionStatus.value = '路线生成失败，请检查后端服务。';
-  } finally {
-    loading.value = false;
-  }
-}
-
 function selectRoute(index) {
-  selectedRouteIndex.value = index;
-  selectedSegmentCode.value = routes.value[index]?.segment_codes?.[0] ?? null;
+  setSelectedRoute(index);
   if (activeMode.value === 'navigation') publishNavigationStatus();
-  actionStatus.value = `已选择推荐路线 ${index + 1}。`;
-}
-
-function selectStrategy(strategyValue) {
-  if (routeStrategy.value === strategyValue) return;
-  routeStrategy.value = strategyValue;
-  routes.value = [];
-  avoidedSegments.value = [];
-  selectedRouteIndex.value = 0;
-  errorMessage.value = '';
-  actionStatus.value = `已切换为“${selectedStrategy.value?.label}”，请重新生成路线。`;
-}
-
-function legacyStartNavigation() {
-  if (selectedRoute.value) activeMode.value = 'navigation';
-  if (!selectedRoute.value) {
-    activeMode.value = 'recommend';
-    actionStatus.value = '请先生成一条路线。';
-    return;
-  }
-  actionStatus.value = '导航已开始，请按下一步提示慢行。';
 }
 
 function reroute() {
   activeMode.value = 'recommend';
-}
-
-async function legacyPlanRouteFromElderHome() {
-  await fetchRoutes(false);
-  if (routes.value.length) activeMode.value = 'navigation';
 }
 
 function openProfile() {
@@ -524,14 +226,14 @@ async function sendSos() {
     const response = await fetch(`${API_BASE_URL}/api/emergency/sos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        elder_user_id: currentUser.value?.role === 'elder' ? currentUser.value.id : null,
-        elder_name: currentUser.value?.realName || (isGuest.value ? '访客' : '演示老人'),
-        mobility_type: mobilityType.value,
-        route_summary: selectedRoute.value?.summary ?? null,
-        current_step: nextStepText.value,
-        destination_name: selectedEnd.value?.label ?? null,
-      }),
+      body: JSON.stringify(buildSosPayload({
+        user: currentUser.value,
+        isGuest: isGuest.value,
+        mobilityType: mobilityType.value,
+        selectedRoute: selectedRoute.value,
+        currentStep: nextStepText.value,
+        destination: selectedEnd.value,
+      })),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -560,7 +262,7 @@ function handleSkipLogin() {
 
 function enterGuestMode(profile) {
   startGuestSession();
-  mobilityType.value = profile.mobilityType;
+  setMobilityType(profile.mobilityType);
   questionnairePending.value = true;
   actionStatus.value = profile.healthCondition
     ? '已按本次出行情况为您调整推荐。'
@@ -570,6 +272,7 @@ function enterGuestMode(profile) {
 
 function handleLogout() {
   const lastRole = endSession();
+  resetFamilyMonitor();
   stopFamilyMonitoring();
   if (lastRole === 'family') boundElder.value = null;
   activeMode.value = 'login';
@@ -586,7 +289,7 @@ function handleSaveProfile(profileData) {
 
     // Update mobility type if changed
     if (profileData.mobilityType && profileData.mobilityType !== mobilityType.value) {
-      mobilityType.value = profileData.mobilityType;
+      setMobilityType(profileData.mobilityType);
     }
 
     actionStatus.value = '个人信息已保存';
@@ -601,7 +304,7 @@ function handleSaveProfile(profileData) {
 }
 
 function selectInitialProfile(profileValue) {
-  mobilityType.value = profileValue;
+  setMobilityType(profileValue);
   updateProfile({
     mobilityType: profileValue,
     profileComplete: true,
@@ -643,58 +346,56 @@ function exitAdmin() {
   activeMode.value = 'login';
 }
 
-async function publishNavigationStatus() {
-  if (isGuest.value || currentUser.value?.role !== 'elder' || !currentUser.value?.id || !selectedRoute.value) return;
+async function publishNavigationStatus(nextStatus = 'NAVIGATING') {
+  if (isGuest.value || currentUser.value?.role !== 'elder' || !currentUser.value?.id || !selectedRoute.value) return false;
   const route = selectedRoute.value;
   const status = {
     start_name: startName.value,
     end_name: endName.value,
     distance_m: Number(route.distance_m || 0),
-    remaining_m: Number(route.distance_m || 0),
+    remaining_m: nextStatus === 'COMPLETED' ? 0 : Number(route.distance_m || 0),
     estimated_minutes: Number(route.estimated_minutes || 0),
-    current_step: nextStepText.value,
+    current_step: nextStatus === 'COMPLETED' ? '导航已结束' : nextStepText.value,
     route_summary: route.summary || '',
-    status: 'NAVIGATING',
+    status: nextStatus,
   };
   try {
-    await fetch(`${API_BASE_URL}/api/auth/elder/${currentUser.value.id}/navigation`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(status) });
-  } catch { /* monitoring update should not interrupt elder navigation */ }
+    const response = await fetch(`${API_BASE_URL}/api/auth/elder/${currentUser.value.id}/navigation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(status),
+    });
+    return response.ok;
+  } catch { return false; }
 }
 
-async function refreshFamilyMonitor() {
-  if (!currentUser.value?.id || currentUser.value.role !== 'family') return;
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/family/${currentUser.value.id}/monitor`);
-    if (!response.ok) return;
-    const payload = await response.json();
-    familyMonitor.value = payload;
-    boundElder.value = payload.elder;
-  } catch { /* retain the previous permitted snapshot */ }
-}
-
-function beginFamilyMonitoring() {
-  if (familyMonitorTimer) window.clearInterval(familyMonitorTimer);
-  refreshFamilyMonitor();
-  familyMonitorTimer = window.setInterval(refreshFamilyMonitor, 5000);
-}
-
-function stopFamilyMonitoring() {
-  if (familyMonitorTimer) window.clearInterval(familyMonitorTimer);
-  familyMonitorTimer = null;
-}
-
-function startNavigation() {
-  if (!selectedRoute.value) { activeMode.value = 'recommend'; return; }
-  activeMode.value = 'navigation';
-  actionStatus.value = '导航已开始，请按语音提示慢行。';
-  publishNavigationStatus();
+async function startNavigation() {
+  const started = await beginRouteNavigation();
+  if (started) publishNavigationStatus();
 }
 
 async function planRouteFromElderHome() {
-  await fetchRoutes(false);
-  if (routes.value.length) {
-    activeMode.value = 'navigation';
-    publishNavigationStatus();
+  if (await planRoutes()) await router.push('/elder/routes');
+}
+
+async function planRouteFromConditions() {
+  if (await planRoutes()) await router.push('/elder/routes');
+}
+
+function openRouteOptions() {
+  router.push('/elder/routes');
+}
+
+function openRouteConditions() {
+  router.push('/elder/plan');
+}
+
+async function finishNavigation() {
+  const shouldSync = !isGuest.value && currentUser.value?.role === 'elder' && Boolean(currentUser.value?.id);
+  const synchronized = await publishNavigationStatus('COMPLETED');
+  await returnToOptions({ ended: true });
+  if (shouldSync && !synchronized) {
+    actionStatus.value = '导航已结束，但家属端状态暂未同步，请稍后重试。';
   }
 }
 
@@ -703,10 +404,10 @@ async function handleLogin(credentials) {
   loginError.value = '';
   try {
     const isFamily = credentials.role === 'family';
+    if (isFamily) resetFamilyMonitor();
     const user = isFamily ? await loginFamily(credentials) : await loginElder(credentials);
     if (isFamily && user.bindingStatus !== 'ACTIVE') {
-      boundElder.value = null;
-      familyMonitor.value = { navigation: { status: 'IDLE' } };
+      resetFamilyMonitor();
       stopFamilyMonitoring();
     }
     if (isFamily && user.bindingStatus === 'ACTIVE') {
@@ -779,13 +480,8 @@ async function bindFamilyToElder(payload) {
 </script>
 
 <template>
-  <main class="app-shell">
-    <PageNavigation
-      :active-mode="activeMode"
-      :current-user="currentUser"
-      :is-guest="isGuest"
-      @update:active-mode="activeMode = $event"
-    />
+  <component :is="activeLayout">
+    <div class="app-content">
 
     <LoginPage
       v-if="activeMode === 'login'"
@@ -808,6 +504,7 @@ async function bindFamilyToElder(payload) {
     <AdminPage
       v-else-if="activeMode === 'admin'"
       :pending-records="pendingCollectionRecords"
+      :audit-loading-ids="auditLoadingIds"
       :collection-segments="collectionSegments"
       :users="adminUsers"
       :action-error="adminActionError"
@@ -843,7 +540,7 @@ async function bindFamilyToElder(payload) {
       :elder="currentUser?.boundElder || boundElder"
       :monitor="familyMonitor"
       @refresh="refreshFamilyMonitor"
-      @manage-binding="familyBindingError = ''; activeMode = 'family-binding'"
+      @manage-binding="resetFamilyMonitor(); familyBindingError = ''; activeMode = 'family-binding'"
       @logout="handleLogout"
     />
 
@@ -863,8 +560,6 @@ async function bindFamilyToElder(payload) {
 
     <NavigationPage
       v-else-if="activeMode === 'navigation'"
-      :routes="routes"
-      :selected-route-index="selectedRouteIndex"
       :selected-route="selectedRoute"
       :selected-profile="selectedProfile"
       :map-features="mapFeatures"
@@ -873,12 +568,35 @@ async function bindFamilyToElder(payload) {
       :map-retrying="mapRetrying"
       :selected-segment-code="selectedSegmentCode"
       :sos-submitting="sosSubmitting"
-      @select-route="selectRoute"
-      @open-routes="activeMode = 'recommend'"
-      @retry-map="retryRealMap"
+      @open-routes="openRouteOptions"
+      @end-navigation="finishNavigation"
+      @retry-map="retryMapData"
       @select-segment="selectMapSegment"
       @map-error="mapFailure = `地图加载失败：${$event}`"
       @send-sos="sendSos"
+    />
+
+    <RouteOptionsPage
+      v-else-if="activeMode === 'route-options'"
+      :routes="routes"
+      :selected-route-index="selectedRouteIndex"
+      :selected-route="selectedRoute"
+      :avoided-segments="avoidedSegments"
+      :map-features="mapFeatures"
+      :pilot-area="pilotArea"
+      :map-failure="mapFailure"
+      :map-retrying="mapRetrying"
+      :map-loading="mapLoading"
+      :selected-segment-code="selectedSegmentCode"
+      :api-base-url="API_BASE_URL"
+      :error-message="errorMessage"
+      :action-status="actionStatus"
+      @select-route="selectRoute"
+      @select-segment="selectMapSegment"
+      @open-conditions="openRouteConditions"
+      @start-navigation="startNavigation"
+      @retry-map="retryMapData"
+      @map-error="mapFailure = `高德底图加载失败：${$event}`"
     />
 
     <RecommendPage
@@ -891,32 +609,13 @@ async function bindFamilyToElder(payload) {
       :end-options="endOptions"
       :profile-options="profileOptions"
       :strategy-options="strategyOptions"
-      :routes="routes"
-      :avoided-segments="avoidedSegments"
-      :selected-route-index="selectedRouteIndex"
       :loading="loading"
       :error-message="errorMessage"
-      :action-status="actionStatus"
-      :map-features="mapFeatures"
-      :pilot-area="pilotArea"
-      :map-failure="mapFailure"
-      :map-retrying="mapRetrying"
-      :map-loading="mapLoading"
-      :selected-segment-code="selectedSegmentCode"
-      :diagnostic-suggestions="diagnosticSuggestions"
-      :diagnostics-loading="diagnosticsLoading"
-      :api-base-url="API_BASE_URL"
-      @update:mobility-type="mobilityType = $event"
-      @update:route-strategy="selectStrategy($event)"
+      @update:mobility-type="setMobilityType($event)"
+      @update:route-strategy="setRouteStrategy($event)"
       @update:start-name="startName = $event"
       @update:end-name="endName = $event"
-      @fetch-routes="fetchRoutes(false)"
-      @start-navigation="startNavigation"
-      @select-route="selectRoute"
-      @select-strategy="selectStrategy"
-      @select-segment="selectMapSegment"
-      @retry-map="retryRealMap"
-      @map-error="mapFailure = `高德底图加载失败：${$event}`"
+      @plan-routes="planRouteFromConditions"
     />
 
     <ElderPage
@@ -925,28 +624,20 @@ async function bindFamilyToElder(payload) {
       :end-name="endName"
       :start-options="startOptions"
       :end-options="endOptions"
-      :selected-route="selectedRoute"
-      :routes="routes"
-      :selected-route-index="selectedRouteIndex"
-      :selected-profile="selectedProfile"
+      :profile-options="profileOptions"
+      :mobility-type="mobilityType"
       :action-status="actionStatus"
+      :error-message="errorMessage"
       :sos-submitting="sosSubmitting"
       :loading="loading"
-      :map-features="mapFeatures"
-      :pilot-area="pilotArea"
-      :map-failure="mapFailure"
-      :map-retrying="mapRetrying"
-      :selected-segment-code="selectedSegmentCode"
       :is-guest="isGuest"
       @update:start-name="startName = $event"
       @update:end-name="endName = $event"
+      @update:mobility-type="setMobilityType($event)"
       @plan-route="planRouteFromElderHome"
-      @select-route="selectRoute"
+      @open-route-options="openRouteOptions"
       @reroute="reroute"
       @send-sos="sendSos"
-      @retry-map="retryRealMap"
-      @select-segment="selectMapSegment"
-      @map-error="mapFailure = `高德底图加载失败：${$event}`"
       @open-profile="openProfile"
     />
 
@@ -998,5 +689,6 @@ async function bindFamilyToElder(payload) {
       @submit="saveHealthQuestionnaire"
       @skip="skipHealthQuestionnaire"
     />
-  </main>
+    </div>
+  </component>
 </template>

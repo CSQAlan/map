@@ -21,18 +21,15 @@ defineEmits(['select', 'select-segment']);
   <article
     class="route-card"
     :class="{ chosen: selected }"
-    role="button"
-    tabindex="0"
-    @click="$emit('select')"
-    @keydown.enter.prevent="$emit('select')"
-    @keydown.space.prevent="$emit('select')"
   >
     <div class="route-card-top">
       <div>
         <p class="rank-label">推荐路线 {{ route.rank }}</p>
         <h3>{{ route.summary || '综合适老成本较低' }}</h3>
       </div>
-      <strong>{{ route.route_score }} 分</strong>
+      <button class="route-card-select" type="button" :aria-pressed="selected" @click="$emit('select')">
+        {{ selected ? '已选择' : '选择此路线' }} · {{ route.route_score }} 分
+      </button>
     </div>
     <dl class="route-metrics">
       <div>
@@ -80,3 +77,20 @@ defineEmits(['select', 'select-segment']);
     </ol>
   </article>
 </template>
+
+<style scoped>
+.route-card-select {
+  min-height: 44px;
+  border: 1px solid var(--leaf-dark, #286887);
+  border-radius: 12px;
+  padding: 0 12px;
+  color: var(--leaf-dark, #286887);
+  background: #fff;
+  font-weight: 800;
+}
+
+.route-card.chosen .route-card-select {
+  color: #fff;
+  background: var(--leaf-dark, #286887);
+}
+</style>

@@ -1,78 +1,34 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import SurveyRecordsMap from '../components/SurveyRecordsMap.vue';
+import { useSurveyRecords } from '../composables/useSurveyRecords.js';
 
 const props = defineProps({ apiBaseUrl: { type: String, required: true } });
-const sites = ref([]);
-const features = ref([]);
-const selectedSiteCode = ref('');
-const selectedRecordCode = ref(null);
+const {
+  sites, features, selectedSiteCode, selectedRecordCode, loading, errorMessage, siteError,
+  selectedFeature, selectedPhotos, unlocatedFeatures, allLocatedCenter,
+  loadSites, loadRecords, selectRecord: setSelectedRecord,
+} = useSurveyRecords({ apiBaseUrl: props.apiBaseUrl });
 const selectedPhotoIndex = ref(0);
-const loading = ref(false);
-const errorMessage = ref('');
-const siteError = ref('');
 const mapFailure = ref('');
 const lightboxPhoto = ref(null);
 
-const selectedFeature = computed(() =>
-  features.value.find((feature) => feature.properties.record_code === selectedRecordCode.value) ?? null
-);
-const selectedPhotos = computed(() => selectedFeature.value?.properties.evidence_photos ?? []);
 const selectedPhoto = computed(() => selectedPhotos.value[selectedPhotoIndex.value] ?? null);
-const allLocatedCenter = computed(() => {
-  const points = features.value
-    .map((feature) => feature.geometry?.coordinates)
-    .filter((coordinates) => Array.isArray(coordinates) && coordinates.length >= 2);
-  if (!points.length) return [];
-  return [
-    points.reduce((sum, point) => sum + point[0], 0) / points.length,
-    points.reduce((sum, point) => sum + point[1], 0) / points.length,
-  ];
-});
-const unlocatedFeatures = computed(() => features.value.filter((feature) => !feature.geometry));
+
+function selectRecord(recordCode) {
+  setSelectedRecord(recordCode);
+  selectedPhotoIndex.value = 0;
+}
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleLightboxKeydown);
   await loadSites();
   await loadRecords();
 });
+onBeforeUnmount(() => window.removeEventListener('keydown', handleLightboxKeydown));
 
-watch(selectedSiteCode, loadRecords);
-
-async function loadSites() {
-  try {
-    const response = await fetch(`${props.apiBaseUrl}/api/survey-records/sites`);
-    if (!response.ok) throw new Error('踩点地点暂时无法读取。');
-    sites.value = await response.json();
-  } catch (error) {
-    siteError.value = error instanceof Error ? error.message : '踩点地点暂时无法读取。';
-  }
-}
-
-async function loadRecords() {
-  loading.value = true;
-  errorMessage.value = '';
-  const query = new URLSearchParams({ coordinate_system: 'GCJ02' });
-  if (selectedSiteCode.value) query.set('site_code', selectedSiteCode.value);
-  try {
-    const response = await fetch(`${props.apiBaseUrl}/api/survey-records?${query}`);
-    if (!response.ok) throw new Error('踩点资料暂时无法读取，请确认后端已初始化。');
-    const payload = await response.json();
-    features.value = payload.features ?? [];
-    if (!features.value.some((feature) => feature.properties.record_code === selectedRecordCode.value)) {
-      selectedRecordCode.value = features.value[0]?.properties.record_code ?? null;
-      selectedPhotoIndex.value = 0;
-    }
-  } catch (error) {
-    features.value = [];
-    errorMessage.value = error instanceof Error ? error.message : '踩点资料暂时无法读取。';
-  } finally {
-    loading.value = false;
-  }
-}
-
-function selectRecord(recordCode) {
-  selectedRecordCode.value = recordCode;
-  selectedPhotoIndex.value = 0;
+function handleLightboxKeydown(event) {
+  if (event.key === 'Escape') lightboxPhoto.value = null;
 }
 
 function movePhoto(step) {
