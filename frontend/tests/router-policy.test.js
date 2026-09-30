@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  LEGACY_MODE_ROUTES,
+  canEnterRoute,
+  legacyAdminRedirect,
+  pathForLegacyMode,
+} from '../src/router/policy.js';
+
+test('legacy admin URL redirects to the login page', () => {
+  assert.equal(legacyAdminRedirect('/admin'), '/admin/login');
+  assert.equal(legacyAdminRedirect('/admin/overview'), null);
+});
+
+test('admin routes require an admin token while public routes remain accessible', () => {
+  assert.equal(canEnterRoute({ requiresAdmin: true }, ''), false);
+  assert.equal(canEnterRoute({ requiresAdmin: true }, 'signed-token'), true);
+  assert.equal(canEnterRoute({}, ''), true);
+});
+
+test('family routes require a restored family role', () => {
+  assert.equal(canEnterRoute({ requiresFamily: true }, '', null), false);
+  assert.equal(canEnterRoute({ requiresFamily: true }, '', 'elder'), false);
+  assert.equal(canEnterRoute({ requiresFamily: true }, '', 'family'), true);
+});
+
+test('every existing App mode has a stable hash route', () => {
+  const modes = [
+    'login', 'guest-profile', 'elder', 'recommend', 'navigation',
+    'survey-records', 'profile', 'family', 'family-binding',
+    'admin-login', 'admin', 'admin-collect', 'admin-survey',
+  ];
+  assert.deepEqual(LEGACY_MODE_ROUTES.map(({ mode }) => mode), modes);
+  assert.equal(pathForLegacyMode('admin-collect'), '/admin/collect');
+  assert.equal(pathForLegacyMode('not-a-mode'), null);
+});

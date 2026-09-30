@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 
-const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
+const configuredApiBaseUrl = (import.meta.env?.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
 
 export const isNativeApp = Capacitor.isNativePlatform();
 export const API_BASE_URL =

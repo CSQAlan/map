@@ -1,5 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import PageNavigation from './components/PageNavigation.vue';
 import RecommendPage from './pages/RecommendPage.vue';
 import ElderPage from './pages/ElderPage.vue';
@@ -18,6 +19,9 @@ import SurveyRecordsPage from './pages/SurveyRecordsPage.vue';
 import AdminSurveyPlacementPage from './pages/AdminSurveyPlacementPage.vue';
 import { API_BASE_URL, apiConfigurationError } from './config/api';
 import { getCurrentCoordinates } from './services/deviceLocation';
+import { apiRequest } from './services/apiClient.js';
+import { useAuthSession } from './composables/useAuthSession.js';
+import { pathForLegacyMode } from './router/policy.js';
 
 const startOptions = [{ label: '师大苑大学城西路入口', value: '师大苑大学城西路入口' }];
 const endOptions = [
@@ -54,11 +58,37 @@ startOptions.splice(0, startOptions.length, ...databasePoiOptions.map((option) =
 endOptions.splice(0, endOptions.length, ...databasePoiOptions.map((option) => ({ ...option })));
 
 const activeMode = ref('login');
-const currentUser = ref(null);
-const isGuest = ref(false);
+const route = useRoute();
+const router = useRouter();
+const {
+  currentUser,
+  isGuest,
+  adminUser,
+  adminAccessToken,
+  restoreSession,
+  loginElder,
+  loginFamily,
+  loginAdmin: authenticateAdmin,
+  enterGuestMode: startGuestSession,
+  clearCurrentUser,
+  logout: endSession,
+  updateProfile,
+  bindFamily: bindFamilySession,
+} = useAuthSession();
 const questionnairePending = ref(false);
-const adminUser = ref(null);
-const adminCredentials = ref({ username: 'admin', password: 'admin123' });
+
+watch(
+  () => route.meta.legacyMode,
+  (mode) => {
+    if (mode && activeMode.value !== mode) activeMode.value = mode;
+  },
+  { immediate: true }
+);
+
+watch(activeMode, (mode) => {
+  const path = pathForLegacyMode(mode);
+  if (path && route.path !== path) router.push(path);
+});
 const adminUsers = ref([]);
 const loginError = ref('');
 const familyBindingError = ref('');
@@ -158,50 +188,22 @@ const nextStepText = computed(() => {
   return `第一步：沿“${firstSegmentName}”方向慢慢前进，注意观察地面和台阶。`;
 });
 
-function syncAdminRoute() {
-  if (window.location.hash === '#/admin' && activeMode.value !== 'admin') {
-    activeMode.value = 'admin-login';
-  }
-}
-
 onMounted(() => {
-  syncAdminRoute();
-  window.addEventListener('hashchange', syncAdminRoute);
+  restoreSession();
+  if (currentUser.value?.mobilityType) mobilityType.value = currentUser.value.mobilityType;
   if (apiConfigurationError) {
     errorMessage.value = apiConfigurationError;
     mapFailure.value = apiConfigurationError;
     return;
   }
-  // Check for saved user session
-  const lastRole = localStorage.getItem('mapLastLoginRole') ?? 'elder';
-  const savedUser = localStorage.getItem(lastRole === 'family' ? 'familyMapUser' : 'elderMapUser');
-  if (savedUser) {
-    try {
-      currentUser.value = JSON.parse(savedUser);
-      // Apply user's mobility type preference
-      if (currentUser.value?.mobilityType) {
-        mobilityType.value = currentUser.value.mobilityType;
-      }
-      if (currentUser.value?.role !== 'family' && !currentUser.value?.familyBindingCode) {
-        currentUser.value = { ...currentUser.value, familyBindingCode: String(Math.floor(100000 + Math.random() * 900000)) };
-        localStorage.setItem('elderMapUser', JSON.stringify(currentUser.value));
-      }
-    } catch (e) {
-      console.error('Failed to parse saved user data');
-      localStorage.removeItem('elderMapUser');
-    }
-  }
-
-  const savedAdminCredentials = localStorage.getItem('adminMapCredentials');
-  if (savedAdminCredentials) {
-    try { adminCredentials.value = JSON.parse(savedAdminCredentials); } catch { localStorage.removeItem('adminMapCredentials'); }
-  }
-
   fetchPilotArea();
   fetchPoiOptions();
   fetchMapData();
   fetchDiagnostics();
   fetchCollectionSegments();
+  if (adminAccessToken.value) {
+    Promise.allSettled([fetchAdminUsers(), fetchPendingCollectionRecords()]);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -306,10 +308,9 @@ async function fetchCollectionSegments() {
 
 async function fetchPendingCollectionRecords() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/collect/pending`, {
-      headers: { Authorization: `Bearer ${adminUser.value?.access_token ?? ''}` },
+    pendingCollectionRecords.value = await apiRequest('/api/collect/pending', {
+      token: adminAccessToken.value,
     });
-    pendingCollectionRecords.value = response.ok ? await response.json() : [];
   } catch {
     pendingCollectionRecords.value = [];
     collectionError.value = '待审核列表暂时无法加载，但不影响提交采集记录。';
@@ -548,53 +549,17 @@ async function sendSos() {
   }
 }
 
-function handleLegacyLogin(credentials) {
-  // Simulate login/register - in production this would call an API
-  isGuest.value = false;
-  const isFamily = credentials.role === 'family';
-  let existingUser = {};
-  try {
-    existingUser = JSON.parse(localStorage.getItem(isFamily ? 'familyMapUser' : 'elderMapUser') || '{}');
-  } catch { existingUser = {}; }
-  const userData = {
-    ...existingUser,
-    username: credentials.username,
-    role: isFamily ? 'family' : 'elder',
-    realName: '',
-    age: '',
-    phone: credentials.phone || existingUser.phone || '',
-    mobilityType: 'INDEPENDENT',
-    hasWheelchair: false,
-    hasCane: false,
-    healthConditions: '',
-    emergencyContact: '',
-    emergencyPhone: '',
-    familyBindingCode: isFamily ? null : String(Math.floor(100000 + Math.random() * 900000)),
-    profileComplete: false,
-    password: credentials.password,
-    createdAt: new Date().toISOString()
-  };
-
-  currentUser.value = userData;
-  localStorage.setItem(isFamily ? 'familyMapUser' : 'elderMapUser', JSON.stringify(userData));
-  localStorage.setItem('mapLastLoginRole', isFamily ? 'family' : 'elder');
-  activeMode.value = isFamily ? 'family-binding' : 'elder';
-}
-
 function handleSkipLogin() {
   // Guest mode is intentionally anonymous: never reuse or persist a registered account session.
-  currentUser.value = null;
-  isGuest.value = true;
+  startGuestSession({ clearLastRole: true });
   questionnairePending.value = false;
   boundElder.value = null;
   stopFamilyMonitoring();
-  localStorage.removeItem('mapLastLoginRole');
   activeMode.value = 'guest-profile';
 }
 
 function enterGuestMode(profile) {
-  isGuest.value = true;
-  currentUser.value = null;
+  startGuestSession();
   mobilityType.value = profile.mobilityType;
   questionnairePending.value = true;
   actionStatus.value = profile.healthCondition
@@ -604,13 +569,8 @@ function enterGuestMode(profile) {
 }
 
 function handleLogout() {
-  const lastRole = currentUser.value?.role;
+  const lastRole = endSession();
   stopFamilyMonitoring();
-  currentUser.value = null;
-  isGuest.value = false;
-  localStorage.removeItem('mapLastLoginRole');
-  if (lastRole === 'elder') localStorage.removeItem('elderMapUser');
-  if (lastRole === 'family') localStorage.removeItem('familyMapUser');
   if (lastRole === 'family') boundElder.value = null;
   activeMode.value = 'login';
 }
@@ -618,14 +578,11 @@ function handleLogout() {
 function handleSaveProfile(profileData) {
   profileSaving.value = true;
   try {
-    const updatedUser = {
-      ...currentUser.value,
+    updateProfile({
       ...profileData,
       profileComplete: true,
       updatedAt: new Date().toISOString()
-    };
-    currentUser.value = updatedUser;
-    localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+    });
 
     // Update mobility type if changed
     if (profileData.mobilityType && profileData.mobilityType !== mobilityType.value) {
@@ -643,22 +600,13 @@ function handleSaveProfile(profileData) {
   }
 }
 
-function loginWithSavedAccount() {
-  if (!currentUser.value) return;
-  isGuest.value = false;
-  activeMode.value = currentUser.value.role === 'family' ? 'family' : 'elder';
-}
-
 function selectInitialProfile(profileValue) {
   mobilityType.value = profileValue;
-  const updatedUser = {
-    ...currentUser.value,
+  updateProfile({
     mobilityType: profileValue,
     profileComplete: true,
     updatedAt: new Date().toISOString(),
-  };
-  currentUser.value = updatedUser;
-  localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+  });
   questionnairePending.value = true;
   actionStatus.value = '已按您的出行情况选择推荐路线。';
 }
@@ -670,76 +618,28 @@ function saveHealthQuestionnaire(answers) {
     actionStatus.value = '已根据您的回答优化本次路线推荐。';
     return;
   }
-  const updatedUser = {
-    ...currentUser.value,
+  updateProfile({
     healthProfile: answers,
     healthConditions: currentUser.value?.healthConditions || notes,
     questionnaireComplete: true,
     updatedAt: new Date().toISOString(),
-  };
-  currentUser.value = updatedUser;
-  localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+  });
   actionStatus.value = '出行画像已完善，路线会更贴合您的需要。';
 }
 
 function skipHealthQuestionnaire() {
   questionnairePending.value = false;
   if (!isGuest.value && currentUser.value) {
-    const updatedUser = { ...currentUser.value, questionnaireSkipped: true, updatedAt: new Date().toISOString() };
-    currentUser.value = updatedUser;
-    localStorage.setItem('elderMapUser', JSON.stringify(updatedUser));
+    updateProfile({ questionnaireSkipped: true, updatedAt: new Date().toISOString() });
   }
-}
-
-function legacyLoginAdmin(payload) {
-  if (payload.username !== adminCredentials.value.username || payload.password !== adminCredentials.value.password) {
-    adminLoginError.value = '账号或密码不正确。';
-    return;
-  }
-  adminLoginError.value = '';
-  adminUser.value = { username: payload.username, role: 'admin' };
-  activeMode.value = 'admin';
 }
 
 function openAdminLogin() {
-  window.location.hash = '/admin';
   activeMode.value = 'admin-login';
 }
 
-function legacyUpdateAdminCredentials(payload) {
-  if (!payload.username?.trim() || !payload.password?.trim()) return;
-  adminCredentials.value = { username: payload.username.trim(), password: payload.password };
-  localStorage.setItem('adminMapCredentials', JSON.stringify(adminCredentials.value));
-  adminUser.value = { username: adminCredentials.value.username, role: 'admin' };
-}
-
-function legacyBindFamilyToElder(payload) {
-  const elderRaw = localStorage.getItem('elderMapUser');
-  if (!elderRaw) {
-    familyBindingError.value = '尚未找到老人账号，请先让老人完成注册。';
-    return;
-  }
-  try {
-    const elder = JSON.parse(elderRaw);
-    if (elder.username !== payload.elderUsername || elder.familyBindingCode !== payload.bindingCode) {
-      familyBindingError.value = '老人账号或关联码不正确，请核对后重试。';
-      return;
-    }
-    const updatedFamily = { ...currentUser.value, boundElder: { username: elder.username, realName: elder.realName || elder.username }, bindingStatus: 'ACTIVE' };
-    currentUser.value = updatedFamily;
-    boundElder.value = updatedFamily.boundElder;
-    localStorage.setItem('familyMapUser', JSON.stringify(updatedFamily));
-    familyBindingError.value = '';
-    beginFamilyMonitoring();
-    activeMode.value = 'family';
-  } catch {
-    familyBindingError.value = '关联信息读取失败，请重新注册后再试。';
-  }
-}
-
 function exitAdmin() {
-  adminUser.value = null;
-  window.location.hash = '';
+  endSession('admin');
   activeMode.value = 'login';
 }
 
@@ -803,62 +703,48 @@ async function handleLogin(credentials) {
   loginError.value = '';
   try {
     const isFamily = credentials.role === 'family';
-    const response = await fetch(`${API_BASE_URL}/api/auth/${isFamily ? 'family' : 'elder'}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(isFamily ? { phone: credentials.phone } : { nickname: credentials.nickname, password: credentials.password }),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(formatApiError(payload.detail, '登录失败，请稍后重试'));
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(isFamily ? 'familyMapUser' : 'elderMapUser') || '{}'); } catch { saved = {}; }
-    // A different family phone is a different account: never inherit another family's binding.
-    if (isFamily && saved.phone !== payload.phone) saved = {};
-    if (!isFamily && saved.account && saved.account !== payload.account) saved = {};
-    const databaseBinding = payload.binding;
-    const user = { ...saved, ...payload, role: isFamily ? 'family' : 'elder', password: isFamily ? '' : credentials.password, mobilityType: saved.mobilityType || 'INDEPENDENT', profileComplete: isFamily ? true : false, questionnaireSkipped: false, createdAt: saved.createdAt || new Date().toISOString(), familyBindingCode: payload.family_binding_code ?? null, bindingStatus: databaseBinding?.status || null, boundElder: databaseBinding?.elder || null };
-    currentUser.value = user;
-    isGuest.value = false;
+    const user = isFamily ? await loginFamily(credentials) : await loginElder(credentials);
     if (isFamily && user.bindingStatus !== 'ACTIVE') {
       boundElder.value = null;
       familyMonitor.value = { navigation: { status: 'IDLE' } };
       stopFamilyMonitoring();
     }
-    localStorage.setItem(isFamily ? 'familyMapUser' : 'elderMapUser', JSON.stringify(user));
-    localStorage.setItem('mapLastLoginRole', user.role);
     if (isFamily && user.bindingStatus === 'ACTIVE') {
-      boundElder.value = databaseBinding?.elder || null;
+      boundElder.value = user.boundElder || null;
       beginFamilyMonitoring();
-      activeMode.value = 'family';
+      await navigateAfterAuthentication('family');
     } else {
-      activeMode.value = isFamily ? 'family-binding' : 'elder';
+      await navigateAfterAuthentication(isFamily ? 'family-binding' : 'elder');
     }
   } catch (error) {
     loginError.value = error instanceof Error ? error.message : '登录失败，请重试';
   } finally { loading.value = false; }
 }
 
+async function navigateAfterAuthentication(mode) {
+  const path = pathForLegacyMode(mode);
+  if (path && route.path !== path) await router.replace(path);
+  activeMode.value = mode;
+}
+
 function handleRoleChange(nextRole) {
-  if (currentUser.value?.role && currentUser.value.role !== nextRole) currentUser.value = null;
+  if (currentUser.value?.role && currentUser.value.role !== nextRole) clearCurrentUser();
   loginError.value = '';
 }
 
 async function fetchAdminUsers() {
-  const response = await fetch(`${API_BASE_URL}/api/auth/admin/users`, {
-    headers: { Authorization: `Bearer ${adminUser.value?.access_token ?? ''}` },
+  adminUsers.value = await apiRequest('/api/auth/admin/users', {
+    token: adminAccessToken.value,
+    errorMessage: '用户数据读取失败',
   });
-  if (!response.ok) throw new Error('用户数据读取失败');
-  adminUsers.value = await response.json();
 }
 
 async function loginAdmin(payload) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const admin = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(formatApiError(admin.detail, '管理员登录失败'));
-    adminUser.value = admin;
+    await authenticateAdmin(payload);
     adminLoginError.value = '';
     await Promise.all([fetchAdminUsers(), fetchPendingCollectionRecords()]);
-    activeMode.value = 'admin';
+    await navigateAfterAuthentication('admin');
   } catch (error) { adminLoginError.value = error instanceof Error ? error.message : '管理员登录失败'; }
 }
 
@@ -867,16 +753,12 @@ async function updateAdminUserStatus({ id, status }) {
   const previousUsers = adminUsers.value;
   adminUsers.value = adminUsers.value.map((user) => user.id === id ? { ...user, status } : user);
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/admin/users/${id}/status`, {
+    const payload = await apiRequest(`/api/auth/admin/users/${id}/status`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminUser.value?.access_token ?? ''}`,
-      },
-      body: JSON.stringify({ status }),
+      token: adminAccessToken.value,
+      body: { status },
+      errorMessage: '账号状态更新失败',
     });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(formatApiError(payload.detail, '账号状态更新失败'));
     adminUsers.value = adminUsers.value.map((user) => user.id === id ? { ...user, ...payload } : user);
     await fetchAdminUsers();
   } catch (error) {
@@ -887,13 +769,8 @@ async function updateAdminUserStatus({ id, status }) {
 
 async function bindFamilyToElder(payload) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/family/bind`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ family_user_id: currentUser.value.id, elder_account: payload.elderAccount, binding_code: payload.bindingCode }) });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(formatApiError(result.detail, '关联失败'));
-    const updatedFamily = { ...currentUser.value, boundElder: result.elder, bindingStatus: 'ACTIVE' };
-    currentUser.value = updatedFamily;
+    const result = await bindFamilySession(payload);
     boundElder.value = result.elder;
-    localStorage.setItem('familyMapUser', JSON.stringify(updatedFamily));
     familyBindingError.value = '';
     beginFamilyMonitoring();
     activeMode.value = 'family';
@@ -917,14 +794,12 @@ async function bindFamilyToElder(payload) {
       :error="loginError"
       @login="handleLogin"
       @role-change="handleRoleChange"
-      @quick-login="loginWithSavedAccount"
       @skip="handleSkipLogin"
       @admin="openAdminLogin"
     />
 
     <AdminLoginPage
       v-else-if="activeMode === 'admin-login'"
-      :default-username="adminCredentials.username"
       :error-message="adminLoginError"
       @login="loginAdmin"
       @back="exitAdmin"

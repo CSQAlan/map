@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 
 const props = defineProps({ loading: Boolean, savedUser: { type: Object, default: null }, error: String });
-const emit = defineEmits(['login', 'skip', 'quick-login', 'admin', 'role-change']);
+const emit = defineEmits(['login', 'skip', 'admin', 'role-change']);
 const role = ref('elder');
 const nickname = ref('');
 const password = ref('');
@@ -12,7 +12,7 @@ watch(() => props.savedUser, (user) => {
   if (!user) return;
   role.value = user.role === 'family' ? 'family' : 'elder';
   nickname.value = user.nickname ?? '';
-  password.value = user.password ?? '';
+  password.value = '';
   phone.value = user.phone ?? '';
 }, { immediate: true });
 
@@ -44,7 +44,7 @@ function submit() {
       <template v-else><label class="field-block"><span>手机号</span><input v-model="phone" type="tel" inputmode="numeric" maxlength="20" required placeholder="请输入手机号注册或登录" /></label><p class="login-hint">家属仅使用手机号注册。登录后请关联老人的数字账号和关联码。</p></template>
       <p v-if="error" class="login-error">{{ error }}</p><button class="primary-action" type="submit" :disabled="loading">{{ loading ? '处理中…' : role === 'elder' ? '登录 / 注册' : '手机号注册 / 登录' }}</button>
     </form>
-    <button v-if="savedUser && savedUser.role === role" class="secondary-action saved-login-button" type="button" @click="$emit('quick-login')">使用已保存信息登录</button>
+    <p v-if="savedUser && savedUser.role === role" class="login-hint saved-login-hint">已填入上次使用的{{ role === 'elder' ? '昵称' : '手机号' }}，请继续完成登录。</p>
     <div v-if="role === 'elder'" class="skip-section"><button class="secondary-action skip-btn" type="button" @click="$emit('skip')">跳过登录，直接使用</button><p class="skip-hint">访客模式不保存个人资料与问卷信息。</p></div>
     <button class="admin-entry" type="button" @click="$emit('admin')">管理入口</button>
   </section>
