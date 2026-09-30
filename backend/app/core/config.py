@@ -17,6 +17,8 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
     redis_url: str = Field(default="redis://127.0.0.1:6379/0", alias="REDIS_URL")
+    admin_token_secret: str = Field(default="", alias="ADMIN_TOKEN_SECRET")
+    admin_token_secret: str = Field(default="", alias="ADMIN_TOKEN_SECRET")
     cors_origins: str = Field(
         default=DEFAULT_DEVELOPMENT_CORS_ORIGINS,
         alias="CORS_ORIGINS",

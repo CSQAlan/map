@@ -10,6 +10,7 @@ from app.scripts.import_survey_archive import (
     SurveyArchiveError,
     _dms_to_decimal,
     _gps_from_image,
+    _safe_member_name,
     build_archive,
 )
 
@@ -27,7 +28,9 @@ SITE_NAMES = [
 
 def _jpeg_bytes() -> bytes:
     output = io.BytesIO()
-    Image.new("RGB", (16, 24), (70, 120, 90)).save(output, "JPEG")
+    exif = Image.Exif()
+    exif[270] = "metadata must be removed from web derivatives"
+    Image.new("RGB", (16, 24), (70, 120, 90)).save(output, "JPEG", exif=exif)
     return output.getvalue()
 
 
@@ -97,3 +100,22 @@ def test_gps_decimal_conversion_handles_southern_and_western_hemispheres() -> No
 def test_gps_is_missing_when_exif_has_no_gps_ifd() -> None:
     with Image.new("RGB", (8, 8)) as image:
         assert _gps_from_image(image) is None
+
+
+def test_gps_is_read_as_longitude_latitude_from_exif_ifd() -> None:
+    class FakeExif(dict):
+        def get_ifd(self, tag):
+            assert tag == 34853
+            return {1: "N", 2: (29, 30, 0), 3: "E", 4: (106, 15, 0)}
+
+    class FakeImage:
+        def getexif(self):
+            return FakeExif()
+
+    assert _gps_from_image(FakeImage()) == pytest.approx((106.25, 29.5))
+
+
+@pytest.mark.parametrize("name", ["../escape.jpg", "C:\\escape.jpg", "\\\\server\\share.jpg", "/escape.jpg"])
+def test_archive_path_validation_rejects_absolute_and_parent_paths(name: str) -> None:
+    with pytest.raises(SurveyArchiveError, match="Unsafe archive path"):
+        _safe_member_name(name)

@@ -34,8 +34,10 @@ python -m app.scripts.init_map_data
 预期输出类似：
 
 ```text
-{'pois': 3, 'nodes': 8, 'segments': 11}
+{'areas': 1, 'nodes': 8, 'pois': 3, 'segments': 11, 'survey_sites': 7, 'survey_records': 67}
 ```
+
+该命令也会幂等初始化独立踩点表；数据库中管理员已补充的位置会保留，不会进入正式路线图。
 
 ## 启动 PostGIS 数据库
 
@@ -79,6 +81,10 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/routes/recommend?start_name=重庆�
 - 地图与种子数据初始化工具
 - 只读地图数据查询接口
 - MSR 路线推荐接口
+- 大学城待核查踩点记录 API 与独立 WebP 媒体
+- HMAC 管理员会话保护的踩点位置更新接口
+
+生产环境必须设置足够随机的 `ADMIN_TOKEN_SECRET`；开发环境仅使用代码内的开发专用默认密钥。不要把开发密钥用于公开部署。
 
 ## 下一步
 

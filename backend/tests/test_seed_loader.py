@@ -1,6 +1,8 @@
 from app.core.database import project_root
 from app.db.schema import load_schema_sql
 from app.db.seeds import load_seed_json, normalize_evidence_photo_refs
+from app.db import seeds
+from app.services.survey_records import load_survey_manifest
 
 
 def test_load_schema_sql_reads_init_schema() -> None:
@@ -8,6 +10,44 @@ def test_load_schema_sql_reads_init_schema() -> None:
     sql = load_schema_sql(schema_path)
     assert "CREATE EXTENSION IF NOT EXISTS postgis;" in sql
     assert "CREATE TABLE IF NOT EXISTS poi_facility" in sql
+    assert "CREATE TABLE IF NOT EXISTS survey_record" in sql
+    assert "REFERENCES pilot_area" not in sql.split("CREATE TABLE IF NOT EXISTS survey_record", 1)[1].split("-- =========================", 1)[0]
+
+
+def test_survey_manifest_contains_all_archive_media_and_independent_sites() -> None:
+    manifest = load_survey_manifest()
+    assert len(manifest["sites"]) == 7
+    assert len(manifest["records"]) == 67
+    assert len(manifest["media"]) == 122
+    assert all(record["review_status"] == "PENDING_REVIEW" for record in manifest["records"])
+
+
+def test_survey_seed_is_idempotent_and_never_overwrites_manual_locations(monkeypatch) -> None:
+    executions = []
+
+    class FakeConnection:
+        def execute(self, statement, params=None):
+            executions.append((str(statement), params))
+
+    class FakeBegin:
+        def __enter__(self):
+            return FakeConnection()
+
+        def __exit__(self, *_args):
+            return False
+
+    class FakeEngine:
+        def begin(self):
+            return FakeBegin()
+
+    monkeypatch.setattr(seeds, "engine", FakeEngine())
+    counts = seeds.seed_survey_records()
+
+    assert counts == {"survey_sites": 7, "survey_records": 67}
+    record_statements = [sql for sql, _ in executions if "INSERT INTO survey_record" in sql]
+    assert len(record_statements) == 67
+    assert all("COALESCE(survey_record.location, EXCLUDED.location)" in sql for sql in record_statements)
+    assert all("review_status = EXCLUDED.review_status" not in sql for sql in record_statements)
 
 
 def test_schema_creates_pilot_area_before_map_entities() -> None:

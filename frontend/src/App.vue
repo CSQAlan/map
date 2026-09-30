@@ -14,6 +14,8 @@ import FamilyPage from './pages/FamilyPage.vue';
 import FamilyBindingPage from './pages/FamilyBindingPage.vue';
 import AdminLoginPage from './pages/AdminLoginPage.vue';
 import AdminPage from './pages/AdminPage.vue';
+import SurveyRecordsPage from './pages/SurveyRecordsPage.vue';
+import AdminSurveyPlacementPage from './pages/AdminSurveyPlacementPage.vue';
 import { API_BASE_URL, apiConfigurationError } from './config/api';
 import { getCurrentCoordinates } from './services/deviceLocation';
 
@@ -925,7 +927,20 @@ async function bindFamilyToElder(payload) {
       @audit="auditCollection($event.record, $event.result)"
       @update-user-status="updateAdminUserStatus"
       @open-collect="activeMode = 'admin-collect'"
+      @open-survey-placement="activeMode = 'admin-survey'"
       @logout="exitAdmin"
+    />
+
+    <SurveyRecordsPage
+      v-else-if="activeMode === 'survey-records'"
+      :api-base-url="API_BASE_URL"
+    />
+
+    <AdminSurveyPlacementPage
+      v-else-if="activeMode === 'admin-survey'"
+      :api-base-url="API_BASE_URL"
+      :access-token="adminUser?.access_token ?? ''"
+      @back="activeMode = 'admin'"
     />
 
     <FamilyBindingPage

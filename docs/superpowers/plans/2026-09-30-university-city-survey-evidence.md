@@ -103,6 +103,7 @@ git commit -m "feat: add survey records API"
 **Files:**
 - Modify: `backend/app/core/config.py`
 - Modify: `backend/.env.example`
+- Modify: `backend/.env.production.example`
 - Modify: `backend/app/api/routes/auth.py`
 - Modify: `backend/app/services/coordinates.py`
 - Modify: `backend/app/schemas/survey_records.py`
@@ -131,7 +132,7 @@ cd F:\items\map\backend
 ```
 
 ```powershell
-git add backend/app/core/config.py backend/.env.example backend/app/api/routes/auth.py backend/app/services/coordinates.py backend/app/schemas/survey_records.py backend/app/api/routes/survey_records.py frontend/src/App.vue backend/tests/test_survey_record_location_api.py backend/tests/test_coordinates.py
+git add backend/app/core/config.py backend/.env.example backend/.env.production.example backend/app/api/routes/auth.py backend/app/services/coordinates.py backend/app/schemas/survey_records.py backend/app/api/routes/survey_records.py frontend/src/App.vue backend/tests/test_survey_record_location_api.py backend/tests/test_coordinates.py
 git commit -m "feat: protect survey pin placement"
 ```
 

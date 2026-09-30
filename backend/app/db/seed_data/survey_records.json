@@ -1,32 +1,32 @@
 {
   "sites": [
     {
-      "site_code": "UC_CQNU",
-      "site_name": "重庆师范大学西部与中部"
+      "site_code": "UC_TIANJIE",
+      "site_name": "大学城天街"
     },
     {
       "site_code": "UC_CUCA",
       "site_name": "川美"
     },
     {
-      "site_code": "UC_FULICHENG",
-      "site_name": "大学城中路富力城"
-    },
-    {
       "site_code": "UC_FULICHENG_STATION",
       "site_name": "沙坪坝区大学城中路38号附83号富力城地壹站"
+    },
+    {
+      "site_code": "UC_XIJIE",
+      "site_name": "熙街地区"
+    },
+    {
+      "site_code": "UC_CQNU",
+      "site_name": "重庆师范大学西部与中部"
     },
     {
       "site_code": "UC_JINKE",
       "site_name": "金科天宸2、3街区"
     },
     {
-      "site_code": "UC_TIANJIE",
-      "site_name": "大学城天街"
-    },
-    {
-      "site_code": "UC_XIJIE",
-      "site_name": "熙街地区"
+      "site_code": "UC_FULICHENG",
+      "site_name": "大学城中路富力城"
     }
   ],
   "records": [

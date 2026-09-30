@@ -15,6 +15,8 @@ from app.schemas.auth import (
     NavigationStatusRequest,
     UserStatusRequest,
 )
+from app.services.admin_tokens import issue_admin_token, token_secret
+from app.services.admin_tokens import issue_admin_token, token_secret
 
 
 router = APIRouter()
@@ -146,7 +148,10 @@ def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)) -> di
         db.commit()
     if not row or row["password_hash"] != password_hash(payload.password) or row["status"] != "ACTIVE":
         raise HTTPException(status_code=401, detail="管理员账号或密码不正确")
-    return user_response(row)
+    response = user_response(row)
+    response["access_token"] = issue_admin_token(int(row["id"]), token_secret())
+    response["token_type"] = "bearer"
+    return response
 
 
 @router.get("/admin/users")
@@ -217,4 +222,7 @@ def update_user_status(user_id: int, payload: UserStatusRequest, db: Session = D
     if not row:
         raise HTTPException(status_code=404, detail="用户不存在")
     db.commit()
-    return user_response(row)
+    response = user_response(row)
+    response["access_token"] = issue_admin_token(int(row["id"]), token_secret())
+    response["token_type"] = "bearer"
+    return response

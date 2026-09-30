@@ -460,7 +460,44 @@ CREATE INDEX IF NOT EXISTS gist_emergency_event_trigger_point
     ON emergency_event USING GIST (trigger_point);
 
 -- =========================
--- 6. 自动更新时间触发器
+-- 6. 独立踩点证据（不属于正式导航路网）
+-- =========================
+
+CREATE TABLE IF NOT EXISTS survey_site (
+    site_code VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    sort_order SMALLINT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS survey_record (
+    record_code VARCHAR(50) PRIMARY KEY,
+    site_code VARCHAR(50) NOT NULL REFERENCES survey_site(site_code),
+    title VARCHAR(255) NOT NULL,
+    issue_tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    notes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    media_refs JSONB NOT NULL DEFAULT '[]'::jsonb,
+    location GEOMETRY(Point, 4326),
+    location_source VARCHAR(20) NOT NULL DEFAULT 'NONE',
+    review_status VARCHAR(30) NOT NULL DEFAULT 'PENDING_REVIEW',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT ck_survey_record_location_source CHECK (location_source IN ('NONE', 'EXIF', 'MANUAL')),
+    CONSTRAINT ck_survey_record_review_status CHECK (
+        review_status IN ('PENDING_REVIEW', 'APPROVED', 'REJECTED')
+    ),
+    CONSTRAINT ck_survey_record_location_source_consistency CHECK (
+        (location IS NULL AND location_source = 'NONE') OR
+        (location IS NOT NULL AND location_source IN ('EXIF', 'MANUAL'))
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_survey_record_site_status
+    ON survey_record(site_code, review_status);
+CREATE INDEX IF NOT EXISTS gist_survey_record_location
+    ON survey_record USING GIST (location);
+
+-- =========================
+-- 7. 自动更新时间触发器
 -- =========================
 
 DROP TRIGGER IF EXISTS trg_app_user_set_updated_at ON app_user;
@@ -490,5 +527,11 @@ EXECUTE FUNCTION set_updated_at();
 DROP TRIGGER IF EXISTS trg_road_segment_set_updated_at ON road_segment;
 CREATE TRIGGER trg_road_segment_set_updated_at
 BEFORE UPDATE ON road_segment
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_survey_record_set_updated_at ON survey_record;
+CREATE TRIGGER trg_survey_record_set_updated_at
+BEFORE UPDATE ON survey_record
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();

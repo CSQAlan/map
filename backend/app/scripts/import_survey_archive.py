@@ -58,7 +58,12 @@ def _decode_zip_name(name: str, flag_bits: int) -> str:
 def _safe_member_name(name: str) -> str:
     normalized = name.replace("\\", "/")
     path = PurePosixPath(normalized)
-    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+    if (
+        path.is_absolute()
+        or normalized.startswith("//")
+        or re.match(r"^[A-Za-z]:", normalized)
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
         raise SurveyArchiveError(f"Unsafe archive path: {name!r}")
     return normalized
 
@@ -264,7 +269,7 @@ def build_archive(
         media_by_site[site_code].extend(site_assets)
 
     payload = {
-        "sites": sorted(site_rows.values(), key=lambda row: row["site_code"]),
+        "sites": list(site_rows.values()),
         "records": records,
         "media": [asset for site_code in sorted(media_by_site) for asset in media_by_site[site_code]],
     }

@@ -24,6 +24,23 @@ def wgs84_to_gcj02(lon: float, lat: float) -> tuple[float, float]:
     return lon + delta_lon, lat + delta_lat
 
 
+def gcj02_to_wgs84(lon: float, lat: float) -> tuple[float, float]:
+    """Invert the project's WGS84->GCJ02 transform to sub-meter numerical tolerance."""
+    if _outside_china(lon, lat):
+        return lon, lat
+    target_lon, target_lat = lon, lat
+    estimate_lon, estimate_lat = lon, lat
+    for _ in range(12):
+        converted_lon, converted_lat = wgs84_to_gcj02(estimate_lon, estimate_lat)
+        error_lon = target_lon - converted_lon
+        error_lat = target_lat - converted_lat
+        estimate_lon += error_lon
+        estimate_lat += error_lat
+        if max(abs(error_lon), abs(error_lat)) < 1e-9:
+            break
+    return estimate_lon, estimate_lat
+
+
 def convert_geometry(geometry: dict[str, Any], target: str) -> dict[str, Any]:
     if target not in {"WGS84", "GCJ02"}:
         raise ValueError(f"Unsupported coordinate system: {target}")

@@ -79,6 +79,8 @@ $env:PYTHONPATH=(Resolve-Path backend).Path
 python -m app.scripts.init_map_data
 ```
 
+首次启用大学城踩点资料或更新其数据库清单后，重新运行此命令；它会幂等创建踩点表并导入 7 个地点、67 条待核查记录，不覆盖管理员已保存的位置。
+
 ### 5. 启动前后端
 
 分别打开两个 PowerShell 窗口，在项目根目录执行：
@@ -150,10 +152,26 @@ Set-Location ..
 
 脚本只处理 `backend/app/db/seed_data/photo_manifest.json` 中登记的照片，不修改原图。生成资源位于 `backend/app/static/evidence/`。
 
+### 大学城踩点资料
+
+`map.zip` 中的 122 张 JPG/PNG/HEIC 已整理成 67 条独立待核查记录，含 7 个原始地点分组。项目提交的是 244 张去除 EXIF/GPS 的 WebP 缩略图和展示图（约 29 MB）；原始 `map.zip`、解压原图及其他采集目录不提交。后端通过 `/media/evidence/survey/` 提供图片，网页与局域网 APK 共用这套资源。
+
+如果需要从新的 `map.zip` 重新生成清单和 WebP，先更新包含 `pillow-heif` 的项目环境，再运行：
+
+```powershell
+Set-Location F:\items\map
+conda env update --prefix .\.conda\elder-map-py311 --file environment.yml
+Set-Location backend
+python -m app.scripts.import_survey_archive --archive ..\map.zip
+python -m app.scripts.init_map_data
+```
+
+地图只显示有坐标的待核查标记；没有 GPS 的记录可在管理员后台对照现场图/地图截图补位置。补点不会审核记录，也不会把大学城资料加入师大苑导航路网。
+
 ## 配置与安全提示
 
 - 当前默认账号、数据库密码和本地采集接口仅用于开发与演示。
-- 对外部署前应更换密钥与密码，限制 CORS 来源，并为登录、采集和管理接口补充正式鉴权。
+- 对外部署前应更换密钥与密码并限制 CORS 来源；生产环境必须设置高强度 `ADMIN_TOKEN_SECRET`，用于保护踩点资料补位置接口。其他现存演示管理接口仍需在公开部署前完成正式鉴权。
 - 不要提交 `.env`、`.env.local`、高德密钥、真实个人信息或未经处理的现场原图。
 - 生产环境应启用 HTTPS，并配置数据库备份、日志脱敏和权限分级。
 

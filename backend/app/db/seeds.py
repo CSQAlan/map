@@ -5,6 +5,7 @@ from sqlalchemy import text
 
 from app.core.database import engine
 from app.services.photo_evidence import load_photo_manifest
+from app.services.survey_records import load_survey_manifest
 
 
 SEED_DIR = Path(__file__).resolve().parent / "seed_data"
@@ -452,13 +453,77 @@ def seed_core_segments(pilot_area_id: int) -> int:
     return len(rows)
 
 
+def seed_survey_records() -> dict[str, int]:
+    manifest = load_survey_manifest()
+    with engine.begin() as connection:
+        for sort_order, site in enumerate(manifest["sites"]):
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO survey_site (site_code, name, sort_order)
+                    VALUES (:site_code, :name, :sort_order)
+                    ON CONFLICT (site_code) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        sort_order = EXCLUDED.sort_order
+                    """
+                ),
+                {**site, "sort_order": sort_order},
+            )
+
+        for record in manifest["records"]:
+            location = record["initial_location"]
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO survey_record (
+                        record_code, site_code, title, issue_tags, notes, media_refs,
+                        location, location_source, review_status
+                    )
+                    VALUES (
+                        :record_code, :site_code, :title,
+                        CAST(:issue_tags AS jsonb), CAST(:notes AS jsonb), CAST(:media_refs AS jsonb),
+                        CASE WHEN :longitude IS NULL THEN NULL
+                             ELSE ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) END,
+                        :location_source, :review_status
+                    )
+                    ON CONFLICT (record_code) DO UPDATE SET
+                        site_code = EXCLUDED.site_code,
+                        title = EXCLUDED.title,
+                        issue_tags = EXCLUDED.issue_tags,
+                        notes = EXCLUDED.notes,
+                        media_refs = EXCLUDED.media_refs,
+                        location = COALESCE(survey_record.location, EXCLUDED.location),
+                        location_source = CASE
+                            WHEN survey_record.location IS NULL THEN EXCLUDED.location_source
+                            ELSE survey_record.location_source
+                        END
+                    """
+                ),
+                {
+                    "record_code": record["record_code"],
+                    "site_code": record["site_code"],
+                    "title": record["title"],
+                    "issue_tags": json.dumps(record["issue_tags"], ensure_ascii=False),
+                    "notes": json.dumps(record["notes"], ensure_ascii=False),
+                    "media_refs": json.dumps(record["media_refs"], ensure_ascii=False),
+                    "longitude": location["longitude"] if location else None,
+                    "latitude": location["latitude"] if location else None,
+                    "location_source": record["initial_location_source"],
+                    "review_status": record["review_status"],
+                },
+            )
+    return {"survey_sites": len(manifest["sites"]), "survey_records": len(manifest["records"])}
+
+
 def seed_map_data() -> dict[str, int]:
     deactivate_legacy_campus_seed_data()
     area_ids = seed_pilot_areas()
     shidayuan_area_id = area_ids["SHIDAYUAN"]
-    return {
+    counts = {
         "areas": len(area_ids),
         "nodes": seed_core_nodes(shidayuan_area_id),
         "pois": seed_core_pois(shidayuan_area_id),
         "segments": seed_core_segments(shidayuan_area_id),
     }
+    counts.update(seed_survey_records())
+    return counts

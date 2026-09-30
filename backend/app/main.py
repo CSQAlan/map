@@ -1,3 +1,5 @@
+import mimetypes
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +10,7 @@ from app.services.photo_evidence import EVIDENCE_ROOT
 
 
 settings = get_settings()
+mimetypes.add_type("image/webp", ".webp")
 
 app = FastAPI(
     title=settings.app_name,

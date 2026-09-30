@@ -1,6 +1,6 @@
 import pytest
 
-from app.services.coordinates import convert_geometry, wgs84_to_gcj02
+from app.services.coordinates import convert_geometry, gcj02_to_wgs84, wgs84_to_gcj02
 
 
 def test_wgs84_to_gcj02_is_stable_for_shidayuan() -> None:
@@ -11,6 +11,17 @@ def test_wgs84_to_gcj02_is_stable_for_shidayuan() -> None:
 
 def test_wgs84_to_gcj02_keeps_outside_china_coordinates() -> None:
     assert wgs84_to_gcj02(2.3522, 48.8566) == (2.3522, 48.8566)
+
+
+def test_gcj02_to_wgs84_round_trips_within_one_meter() -> None:
+    original = (106.3086, 29.60435)
+    converted = wgs84_to_gcj02(*original)
+    restored = gcj02_to_wgs84(*converted)
+    assert restored == pytest.approx(original, abs=1e-7)
+
+
+def test_gcj02_to_wgs84_keeps_outside_china_coordinates() -> None:
+    assert gcj02_to_wgs84(2.3522, 48.8566) == (2.3522, 48.8566)
 
 
 def test_convert_geometry_recursively_converts_linestring() -> None:
