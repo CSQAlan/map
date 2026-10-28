@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const DEFAULT_PROFILE_OPTIONS = [
   { label: '轮椅老人', value: 'WHEELCHAIR', hint: '不走台阶，优先坡道、宽路和无障碍路段' },
@@ -18,6 +18,7 @@ const DEFAULT_STRATEGY_OPTIONS = [
 
 function resolvePilotLocation(input, options) {
   const normalizedInput = input.trim();
+  if (!normalizedInput) return null;
   const exact = options.find((option) => option.value === normalizedInput || option.label === normalizedInput);
   if (exact) return exact.value;
   const fuzzy = options.find(
@@ -57,10 +58,29 @@ export function createRoutePlanner({
   const selectedStrategy = computed(() => currentStrategyOptions.find((item) => item.value === routeStrategy.value));
   const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
 
-  async function planRoutes() {
-    loading.value = true;
-    errorMessage.value = '';
+  let requestVersion = 0;
+
+  function clearResults() {
+    routes.value = [];
     avoidedSegments.value = [];
+    selectedRouteIndex.value = 0;
+    selectedSegmentCode.value = null;
+    errorMessage.value = '';
+  }
+
+  // Inputs are also assigned directly by v-model and session restoration.
+  // Invalidate synchronously so navigation cannot observe an obsolete route.
+  watch([startName, endName, mobilityType, routeStrategy], () => {
+    requestVersion += 1;
+    clearResults();
+    loading.value = false;
+    actionStatus.value = '出行条件已更新，请重新生成路线。';
+  }, { flush: 'sync' });
+
+  async function planRoutes() {
+    let version = ++requestVersion;
+    clearResults();
+    loading.value = false;
     actionStatus.value = '正在根据老人画像重新计算适老路线。';
 
     try {
@@ -76,6 +96,11 @@ export function createRoutePlanner({
       // Keep the normalized selections visible even when the backend rejects a route.
       startName.value = resolvedStart;
       endName.value = resolvedEnd;
+      // Normalization may trigger the input watcher; claim this request only
+      // after both normalized values have been committed.
+      version = ++requestVersion;
+      loading.value = true;
+      actionStatus.value = '正在根据老人画像重新计算适老路线。';
       const params = new URLSearchParams({
         start_name: resolvedStart,
         end_name: resolvedEnd,
@@ -84,6 +109,7 @@ export function createRoutePlanner({
       });
       const response = await fetcher(`${currentApiBaseUrl}/api/routes/recommend?${params.toString()}`);
       const payload = await response.json().catch(() => ({}));
+      if (version !== requestVersion) return false;
 
       if (!response.ok) {
         const detail = payload.detail;
@@ -102,15 +128,14 @@ export function createRoutePlanner({
         : '没有找到可用路线，请更换目的地或老人画像。';
       return routes.value.length > 0;
     } catch (error) {
-      routes.value = [];
-      selectedRouteIndex.value = 0;
+      if (version !== requestVersion) return false;
       errorMessage.value = error instanceof Error
         ? error.message
         : '无法连接后端服务，请确认 FastAPI 已启动。';
       actionStatus.value = '路线生成失败，请检查后端服务。';
       return false;
     } finally {
-      loading.value = false;
+      if (version === requestVersion) loading.value = false;
     }
   }
 
@@ -128,22 +153,12 @@ export function createRoutePlanner({
   function selectStrategy(strategyValue) {
     if (routeStrategy.value === strategyValue) return;
     routeStrategy.value = strategyValue;
-    routes.value = [];
-    avoidedSegments.value = [];
-    selectedRouteIndex.value = 0;
-    selectedSegmentCode.value = null;
-    errorMessage.value = '';
     actionStatus.value = `已切换为“${selectedStrategy.value?.label}”，请重新生成路线。`;
   }
 
   function selectMobility(mobilityValue) {
     if (mobilityType.value === mobilityValue) return;
     mobilityType.value = mobilityValue;
-    routes.value = [];
-    avoidedSegments.value = [];
-    selectedRouteIndex.value = 0;
-    selectedSegmentCode.value = null;
-    errorMessage.value = '';
     actionStatus.value = `已切换为“${selectedProfile.value?.label}”，请重新生成路线。`;
   }
 
