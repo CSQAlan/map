@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import AssistantPage from './pages/AssistantPage.vue';
 import RecommendPage from './pages/RecommendPage.vue';
 import ElderPage from './pages/ElderPage.vue';
 import CollectPage from './pages/CollectPage.vue';
@@ -147,6 +148,14 @@ const {
   auditAccessToken: () => adminUser.value?.access_token ?? '',
   loadMapData,
 });
+
+const assistantRouteContext = computed(() => selectedRoute.value ? ({
+  mobility: selectedProfile.value?.label || '',
+  start: startName.value || '',
+  destination: endName.value || '',
+  summary: String(selectedRoute.value?.summary || '').slice(0, 500),
+  distance_m: Number.isFinite(Number(selectedRoute.value?.distance_m)) ? Number(selectedRoute.value.distance_m) : null,
+}) : null);
 
 const selectedEnd = computed(() => findOptionByValue(endOptions.value, endName.value));
 const selectedSegments = computed(() => selectedRoute.value?.segments ?? []);
@@ -544,6 +553,8 @@ async function bindFamilyToElder(payload) {
       @logout="handleLogout"
     />
 
+    <AssistantPage v-else-if="activeMode === 'assistant'" :route-context="assistantRouteContext" />
+
     <ProfilePage
       v-else-if="activeMode === 'profile'"
       :user="currentUser"
@@ -639,6 +650,7 @@ async function bindFamilyToElder(payload) {
       @reroute="reroute"
       @send-sos="sendSos"
       @open-profile="openProfile"
+      @open-assistant="activeMode = 'assistant'"
     />
 
     <section v-else-if="activeMode === 'admin-collect'" class="admin-collection-workspace">

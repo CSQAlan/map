@@ -5,3 +5,5 @@ import './styles.css';
 import './styles/base.css';
 
 createApp(App).use(router).mount('#app');
+
+import './styles/mobile-refresh.css';

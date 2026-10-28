@@ -45,3 +45,6 @@ frontend/android/app/src/main/assets/capacitor.config.json
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Browser verification artifacts
+frontend/artifacts/

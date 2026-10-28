@@ -5,6 +5,7 @@ export const LEGACY_MODE_ROUTES = [
   { path: '/elder/routes', mode: 'route-options' },
   { path: '/elder/plan', mode: 'recommend' },
   { path: '/elder/navigation', mode: 'navigation', hidePrimaryNav: true },
+  { path: '/elder/assistant', mode: 'assistant' },
   { path: '/elder/survey', mode: 'survey-records' },
   { path: '/elder/profile', mode: 'profile' },
   { path: '/family/dashboard', mode: 'family', requiresFamily: true },

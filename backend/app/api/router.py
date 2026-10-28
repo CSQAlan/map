@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.routes.assistant import router as assistant_router
 from app.api.routes.collect import router as collect_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.diagnostics import router as diagnostics_router
@@ -8,7 +9,6 @@ from app.api.routes.health import router as health_router
 from app.api.routes.map_data import router as map_data_router
 from app.api.routes.pilot_areas import router as pilot_areas_router
 from app.api.routes.routes import router as routes_router
-from app.api.routes.survey_records import router as survey_records_router
 from app.api.routes.survey_records import router as survey_records_router
 
 
@@ -22,3 +22,5 @@ api_router.include_router(collect_router, prefix="/collect", tags=["collect"])
 api_router.include_router(diagnostics_router, prefix="/diagnostics", tags=["diagnostics"])
 api_router.include_router(emergency_router, prefix="/emergency", tags=["emergency"])
 api_router.include_router(survey_records_router, prefix="/survey-records", tags=["survey-records"])
+
+api_router.include_router(assistant_router, prefix="/assistant", tags=["assistant"])

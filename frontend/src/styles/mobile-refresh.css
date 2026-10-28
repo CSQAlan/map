@@ -1,0 +1,141 @@
+/* Mobile-first community walking identity. Loaded after legacy rules. */
+body { background: var(--color-fog); }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+.role-shell { background: var(--color-fog); }
+.role-brand { gap: 10px; }
+.role-brand__mark { width: 37px; height: 37px; border-radius: 13px 13px 13px 4px; background: #24685b; }
+.role-brand__name { font-size: 18px; letter-spacing: -.5px; }
+.role-brand__name small { display: block; margin-top: 5px; font-size: 12px; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+.role-mobile-header { padding: 12px 20px; background: var(--color-fog); border: 0; }
+.pilot-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #5c7067; }
+.pilot-badge > span { width: 6px; height: 6px; background: #518568; border-radius: 50%; }
+.role-main { padding: 10px 20px 28px; }
+.elder-shell:not(.elder-shell--focused) .elder-shell__main { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+.role-bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 7px 10px calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #e1e8e3; background: #fff; box-shadow: 0 -4px 24px #203d3605; }
+.role-bottom-nav__link { flex-direction: column; gap: 3px; min-height: 56px; padding: 0; font-size: 12px; font-weight: 500; border-radius: 0; }
+.role-bottom-nav__link.router-link-active { background: transparent; color: #24685b; font-weight: 700; }
+.bottom-nav-icon { display: inline-flex; padding: 3px 13px; border-radius: 15px; }
+.router-link-active .bottom-nav-icon { background: #e6f1eb; }
+.role-nav__link { gap: 12px; }
+.sidebar-note { margin-top: auto; padding: 24px 18px; border-radius: 18px; background: #eef5f0; color: #52735f; }
+.sidebar-note p { margin: 12px 0; line-height: 1.8; }
+.sidebar-note small { font-size: 12px; }
+.home-v2 { max-width: 1100px; margin: 0 auto; }
+.home-greeting { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 10px 0 23px; }
+.home-greeting p { margin: 0 0 10px; font-size: 13px; color: #718078; }
+.home-greeting h1 { margin: 0; font-size: clamp(23px, 6.3vw, 32px); font-weight: 750; letter-spacing: -1px; line-height: 1.35; }
+.home-avatar { display: grid; place-items: center; flex: 0 0 auto; min-width: 46px; height: 46px; border: 1px solid #dce7df; background: white; border-radius: 50%; color: #527460; }
+.home-journey-grid { display: grid; gap: 20px; }
+.walk-banner { position: relative; min-height: 207px; overflow: hidden; border-radius: 24px; background: #e4efe7; isolation: isolate; }
+.walk-banner-copy { position: relative; z-index: 1; padding: 23px 22px; width: 63%; }
+.walk-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #396551; }
+.walk-banner h2 { margin: 12px 0 10px; font-size: 27px; line-height: 1.4; letter-spacing: .5px; font-weight: 650; }
+.walk-banner p { margin: 0; color: #62766a; font-size: 12px; line-height: 1.8; }
+.illustration-caption { position: absolute; bottom: 10px; left: 22px; color: #62766a; font-size: 10px; }
+.walk-illustration { position: absolute; width: 62%; height: 100%; bottom: 0; right: -5%; z-index: 0; }
+.home-plan-panel { padding: 22px 20px 0; border: 1px solid #e4ebe5; border-radius: 24px; background: #fff; box-shadow: 0 5px 22px #203d3604; }
+.home-section-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 0 18px; color: #2c6050; }
+.home-section-heading h2 { margin: 0; font-size: 18px; color: #203d36; }
+.home-plan-panel .destination-form__fields { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 14px; border: 1px solid #e0e8e2; border-radius: 16px; background: #f8faf8; }
+.home-plan-panel .location-input { margin: 0; padding: 7px 0; border: 0; background: transparent; box-shadow: none; }
+.home-plan-panel .location-input + .location-input { border-top: 1px solid #e0e8e2; }
+.home-plan-panel .location-input-label { display: flex; align-items: center; gap: 9px; margin: 0; color: #758279; font-size: 12px; }
+.home-plan-panel .location-input-label i { display: grid; place-items: center; width: 19px; height: 19px; border-radius: 7px; color: #24685b; background: #e2eee7; font-size: 10px; font-style: normal; }
+.home-plan-panel .location-input-control { margin: 0; }
+.home-plan-panel select { width: 100%; min-height: 43px; padding: 4px 6px 4px 28px; border: 0; border-radius: 5px; background: transparent; box-shadow: none; font-size: 16px; font-weight: 600; }
+.home-plan-panel .destination-form__submit { min-height: 54px; border-radius: 15px; font-size: 17px; background: #24685b; letter-spacing: 1px; }
+.home-plan-panel .destination-form__submit:hover { background: #194f44; }
+.destination-shortcuts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 13px 0 16px; font-size: 12px; }
+.destination-shortcuts > span { color: #7c8980; margin-right: 2px; }
+.destination-shortcuts button { border: 1px solid #e1e8e2; background: #fff; border-radius: 9px; min-height: 44px; padding: 6px 9px; color: #607268; font-size: 12px; }
+.home-preferences { border-top: 1px solid #edf0ed; }
+.home-preferences summary { display: flex; justify-content: space-between; align-items: center; min-height: 60px; gap: 10px; list-style: none; cursor: pointer; font-size: 14px; font-weight: 600; }
+.home-preferences summary::-webkit-details-marker { display: none; }
+.home-preferences summary > span { display: flex; align-items: center; gap: 8px; }
+.home-preferences .preference-change { color: #7b8980; font-size: 12px; font-weight: 400; }
+.home-preferences[open] { padding-bottom: 18px; }
+.home-preferences .mobility-picker__option { border-radius: 12px; }
+.home-assistant-entry { display: flex; align-items: center; gap: 12px; margin: 20px 0 16px; width: 100%; padding: 18px 16px; border: 1px solid #dce8df; border-radius: 20px; background: #edf4ee; text-align: left; color: #275743; }
+.assistant-entry-icon { display: grid; place-items: center; width: 46px; height: 46px; flex: 0 0 auto; border-radius: 16px; background: #fff; color: #437b5c; }
+.home-assistant-entry > span:nth-child(2) { flex: 1; min-width: 0; }
+.home-assistant-entry strong { display: block; font-size: 15px; font-weight: 650; }
+.home-assistant-entry small { display: block; margin-top: 6px; font-size: 11px; line-height: 1.6; color: #6b8071; }
+.home-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.home-tools button { display: flex; align-items: center; gap: 9px; min-height: 66px; padding: 10px 13px; border: 1px solid #e2e9e3; border-radius: 16px; background: #fff; font-size: 14px; }
+.home-tools button > span { flex: 1; text-align: left; }
+.home-tools .home-sos { color: #9c4f3d; background: #fffaf8; border-color: #f0e2d9; }
+.home-status { display: flex; justify-content: center; gap: 6px; margin: 20px 0 0; font-size: 12px; color: #7a897e; line-height: 1.7; }
+.home-status svg { flex: 0 0 auto; margin-top: 3px; }
+/* Shared pages retain their business markup and adopt the same surfaces. */
+.primary-action { border-radius: 14px; background: #24685b; box-shadow: none; }
+.secondary-action { border-radius: 14px; background: #fff; color: #24685b; border-color: #cbdcd0; }
+.routes-panel { border-radius: 22px; border-color: #e0e8e2; box-shadow: 0 5px 25px #203d3605; }
+.route-card { border-radius: 18px; box-shadow: none; }
+.route-card.selected { border-color: #24685b; background: #f1f7f2; }
+.section-kicker { color: #547e67; letter-spacing: .5px; }
+.auth-shell { background: #f4f7f5; }
+.auth-shell__header { background: transparent; border: 0; }
+.role-login-panel { box-shadow: none !important; border: 1px solid #dfe9e1 !important; border-radius: 26px !important; }
+.role-login-panel .login-hero { padding-bottom: 10px; }
+.role-login-panel .login-hero h1 { letter-spacing: -1px; }
+.role-login-panel .role-switch { border-radius: 14px; padding: 5px; }
+.role-login-panel .role-switch button { border-radius: 10px; }
+.role-login-panel .field-block input { border-radius: 12px; background: #f8faf8; border-color: #d7e3da; }
+@media (max-width: 360px) {
+  .role-main { padding-inline: 14px; }
+  .role-mobile-header { padding-inline: 14px; }
+  .home-plan-panel { padding-inline: 16px; }
+  .walk-banner-copy { padding-left: 18px; }
+  .walk-banner h2 { font-size: 25px; }
+  .home-tools { gap: 8px; }
+  .home-tools button { padding-inline: 9px; font-size: 13px; }
+  .home-assistant-entry { padding: 14px 12px; gap: 9px; }
+  .home-assistant-entry strong { font-size: 14px; }
+  .home-greeting h1 { letter-spacing: -.5px; font-size: 22px; }
+}
+@media (min-width: 768px) {
+  .elder-shell:not(.elder-shell--focused) .elder-shell__main { padding-bottom: 32px; }
+  .role-main { padding: 26px 32px; }
+  .home-journey-grid { grid-template-columns: .9fr 1.1fr; align-items: stretch; gap: 24px; }
+  .walk-banner { min-height: 360px; }
+  .walk-banner-copy { padding: 28px; width: 80%; }
+  .walk-banner h2 { font-size: 34px; }
+  .walk-banner p { font-size: 14px; }
+  .walk-illustration { width: 90%; height: 75%; bottom: -8%; right: -12%; }
+  .home-plan-panel { padding-top: 26px; }
+  .home-greeting { margin: 8px 0 28px; }
+  .home-assistant-entry { margin-block: 24px; padding: 22px; }
+  .home-assistant-entry strong { font-size: 18px; }
+  .home-assistant-entry small { font-size: 14px; }
+  .home-tools button { padding-inline: 22px; font-size: 16px; }
+  .pilot-badge { display: none; }
+}
+@media (min-width: 1024px) {
+  .role-shell { --shell-nav-width: 230px; }
+  .role-sidebar { border-color: #e1e9e3; padding: 32px 20px; min-height: 100dvh; }
+  .role-nav--vertical .role-nav__link { min-height: 55px; border-radius: 14px; margin-block: 3px; }
+  .role-main { padding: 36px 42px; }
+  .home-v2 { padding-top: 10px; }
+}
+
+.route-card.chosen, .route-card:hover { border-color: #739b7f; background: #f3f8f3; box-shadow: none; transform: none; }
+.route-card .segment-detail.selected { outline-color: #7ca58a; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+.route-options-list .route-page-intro h1 { font-size: clamp(24px, 6vw, 30px); letter-spacing: -.7px; line-height: 1.4; }
+.route-options-list .route-page-intro > p:last-child, .route-options-list .status-line { font-size: 15px; line-height: 1.8; color: #6a7e70; }
+.route-options-list .route-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.route-options-list .route-metrics > div { padding: 14px; border-radius: 13px; background: #eaf2eb; }
+.route-options-list .route-metrics dt { font-size: 12px; color: #6c7e70; }
+.route-options-list .route-metrics dd { margin: 5px 0 0; font-size: 22px; color: #295140; }
+.route-options-list .route-card-top h3 { font-size: 18px; line-height: 1.6; }
+.route-options-list .route-card-select { min-height: 48px; font-size: 15px; }
+.route-options-list .segment-detail { background: #fff; border: 1px solid #dbe5dd; border-radius: 13px; padding: 14px; }
+.route-options-list .segment-detail p { color: #728075; font-size: 14px; line-height: 1.8; }
+.route-options-list .segment-title { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.route-options-list .segment-title strong { font-size: 16px; }
+.route-options-list .segment-title span { color: #597560; font-size: 13px; }
+.route-options-list .route-tag { font-size: 12px; }
+.route-options-actions { gap: 10px; }
+.route-options-actions button { min-height: 54px; font-size: 16px; }

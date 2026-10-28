@@ -4,6 +4,7 @@
 
 ## 主要功能
 
+- 本地助手：通过本机 Ollama 提供使用问答、路线说明、快捷提问与连续对话；默认使用已安装的 `qwen3.5:4b`，手机经后端访问
 - 老人端：大字号首页、地点选择、语音输入、路线推荐、导航提示和紧急求助
 - 路线规划：按轮椅、拐杖、慢行等画像及安全/省力策略进行候选路线排序
 - 家属端：老人绑定、位置与行程查看、异常提醒和授权说明
@@ -33,7 +34,7 @@ deliverables/  项目交付文档
 ## 环境要求
 
 - Conda（推荐）或 Python 3.11
-- Node.js 18+ 与 npm
+- Node.js 22.12+ 与 npm
 - Docker Desktop（用于 PostgreSQL/PostGIS）
 - 可选：高德地图 Web 端 JS API Key 与安全密钥
 
@@ -112,11 +113,11 @@ Vite 已监听局域网地址，前端会请求同一台电脑的 `8000` 端口�
 
 ## 响应式布局说明
 
-全局颜色与触控尺寸定义在 `frontend/src/styles/tokens.css`，基础可访问性规则在 `base.css`，角色外壳和断点在 `layouts.css`；尚未迁移的旧业务样式仍暂留在 `frontend/src/styles.css`。当前主要布局断点为：
+界面采用手机优先的深青绿社区出行风格：首页地点查询、可展开的出行偏好、五项图标底栏与独立助手。新版页面规则在 `frontend/src/styles/mobile-refresh.css`；全局颜色与触控尺寸定义在 `frontend/src/styles/tokens.css`，基础可访问性规则在 `base.css`，角色外壳和断点在 `layouts.css`；尚未迁移的旧业务样式仍暂留在 `frontend/src/styles.css`。当前主要布局断点为：
 
 - `>= 1024px`：角色侧栏和桌面工作区分栏
 - `768px–1023px`：老人端使用紧凑顶部导航，内容按任务组织
-- `<= 767px`：单列任务页面；老人端显示固定底部导航并预留安全区
+- `<= 767px`：单列任务页面；老人端显示固定五项底部导航并预留安全区
 - 局部页面可以有更窄断点，用于图片网格、表格和长标签的适配
 
 Vue Router 使用 hash URL，适用于静态网页托管和 Capacitor WebView，例如 `/#/elder/home`、`/#/family/dashboard`、`/#/admin/overview`。新增页面时复用对应角色外壳与设计 tokens；老人端主要触控目标至少 48px，并为长内容保留自然滚动。
@@ -143,6 +144,10 @@ npm run build
 ```
 
 建议同时使用浏览器开发者工具检查 `375px`、`390px`、`768px` 和桌面宽度，并在真机验证输入框、底部导航、地图手势及后台表格。
+
+## 本地 AI 助手
+
+在电脑启动 Ollama 并用 `ollama list` 确认已有 `qwen3.5:4b` 后，启动现有前后端，打开 `/#/elder/assistant` 即可使用。本轮不下载模型。手机通过电脑后端访问助手，配置、故障恢复、隐私边界和浏览器验收命令见 [本地助手使用说明](docs/local-assistant.md)。
 
 ## 照片证据资源
 

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://postgres:postgres@127.0.0.1:5432/elder_map",
         alias="DATABASE_URL",
     )
+    ollama_base_url: str = Field(default="http://127.0.0.1:11434", alias="OLLAMA_BASE_URL")
+    ollama_model: str = Field(default="qwen3.5:4b", alias="OLLAMA_MODEL")
+    ollama_timeout_seconds: float = Field(default=90, ge=1, le=180, alias="OLLAMA_TIMEOUT_SECONDS")
     redis_url: str = Field(default="redis://127.0.0.1:6379/0", alias="REDIS_URL")
     admin_token_secret: str = Field(default="", alias="ADMIN_TOKEN_SECRET")
     cors_origins: str = Field(
