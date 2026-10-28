@@ -4,6 +4,7 @@ import { computed } from 'vue';
 const props = defineProps({
   features: { type: Array, default: () => [] },
   routeSegmentCodes: { type: Object, required: true },
+  position: { type: Object, default: null },
   selectedSegmentCode: { type: String, default: null },
 });
 
@@ -23,13 +24,12 @@ const mapBounds = computed(() => {
   }
   const lons = points.map((point) => point[0]);
   const lats = points.map((point) => point[1]);
-  return {
-    minLon: Math.min(...lons),
-    maxLon: Math.max(...lons),
-    minLat: Math.min(...lats),
-    maxLat: Math.max(...lats),
-  };
+  const minLon=Math.min(...lons), maxLon=Math.max(...lons), minLat=Math.min(...lats), maxLat=Math.max(...lats);
+  const lonPadding=Math.max((maxLon-minLon)*.08,.0001), latPadding=Math.max((maxLat-minLat)*.08,.0001);
+  return { minLon:minLon-lonPadding,maxLon:maxLon+lonPadding,minLat:minLat-latPadding,maxLat:maxLat+latPadding };
 });
+
+const positionOutside = computed(() => { const point=props.position?.point; const b=mapBounds.value; return Boolean(point && (point[0]<b.minLon || point[0]>b.maxLon || point[1]<b.minLat || point[1]>b.maxLat)); });
 
 function collectCoordinates(coordinates, points) {
   if (!Array.isArray(coordinates)) return;
@@ -64,7 +64,7 @@ function pathForCoordinates(coordinates) {
 </script>
 
 <template>
-  <svg class="campus-map" viewBox="0 0 760 360" role="img" aria-label="师大苑离线路网">
+  <div><p class="fallback-map-note" role="status">{{ roadFeatures.length ? '简化路网示意，非完整离线底图；蓝点为定位估计。' : '暂无路网图形，请使用上方文字指引。' }}</p><p v-if="positionOutside" class="fallback-map-note" role="status">您的位置在此示意图范围外，请核对当前地点。</p><svg class="campus-map" viewBox="0 0 760 360" role="img" aria-label="师大苑简化路网示意">
     <defs>
       <linearGradient id="fallbackRouteGlow" x1="0" x2="1">
         <stop offset="0%" stop-color="#2f6f5e" />
@@ -97,5 +97,8 @@ function pathForCoordinates(coordinates) {
       <circle r="10" />
       <text x="14" y="5">{{ feature.properties.name }}</text>
     </g>
-  </svg>
+    <g v-if="position?.point && !positionOutside" :transform="`translate(${projectPoint(position.point)[0]}, ${projectPoint(position.point)[1]})`"><circle r="15" fill="#4288cb" opacity=".2" /><circle r="7" fill="#287ac2" stroke="white" stroke-width="3" /><title>我的位置估计，精度约{{ Math.round(position.accuracy) }}米</title></g>
+  </svg></div>
 </template>
+
+<style scoped>.fallback-map-note { padding:10px 16px; margin:0; color:#5d7164; font-size:14px; line-height:1.6; }</style>

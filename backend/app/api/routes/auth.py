@@ -183,12 +183,17 @@ def save_navigation_status(
 ) -> dict:
     """Store the latest elder navigation snapshot for linked-family monitoring."""
     profile = db.execute(
-        text("SELECT route_weight_profile FROM elder_profile WHERE user_id = :id"),
+        text("SELECT route_weight_profile FROM elder_profile WHERE user_id = :id FOR UPDATE"),
         {"id": elder_user_id},
     ).mappings().first()
     if not profile:
         raise HTTPException(status_code=404, detail="老人画像不存在")
-    data = profile["route_weight_profile"] or {}
+    data = dict(profile["route_weight_profile"] or {})
+    previous_revision = (data.get("navigation_status") or {}).get("snapshot_revision")
+    if previous_revision is not None and (
+        payload.snapshot_revision is None or payload.snapshot_revision <= previous_revision
+    ):
+        raise HTTPException(status_code=409, detail={"message": "导航状态已更新，已忽略过期进度。", "snapshot_revision": previous_revision})
     data["navigation_status"] = payload.model_dump()
     db.execute(
         text("UPDATE elder_profile SET route_weight_profile = CAST(:data AS jsonb) WHERE user_id = :id"),

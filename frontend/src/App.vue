@@ -8,6 +8,9 @@ import CollectPage from './pages/CollectPage.vue';
 import LoginPage from './pages/LoginPage.vue';
 import ProfilePage from './pages/ProfilePage.vue';
 import GuestProfilePage from './pages/GuestProfilePage.vue';
+import { buildSegmentInstruction } from './services/speechOutput.js';
+import { createNavigationPublisher } from './services/navigationPublisher.js';
+import { remainingDistance } from './services/navigationJourney.js';
 import NavigationPage from './pages/NavigationPage.vue';
 import RouteOptionsPage from './pages/RouteOptionsPage.vue';
 import ProfilePrompt from './components/ProfilePrompt.vue';
@@ -175,12 +178,13 @@ const routeEvidenceFeatures = computed(() => {
     .map((code) => byCode.get(code))
     .filter(Boolean);
 });
+const navigationProgress = ref({ index:0, paused:false });
+watch(selectedRoute, () => { navigationProgress.value={ index:0, paused:false }; }, { flush:'sync' });
 const nextStepText = computed(() => {
-  const firstSegmentName = selectedSegments.value[0]?.name ?? selectedRoute.value?.segment_names?.[0];
-  if (!firstSegmentName) return '请先生成并选择一条路线。';
-  return `第一步：沿“${firstSegmentName}”方向慢慢前进，注意观察地面和台阶。`;
+  const segments=selectedRoute.value?.segments || [];
+  return `${navigationProgress.value.paused ? '正在休息。' : ''}${buildSegmentInstruction(segments[navigationProgress.value.index], navigationProgress.value.index, segments.length)}`;
 });
-
+function updateNavigationProgress(progress) { navigationProgress.value=progress; publishNavigationStatus(); }
 onMounted(() => {
   restoreSession();
   if (currentUser.value?.mobilityType) setMobilityType(currentUser.value.mobilityType);
@@ -355,6 +359,7 @@ function exitAdmin() {
   activeMode.value = 'login';
 }
 
+const sendNavigationSnapshot = createNavigationPublisher();
 async function publishNavigationStatus(nextStatus = 'NAVIGATING') {
   if (isGuest.value || currentUser.value?.role !== 'elder' || !currentUser.value?.id || !selectedRoute.value) return false;
   const route = selectedRoute.value;
@@ -362,22 +367,14 @@ async function publishNavigationStatus(nextStatus = 'NAVIGATING') {
     start_name: startName.value,
     end_name: endName.value,
     distance_m: Number(route.distance_m || 0),
-    remaining_m: nextStatus === 'COMPLETED' ? 0 : Number(route.distance_m || 0),
+    remaining_m: remainingDistance(route, navigationProgress.value.index),
     estimated_minutes: Number(route.estimated_minutes || 0),
-    current_step: nextStatus === 'COMPLETED' ? '导航已结束' : nextStepText.value,
+    current_step: nextStatus === 'COMPLETED' ? '用户已结束导航，是否到达请本人确认。' : nextStepText.value,
     route_summary: route.summary || '',
     status: nextStatus,
   };
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/elder/${currentUser.value.id}/navigation`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(status),
-    });
-    return response.ok;
-  } catch { return false; }
+  return sendNavigationSnapshot(`${API_BASE_URL}/api/auth/elder/${currentUser.value.id}/navigation`, status);
 }
-
 async function startNavigation() {
   const started = await beginRouteNavigation();
   if (started) publishNavigationStatus();
@@ -400,10 +397,13 @@ function openRouteConditions() {
 }
 
 async function finishNavigation() {
+  const endingUserId = currentUser.value?.id;
   const shouldSync = !isGuest.value && currentUser.value?.role === 'elder' && Boolean(currentUser.value?.id);
-  const synchronized = await publishNavigationStatus('COMPLETED');
+  const synchronization = publishNavigationStatus('COMPLETED');
+  navigationProgress.value = { index:0, paused:false };
   await returnToOptions({ ended: true });
-  if (shouldSync && !synchronized) {
+  const synchronized = await synchronization;
+  if (shouldSync && !synchronized && currentUser.value?.id === endingUserId && activeMode.value !== 'navigation') {
     actionStatus.value = '导航已结束，但家属端状态暂未同步，请稍后重试。';
   }
 }
@@ -570,7 +570,7 @@ async function bindFamilyToElder(payload) {
     />
 
     <NavigationPage
-      v-else-if="activeMode === 'navigation'"
+      v-else-if="activeMode === 'navigation'" :progress="navigationProgress" @progress="updateNavigationProgress"
       :selected-route="selectedRoute"
       :selected-profile="selectedProfile"
       :map-features="mapFeatures"

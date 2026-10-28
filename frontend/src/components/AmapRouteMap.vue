@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import { loadAmap } from '../services/amapLoader';
 
@@ -7,11 +7,18 @@ const props = defineProps({
   area: { type: Object, required: true },
   features: { type: Array, default: () => [] },
   routeSegmentCodes: { type: Object, required: true },
+  currentSegmentCode: { type: String, default: null },
+  position: { type: Object, default: null },
   selectedSegmentCode: { type: String, default: null },
 });
 
 const emit = defineEmits(['select-segment', 'map-error']);
 
+const container = ref(null);
+let disposed = false;
+let hasFitted = false;
+let locationMarker;
+let accuracyCircle;
 let AMap;
 let map;
 let overlays = [];
@@ -20,7 +27,8 @@ let roadOverlays = new Map();
 onMounted(async () => {
   try {
     AMap = await loadAmap();
-    map = new AMap.Map('shidayuan-amap', {
+    if (disposed) return;
+    map = new AMap.Map(container.value, {
       center: props.area.center,
       zoom: Math.max(props.area.min_zoom, 17),
       zooms: [props.area.min_zoom, props.area.max_zoom],
@@ -36,20 +44,21 @@ onMounted(async () => {
     map.setLimitBounds(bounds);
     map.addControl(new AMap.Scale({ position: 'LB' }));
     map.addControl(new AMap.ToolBar({ position: 'RT', liteStyle: true }));
-    renderOverlays();
+    renderOverlays(); renderPosition();
   } catch (error) {
-    emit('map-error', error instanceof Error ? error.message : '高德地图加载失败');
+    if (!disposed) emit('map-error', error instanceof Error ? error.message : '高德地图加载失败');
   }
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
   map?.destroy();
   map = null;
   AMap = null;
 });
 
 watch(
-  () => [props.features, props.routeSegmentCodes, props.selectedSegmentCode],
+  () => [props.features],
   () => renderOverlays(),
   { deep: true }
 );
@@ -81,12 +90,37 @@ function renderOverlays() {
     }
   }
   map.add(overlays);
-  if (props.selectedSegmentCode) focusSelectedSegment();
+  updateRoadStyles();
+  if (!hasFitted && roadOverlays.size) { hasFitted=true; fitCurrentRoute(); }
 }
 
+watch(() => [props.routeSegmentCodes, props.selectedSegmentCode], updateRoadStyles, { deep: true });
+watch(() => props.position, renderPosition, { deep: true });
+function updateRoadStyles() {
+  for (const [code, overlay] of roadOverlays) {
+    const selected=code === props.selectedSegmentCode, inRoute=props.routeSegmentCodes.has(code);
+    const feature=props.features.find(f => f.properties?.segment_code === code);
+    const risky=feature?.properties.step_count>0 || !feature?.properties.wheelchair_accessible;
+    overlay.setOptions({ strokeColor:selected?'#d9771f':inRoute?'#176b57':risky?'#c7543d':'#71847d', strokeWeight:selected?10:inRoute?8:5, strokeOpacity:(selected||inRoute) ? .96 : .68, strokeStyle:risky&&!inRoute?'dashed':'solid', zIndex:selected?40:inRoute?30:20 });
+  }
+}
+function renderPosition() {
+  if (!map || !AMap) return;
+  if (!props.position?.point) { if (locationMarker) map.remove(locationMarker); if (accuracyCircle) map.remove(accuracyCircle); locationMarker=null; accuracyCircle=null; return; }
+  const point=props.position.point;
+  if (!locationMarker) {
+    const dot=document.createElement('span'); dot.className='journey-location-dot'; dot.setAttribute('aria-label','我的位置');
+    locationMarker=new AMap.Marker({ position:point,content:dot,anchor:'center',zIndex:100 });
+    accuracyCircle=new AMap.Circle({ center:point,radius:props.position.accuracy,strokeColor:'#307bc2',fillColor:'#4d92d6',fillOpacity:.12,strokeOpacity:.4,zIndex:5 });
+    map.add([accuracyCircle,locationMarker]);
+  } else { locationMarker.setPosition(point); accuracyCircle.setCenter(point); accuracyCircle.setRadius(Math.max(0,props.position.accuracy || 0)); }
+}
+function focusPosition() { if (map && props.position?.point) map.setZoomAndCenter(18,props.position.point); }
 function focusSelectedSegment() {
   if (!map) return;
-  const overlay = roadOverlays.get(props.selectedSegmentCode);
+  const code = props.currentSegmentCode || props.selectedSegmentCode;
+  if (props.currentSegmentCode) emit('select-segment', code);
+  const overlay = roadOverlays.get(code);
   if (overlay) map.setFitView([overlay], false, [90, 90, 90, 90], 19);
 }
 
@@ -135,8 +169,8 @@ function createPoiOverlay(feature) {
 
 <template>
   <div class="amap-map-shell">
-    <div id="shidayuan-amap" class="amap-route-map" aria-label="师大苑真实地图"></div>
-    <div class="amap-map-actions">
+    <div ref="container" class="amap-route-map" aria-label="师大苑真实地图"></div>
+    <div class="amap-map-actions"><button type="button" :disabled="!position" @click="focusPosition">我的位置</button>
       <button type="button" @click="focusSelectedSegment">查看当前路段</button>
       <button type="button" @click="fitCurrentRoute">回到完整路线</button>
     </div>

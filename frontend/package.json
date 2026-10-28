@@ -17,7 +17,10 @@
     "android:build": "npm run build:android && npx cap sync android && npx cap build android",
     "android:apk:lan": "npm run android:sync:lan && cd android && gradlew.bat assembleDebug",
     "test:ui": "node scripts/check-mobile-ui.mjs",
-    "test:assistant:live": "node scripts/check-assistant-live.mjs"
+    "test:assistant:live": "node scripts/check-assistant-live.mjs",
+    "test:speech-navigation": "node scripts/check-speech-navigation.mjs",
+    "test:map": "node scripts/check-map-lifecycle.mjs",
+    "test:speech:live": "node scripts/check-speech-live.mjs"
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "1.0.1",

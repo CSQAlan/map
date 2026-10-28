@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://postgres:postgres@127.0.0.1:5432/elder_map",
         alias="DATABASE_URL",
     )
+    speech_model_path: str = Field(default=str(Path(__file__).resolve().parents[3] / ".models" / "faster-whisper-base"), alias="SPEECH_MODEL_PATH")
+    speech_cpu_threads: int = Field(default=4, ge=1, le=16, alias="SPEECH_CPU_THREADS")
     ollama_base_url: str = Field(default="http://127.0.0.1:11434", alias="OLLAMA_BASE_URL")
     ollama_model: str = Field(default="qwen3.5:4b", alias="OLLAMA_MODEL")
     ollama_timeout_seconds: float = Field(default=90, ge=1, le=180, alias="OLLAMA_TIMEOUT_SECONDS")

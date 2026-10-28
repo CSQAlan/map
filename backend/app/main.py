@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import get_settings
+from app.services.speech_request_limit import SpeechRequestLimitMiddleware
 from app.services.photo_evidence import EVIDENCE_ROOT
 
 
@@ -17,6 +18,7 @@ app = FastAPI(
     debug=settings.app_debug,
     version="0.1.0",
 )
+app.add_middleware(SpeechRequestLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_cors_origins,

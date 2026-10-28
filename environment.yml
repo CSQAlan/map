@@ -21,3 +21,6 @@ dependencies:
       - pytest
       - pillow==12.3.0
       - pillow-heif==1.8.0
+
+      - faster-whisper==1.2.1
+      - python-multipart==0.0.32

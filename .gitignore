@@ -48,3 +48,6 @@ Thumbs.db
 
 # Browser verification artifacts
 frontend/artifacts/
+
+# Local speech model weights
+.models/

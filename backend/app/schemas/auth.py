@@ -28,6 +28,7 @@ class UserStatusRequest(BaseModel):
 
 
 class NavigationStatusRequest(BaseModel):
+    snapshot_revision: int | None = Field(default=None, ge=0, le=9007199254740991)
     start_name: str
     end_name: str
     distance_m: float = 0

@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import { chromium } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+const base=process.env.UI_BASE_URL || 'http://127.0.0.1:5173';
+const output=process.env.UI_OUTPUT_DIR || 'artifacts/speech-navigation';
+await mkdir(output,{recursive:true});
+const browser=await chromium.launch({channel:process.env.UI_BROWSER || 'chrome',headless:true});
+const places=['师大苑大学城西路入口','师大苑荷塘水景休息区'];
+const segments=[{segment_code:'A',name:'林下平缓步道',length_m:100,risk_tags:[],step_count:0},{segment_code:'B',name:'荷塘坡道',length_m:300,explanation:'沿坡道慢行，请现场确认入口。',risk_tags:['临水'],step_count:3,has_ramp:true}];
+const routeData={rank:1,distance_m:400,estimated_minutes:9,summary:'浏览器验证专用路线',segment_codes:['A','B'],segments};
+const features=segments.map((s,i)=>({type:'Feature',properties:{...s,kind:'segment',wheelchair_accessible:true},geometry:{type:'LineString',coordinates:[[106.312+i*.001,29.602],[106.313+i*.001,29.602]]}}));
+try {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  await context.addInitScript(()=>{
+    localStorage.setItem('elderMapUser',JSON.stringify({id:42,role:'elder',name:'交互检查',mobilityType:'SLOW_WALKER',profileComplete:true}));localStorage.setItem('mapLastLoginRole','elder');
+    window.__spoken=[];window.__cancel=0;window.__stopped=0;window.__cleared=0;
+    Object.defineProperty(window,'speechSynthesis',{value:{cancel(){window.__cancel++;},getVoices(){return[{lang:'zh-CN',localService:true}];},speak(u){window.__spoken.push(u.text);}}});
+    window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};
+    Object.defineProperty(navigator,'mediaDevices',{value:{getUserMedia:async()=>({getTracks:()=>[{stop(){window.__stopped++;}}]})}});
+    window.MediaRecorder=class{static isTypeSupported(){return true;}constructor(){this.state='inactive';this.mimeType='audio/webm';}start(){this.state='recording';}stop(){this.state='inactive';this.ondataavailable?.({data:new Blob(['voice'])});this.onstop?.();}};
+    Object.defineProperty(navigator,'geolocation',{value:{watchPosition(success){window.__position=success;return 9;},clearWatch(){window.__cleared++;}}});
+  });
+  const page=await context.newPage();const errors=[];const statuses=[];let chats=0;
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.route('**/src/services/amapLoader.js*', route => route.fulfill({contentType:'application/javascript',body:"export function loadAmap() { return Promise.reject(new Error('界面验证：底图暂不可用')); }"}));
+  await page.route('**/api/**',async route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path.endsWith('/navigation')) statuses.push(route.request().postDataJSON());
+    if(path.endsWith('/assistant/chat')) chats++;
+    const data=path.endsWith('/pois')?places.map(name=>({name})):path.endsWith('/recommend')?{routes:[routeData],avoided_segments:[]}:path.endsWith('/geojson')?{features}:path.endsWith('/assistant/status')?{available:true,message:'本地助手已就绪'}:path.endsWith('/assistant/chat')?{reply:'请在路线页面选择平缓路线。'}:path.endsWith('/speech/transcribe')?{text:'我想去荷塘水景休息区'}:path.endsWith('/sites')?[]:{features:[],suggestions:[]};
+    await route.fulfill({json:data,headers:{'access-control-allow-origin':'*'}});
+  });
+  await page.goto(base+'/#/elder/assistant');
+  await page.getByRole('button',{name:'语音输入',exact:true}).click();await page.getByRole('button',{name:'说完了，开始识别'}).click();
+  await page.getByText('语音已转成文字，请检查后发送。').waitFor();
+  assert.equal(await page.getByLabel('向出行助手提问').inputValue(),'我想去荷塘水景休息区');assert.equal(chats,0);
+  assert.equal(await page.evaluate(()=>window.__stopped),1);
+  await page.getByRole('button',{name:'发送问题',exact:true}).click();await page.getByRole('button',{name:'朗读回答'}).click();assert.match(await page.evaluate(()=>window.__spoken.at(-1)),/平缓路线/);
+  await page.getByRole('button',{name:'停止播报'}).click();
+  await page.evaluate(()=>location.hash='/elder/home');await page.getByLabel('选择出发地点',{exact:true}).selectOption(places[0]);
+  const destination=page.locator('.location-input').filter({has:page.getByLabel('选择目的地',{exact:true})});
+  await destination.getByRole('button',{name:'语音输入目的地'}).click();await destination.getByRole('button',{name:'说完了，开始识别'}).click();await page.getByText('已识别并选择：师大苑荷塘水景休息区').waitFor();
+  assert.equal(await page.getByLabel('选择目的地',{exact:true}).inputValue(),places[1]);
+  await page.getByRole('button',{name:'查询适合的路线'}).click();await page.getByRole('button',{name:'开始导航',exact:true}).click();
+  await page.getByRole('button',{name:'开启语音提示'}).click();assert.match(await page.evaluate(()=>window.__spoken.at(-1)),/第1段/);
+  await page.getByRole('button',{name:'已走完这段'}).click();await page.getByRole('heading',{name:'约剩 300 米'}).waitFor();assert.match(await page.evaluate(()=>window.__spoken.at(-1)),/第2段.*荷塘坡道.*3级台阶.*临水/);
+  await page.getByRole('button',{name:'休息一下'}).click();assert.equal(await page.getByRole('button',{name:'核对目的地并结束'}).isDisabled(),true);
+  await page.getByRole('button',{name:'继续前行'}).click();await page.getByRole('button',{name:'开启我的位置'}).click();
+  await page.evaluate(()=>{for(let i=0;i<3;i++)window.__position({coords:{longitude:106.33,latitude:29.63,accuracy:10},timestamp:Date.now()+i});});
+  await page.getByText('您可能偏离路线，请先在安全处停下，核对地图。',{exact:true}).waitFor();
+  await page.locator('.campus-map').waitFor();await page.screenshot({path:output+'/navigation-390.png',fullPage:true});
+  for(const width of [320,390,768]) {await page.setViewportSize({width,height:844}); const d=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));assert.ok(d.scroll<=d.client+1,JSON.stringify({width,...d}));}
+  await page.getByRole('button',{name:'结束导航',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'继续导航',exact:true}).click();
+  await page.getByRole('button',{name:'查看路线方案'}).click();assert.equal(await page.evaluate(()=>window.__cleared),1);
+  await page.getByRole('button',{name:'开始导航',exact:true}).click();await page.getByRole('heading',{name:'约剩 300 米'}).waitFor();
+  await page.getByRole('button',{name:'结束导航',exact:true}).click();await page.getByRole('button',{name:'确认结束导航',exact:true}).click();await page.waitForURL('**/#/elder/routes');
+  assert.ok(statuses.some(s=>s.remaining_m===300&&s.current_step.includes('第2段')));assert.ok(statuses.some(s=>s.current_step.includes('正在休息')));assert.equal(statuses.at(-1).status,'COMPLETED');assert.equal(statuses.at(-1).remaining_m,300);assert.match(statuses.at(-1).current_step,/本人确认/);
+  await page.getByRole('button',{name:'开始导航',exact:true}).click();await page.getByRole('heading',{name:'约剩 400 米'}).waitFor();assert.equal(await page.getByRole('button',{name:'休息一下',exact:true}).count(),1);
+  assert.deepEqual(errors,[]);await writeFile(output+'/checks.json',JSON.stringify({fixtures:true,hardware:'mocked recorder, synthesis and GPS',statuses,errors},null,2));
+  console.log('PASS: voice draft confirmation, POI matching, current-segment TTS, rest, GPS/off-route, cleanup, progress preservation, end confirmation and mobile navigation widths.');
+  await context.close();
+} finally {await browser.close();}

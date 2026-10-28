@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.routes.speech import router as speech_router
 from app.api.routes.assistant import router as assistant_router
 from app.api.routes.collect import router as collect_router
 from app.api.routes.auth import router as auth_router
@@ -24,3 +25,5 @@ api_router.include_router(emergency_router, prefix="/emergency", tags=["emergenc
 api_router.include_router(survey_records_router, prefix="/survey-records", tags=["survey-records"])
 
 api_router.include_router(assistant_router, prefix="/assistant", tags=["assistant"])
+
+api_router.include_router(speech_router, prefix="/speech", tags=["speech"])

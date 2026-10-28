@@ -1,25 +1,34 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { createAssistant } from '../composables/useAssistant.js';
+import VoiceInput from '../components/VoiceInput.vue';
+import { createSpeechOutput } from '../services/speechOutput.js';
 import AppIcon from '../components/ui/AppIcon.vue';
 const props = defineProps({ routeContext: { type: Object, default: null } });
 const { messages, draft, loading, error, status, checking, checkStatus, send, cancel, clear, dispose } = createAssistant();
 const includeContext = ref(false);
+const voiceBusy = ref(false);
+const readingIndex = ref(null);
+function readMessage(message,index) { if (playing.value && readingIndex.value === index) { stop(); readingIndex.value=null; } else { readingIndex.value=index; speak(message.content); } }
+const voiceNotice = ref('');
+const { playing, error: voiceError, speak, stop } = createSpeechOutput();
+function receiveSpeech(text) { const combined = [draft.value.trim(), text].filter(Boolean).join('，'); draft.value = combined.slice(0, 1000); voiceNotice.value = combined.length > 1000 ? '文字已填入，超出1000字的部分未保留，请检查后发送。' : '语音已转成文字，请检查后发送。'; }
 const conversationEnd = ref(null);
 const hasRoute = computed(() => Boolean(props.routeContext?.summary || props.routeContext?.destination));
 const prompts = ['怎么选择适合自己的路线？', '轮椅出行前，要留意哪些事？', '怎么把出行情况告诉家人？'];
-async function submit(text = draft.value) { await send(text, includeContext.value ? props.routeContext : null); }
+watch(voiceBusy, busy => { if (busy) stop(); });
+async function submit(text = draft.value) { if (voiceBusy.value) return; stop(); await send(text, includeContext.value ? props.routeContext : null); }
 watch(() => [messages.value.length, loading.value], async () => {
   await nextTick();
   if (messages.value.length) conversationEnd.value?.scrollIntoView({ block: 'nearest' });
 });
 onMounted(checkStatus);
-onBeforeUnmount(dispose);
+onBeforeUnmount(() => { dispose(); stop(); });
 </script>
 
 <template>
   <section class="assistant-page">
-    <header class="assistant-heading"><div><p>出门前，聊一聊</p><h1>您的出行小助手</h1></div><button v-if="messages.length" class="assistant-clear" type="button" @click="clear"><AppIcon name="plus" :size="18" />新对话</button></header>
+    <header class="assistant-heading"><div><p>出门前，聊一聊</p><h1>您的出行小助手</h1></div><button v-if="messages.length" class="assistant-clear" type="button" @click="stop(); clear(); readingIndex=null"><AppIcon name="plus" :size="18" />新对话</button></header>
     <div class="assistant-connection" :class="{ 'is-offline': status && !status.available }" role="status"><span class="connection-dot"></span><span>{{ checking ? '正在连接本地助手…' : status?.message || '本地助手' }}</span><button type="button" :disabled="checking" aria-label="重新检查助手连接" @click="checkStatus"><AppIcon name="refresh" :size="16" /></button></div>
     <div v-if="!messages.length" class="assistant-welcome" role="region" aria-label="助手介绍与快捷提问" tabindex="0">
       <div class="assistant-emblem"><AppIcon name="chat" :size="40" /><span><AppIcon name="leaf" :size="18" /></span></div>
@@ -27,20 +36,20 @@ onBeforeUnmount(dispose);
       <div class="assistant-prompts"><button v-for="prompt in prompts" :key="prompt" type="button" :disabled="loading" @click="submit(prompt)"><AppIcon name="chat" :size="19" /><span>{{ prompt }}</span><AppIcon name="arrow" :size="18" /></button></div>
     </div>
     <div v-else class="assistant-conversation" role="log" tabindex="0" aria-label="与出行助手的对话" aria-live="polite" aria-relevant="additions text">
-      <article v-for="(message, index) in messages" :key="index" class="chat-turn" :class="`chat-turn--${message.role}`"><span class="chat-speaker">{{ message.role === 'user' ? '您' : '出行小助手' }}</span><p>{{ message.content }}</p></article>
+      <article v-for="(message, index) in messages" :key="index" class="chat-turn" :class="`chat-turn--${message.role}`"><span class="chat-speaker">{{ message.role === 'user' ? '您' : '出行小助手' }}</span><p>{{ message.content }}</p><button v-if="message.role === 'assistant'" class="assistant-read" type="button" @click="readMessage(message,index)">{{ playing && readingIndex === index ? '停止播报' : '朗读回答' }}</button></article>
       <p v-if="loading" class="assistant-thinking" role="status"><span class="thinking-dot"></span>正在为您整理回答…</p><div ref="conversationEnd"></div>
     </div>
-    <div class="assistant-composer">
+    <div class="assistant-composer"><VoiceInput :disabled="loading" @text="receiveSpeech" @recording="voiceBusy = $event" /><p v-if="voiceNotice || voiceError" class="voice-notice" role="status">{{ voiceError || voiceNotice }}</p>
       <label class="assistant-context"><input v-model="includeContext" type="checkbox" :disabled="loading || !hasRoute" /><span>附带当前路线摘要</span><small>{{ hasRoute ? '仅含地点、出行方式和路线说明' : '查询路线后可使用' }}</small></label>
       <p v-if="includeContext && hasRoute" class="assistant-context-preview">{{ routeContext.start }} → {{ routeContext.destination }} · {{ routeContext.mobility }}</p>
       <p v-if="error" class="assistant-error" role="alert">{{ error }} 问题已保留，可修改后重新发送。</p>
-      <form class="assistant-input-box" @submit.prevent="submit()"><label class="sr-only" for="assistant-question">向出行助手提问</label><textarea id="assistant-question" v-model="draft" rows="2" maxlength="1000" :disabled="loading" placeholder="说说您想了解什么…" enterkeyhint="enter"></textarea><button v-if="loading" class="assistant-send" type="button" aria-label="取消等待" @click="cancel"><AppIcon name="close" :size="21" /></button><button v-else class="assistant-send" type="submit" :disabled="!draft.trim()" aria-label="发送问题"><AppIcon name="send" :size="21" /></button></form>
+      <form class="assistant-input-box" @submit.prevent="submit()"><label class="sr-only" for="assistant-question">向出行助手提问</label><textarea id="assistant-question" v-model="draft" rows="2" maxlength="1000" :disabled="loading" placeholder="说说您想了解什么…" enterkeyhint="enter"></textarea><button v-if="loading" class="assistant-send" type="button" aria-label="取消等待" @click="cancel"><AppIcon name="close" :size="21" /></button><button v-else class="assistant-send" type="submit" :disabled="!draft.trim() || voiceBusy" aria-label="发送问题"><AppIcon name="send" :size="21" /></button></form>
       <p class="assistant-footnote">AI 回答供参考，实际出行请以现场情况与路线页面为准。<span>{{ draft.length }}/1000</span></p>
     </div>
   </section>
 </template>
 
-<style scoped>
+<style scoped>.assistant-read { min-height:44px; padding:8px 12px; border:1px solid #bed5c9; background:#edf5ef; color:#205747; border-radius:10px; }.voice-notice { margin:4px 0; font-size:13px; color:#526d60; }
 .assistant-page { max-width: 780px; margin: 0 auto; height: calc(100dvh - 180px); min-height: 360px; display: flex; flex-direction: column; }
 .assistant-heading, .assistant-connection, .assistant-composer { flex: 0 0 auto; }
 .assistant-welcome, .assistant-conversation { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; padding-inline: 2px; }

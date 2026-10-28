@@ -139,3 +139,7 @@ button { touch-action: manipulation; }
 .route-options-list .route-tag { font-size: 12px; }
 .route-options-actions { gap: 10px; }
 .route-options-actions button { min-height: 54px; font-size: 16px; }
+
+.journey-location-dot { display:block; width:18px; height:18px; background:#287ac2; border:3px solid white; border-radius:50%; box-shadow:0 0 0 6px #4288cb44, 0 2px 8px #1a416b55; }
+.amap-map-actions { flex-wrap:wrap; max-width:calc(100% - 28px); }
+.amap-map-actions button { min-height:44px; }
