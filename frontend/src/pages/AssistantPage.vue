@@ -11,13 +11,42 @@ const voiceBusy = ref(false);
 const readingIndex = ref(null);
 function readMessage(message,index) { if (playing.value && readingIndex.value === index) { stop(); readingIndex.value=null; } else { readingIndex.value=index; speak(message.content); } }
 const voiceNotice = ref('');
+const questionInput = ref(null);
+const newConversationDialog = ref(null);
 const { playing, error: voiceError, speak, stop } = createSpeechOutput();
-function receiveSpeech(text) { const combined = [draft.value.trim(), text].filter(Boolean).join('，'); draft.value = combined.slice(0, 1000); voiceNotice.value = combined.length > 1000 ? '文字已填入，超出1000字的部分未保留，请检查后发送。' : '语音已转成文字，请检查后发送。'; }
+async function receiveSpeech(text) {
+  const combined = [draft.value.trim(), text].filter(Boolean).join('，');
+  draft.value = combined.slice(0, 1000);
+  voiceNotice.value = combined.length > 1000 ? '文字已填入，超出1000字的部分未保留，请检查后发送。' : '语音已转成文字，请检查后发送。';
+  await nextTick();
+  questionInput.value?.focus();
+}
+function requestNewConversation() {
+  stop();
+  cancel();
+  if (draft.value.trim()) newConversationDialog.value?.showModal();
+  else resetConversation(false);
+}
+async function resetConversation(keepDraft) {
+  const savedDraft = keepDraft ? draft.value : '';
+  clear();
+  draft.value = savedDraft;
+  readingIndex.value = null;
+  voiceNotice.value = keepDraft ? '已开启新对话，未发送的文字已保留。' : '';
+  newConversationDialog.value?.close();
+  await nextTick();
+  questionInput.value?.focus();
+}
+async function returnToDraft() {
+  newConversationDialog.value?.close();
+  await nextTick();
+  questionInput.value?.focus();
+}
 const conversationEnd = ref(null);
 const hasRoute = computed(() => Boolean(props.routeContext?.summary || props.routeContext?.destination));
 const prompts = ['怎么选择适合自己的路线？', '轮椅出行前，要留意哪些事？', '怎么把出行情况告诉家人？'];
 watch(voiceBusy, busy => { if (busy) stop(); });
-async function submit(text = draft.value) { if (voiceBusy.value) return; stop(); await send(text, includeContext.value ? props.routeContext : null); }
+async function submit(text = draft.value) { if (voiceBusy.value) return; stop(); voiceNotice.value = ''; await send(text, includeContext.value ? props.routeContext : null); }
 watch(() => [messages.value.length, loading.value], async () => {
   await nextTick();
   if (messages.value.length) conversationEnd.value?.scrollIntoView({ block: 'nearest' });
@@ -28,7 +57,7 @@ onBeforeUnmount(() => { dispose(); stop(); });
 
 <template>
   <section class="assistant-page">
-    <header class="assistant-heading"><div><p>出门前，聊一聊</p><h1>您的出行小助手</h1></div><button v-if="messages.length" class="assistant-clear" type="button" @click="stop(); clear(); readingIndex=null"><AppIcon name="plus" :size="18" />新对话</button></header>
+    <header class="assistant-heading"><div><p>出门前，聊一聊</p><h1>您的出行小助手</h1></div><button v-if="messages.length" class="assistant-clear" type="button" :disabled="voiceBusy" @click="requestNewConversation"><AppIcon name="plus" :size="18" />新对话</button></header>
     <div class="assistant-connection" :class="{ 'is-offline': status && !status.available }" role="status"><span class="connection-dot"></span><span>{{ checking ? '正在连接本地助手…' : status?.message || '本地助手' }}</span><button type="button" :disabled="checking" aria-label="重新检查助手连接" @click="checkStatus"><AppIcon name="refresh" :size="16" /></button></div>
     <div v-if="!messages.length" class="assistant-welcome" role="region" aria-label="助手介绍与快捷提问" tabindex="0">
       <div class="assistant-emblem"><AppIcon name="chat" :size="40" /><span><AppIcon name="leaf" :size="18" /></span></div>
@@ -43,9 +72,16 @@ onBeforeUnmount(() => { dispose(); stop(); });
       <label class="assistant-context"><input v-model="includeContext" type="checkbox" :disabled="loading || !hasRoute" /><span>附带当前路线摘要</span><small>{{ hasRoute ? '仅含地点、出行方式和路线说明' : '查询路线后可使用' }}</small></label>
       <p v-if="includeContext && hasRoute" class="assistant-context-preview">{{ routeContext.start }} → {{ routeContext.destination }} · {{ routeContext.mobility }}</p>
       <p v-if="error" class="assistant-error" role="alert">{{ error }} 问题已保留，可修改后重新发送。</p>
-      <form class="assistant-input-box" @submit.prevent="submit()"><label class="sr-only" for="assistant-question">向出行助手提问</label><textarea id="assistant-question" v-model="draft" rows="2" maxlength="1000" :disabled="loading" placeholder="说说您想了解什么…" enterkeyhint="enter"></textarea><button v-if="loading" class="assistant-send" type="button" aria-label="取消等待" @click="cancel"><AppIcon name="close" :size="21" /></button><button v-else class="assistant-send" type="submit" :disabled="!draft.trim() || voiceBusy" aria-label="发送问题"><AppIcon name="send" :size="21" /></button></form>
+      <form class="assistant-input-box" @submit.prevent="submit()"><label class="sr-only" for="assistant-question">向出行助手提问</label><textarea id="assistant-question" ref="questionInput" v-model="draft" rows="2" maxlength="1000" :disabled="loading" placeholder="说说您想了解什么…" enterkeyhint="enter"></textarea><button v-if="loading" class="assistant-send" type="button" aria-label="取消等待" @click="cancel"><AppIcon name="close" :size="21" /></button><button v-else class="assistant-send" type="submit" :disabled="!draft.trim() || voiceBusy" aria-label="发送问题"><AppIcon name="send" :size="21" /></button></form>
       <p class="assistant-footnote">AI 回答供参考，实际出行请以现场情况与路线页面为准。<span>{{ draft.length }}/1000</span></p>
     </div>
+    <dialog ref="newConversationDialog" class="assistant-draft-dialog" aria-labelledby="draft-dialog-title" aria-describedby="draft-dialog-description" @cancel.prevent="returnToDraft">
+      <h2 id="draft-dialog-title">还有未发送的文字</h2>
+      <p id="draft-dialog-description">开启新对话会清空当前聊天记录。您可以把未发送的文字带到新对话，或放弃这些文字。</p>
+      <button type="button" autofocus @click="resetConversation(true)">保留文字，开启新对话</button>
+      <button type="button" @click="returnToDraft">返回继续编辑</button>
+      <button type="button" @click="resetConversation(false)">放弃文字，开启新对话</button>
+    </dialog>
   </section>
 </template>
 
@@ -57,6 +93,13 @@ onBeforeUnmount(() => { dispose(); stop(); });
 .assistant-heading p { margin: 0 0 8px; color: #718078; font-size: 13px; }
 .assistant-heading h1 { margin: 0; font-size: 27px; letter-spacing: -.7px; }
 .assistant-clear { display: inline-flex; align-items: center; gap: 4px; border: 0; padding: 6px 8px; background: transparent; color: #507560; font-size: 13px; }
+.assistant-clear:disabled { opacity:.5; }
+.assistant-draft-dialog { width:min(420px, calc(100% - 32px)); max-height:calc(100dvh - 32px); overflow-y:auto; box-sizing:border-box; border:1px solid #cbdcd0; border-radius:20px; padding:24px; color:#35513e; background:#fffdf7; }
+.assistant-draft-dialog::backdrop { background:#15291d88; }
+.assistant-draft-dialog h2 { margin:0 0 12px; font-size:23px; }
+.assistant-draft-dialog p { line-height:1.8; }
+.assistant-draft-dialog button { display:block; width:100%; min-height:48px; margin-top:10px; padding:10px 12px; border:1px solid #cbdcd0; border-radius:12px; background:white; color:#35513e; font:inherit; }
+.assistant-draft-dialog button:first-of-type { background:#24685b; color:white; }
 .assistant-connection { display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: #e7f1e9; color: #48705a; border-radius: 12px; font-size: 12px; }
 .assistant-connection > span:nth-child(2) { flex: 1; }
 .connection-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: #548d64; }
