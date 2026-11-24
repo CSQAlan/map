@@ -1,4 +1,5 @@
 <script setup>
+import RouteAccessibilityFacts from './RouteAccessibilityFacts.vue';
 defineProps({
   route: {
     type: Object,
@@ -41,6 +42,7 @@ defineEmits(['select', 'select-segment']);
         <dd>{{ route.estimated_minutes }} 分钟</dd>
       </div>
     </dl>
+    <RouteAccessibilityFacts :route="route" />
     <ol class="segment-flow">
       <li
         v-for="segment in route.segments"

@@ -43,6 +43,8 @@ export function createRoutePlanner({
   let currentRouter = router;
   let currentApiBaseUrl = apiBaseUrl;
   const startName = ref('');
+  const currentOrigin = ref(null);
+  const startContext = ref(null);
   const endName = ref('');
   const mobilityType = ref('WHEELCHAIR');
   const routeStrategy = ref('BALANCED');
@@ -66,11 +68,38 @@ export function createRoutePlanner({
     selectedRouteIndex.value = 0;
     selectedSegmentCode.value = null;
     errorMessage.value = '';
+    startContext.value = null;
   }
+
+  function clearCurrentOrigin() {
+    const previous = currentOrigin.value;
+    currentOrigin.value = null;
+    if (previous && startName.value === previous.label) startName.value = '';
+  }
+
+  function setCurrentOrigin(sample, candidate) {
+    const label = `当前位置附近 · ${candidate.name}`;
+    startName.value = label;
+    currentOrigin.value = { ...sample, segmentCode: candidate.segment_code, label, mobilityType: mobilityType.value };
+  }
+
+  function beginCurrentOrigin() {
+    clearCurrentOrigin();
+    requestVersion++;
+    clearResults();
+    loading.value = false;
+    actionStatus.value = '正在获取当前位置，请确认道路后重新查询路线。';
+  }
+
+  watch([startName, mobilityType], () => {
+    if (currentOrigin.value && (startName.value !== currentOrigin.value.label || mobilityType.value !== currentOrigin.value.mobilityType)) {
+      clearCurrentOrigin();
+    }
+  }, { flush: 'sync' });
 
   // Inputs are also assigned directly by v-model and session restoration.
   // Invalidate synchronously so navigation cannot observe an obsolete route.
-  watch([startName, endName, mobilityType, routeStrategy], () => {
+  watch([startName, endName, mobilityType, routeStrategy, currentOrigin], () => {
     requestVersion += 1;
     clearResults();
     loading.value = false;
@@ -84,7 +113,11 @@ export function createRoutePlanner({
     actionStatus.value = '正在根据老人画像重新计算适老路线。';
 
     try {
-      const resolvedStart = resolvePilotLocation(startName.value, startOptionsGetter());
+      const origin = currentOrigin.value;
+      if (origin && (Date.now() - origin.timestamp > 60000 || origin.timestamp > Date.now() + 5000)) {
+        throw new Error('当前位置已过期，请重新点击“使用当前位置”。');
+      }
+      const resolvedStart = origin?.label || resolvePilotLocation(startName.value, startOptionsGetter());
       const resolvedEnd = resolvePilotLocation(endName.value, endOptionsGetter());
       if (!resolvedStart || !resolvedEnd) {
         throw new Error('请从输入框提示的试点地点中选择起点和目的地。');
@@ -102,11 +135,18 @@ export function createRoutePlanner({
       loading.value = true;
       actionStatus.value = '正在根据老人画像重新计算适老路线。';
       const params = new URLSearchParams({
-        start_name: resolvedStart,
+        ...(!origin ? { start_name: resolvedStart } : {}),
         end_name: resolvedEnd,
         mobility_type: mobilityType.value,
         strategy: routeStrategy.value,
       });
+      if (origin) {
+        params.set('start_longitude', origin.longitude);
+        params.set('start_latitude', origin.latitude);
+        params.set('start_accuracy', origin.accuracy);
+        params.set('start_timestamp_ms', origin.timestamp);
+        params.set('start_segment_code', origin.segmentCode);
+      }
       const response = await fetcher(`${currentApiBaseUrl}/api/routes/recommend?${params.toString()}`);
       const payload = await response.json().catch(() => ({}));
       if (version !== requestVersion) return false;
@@ -119,7 +159,11 @@ export function createRoutePlanner({
         );
       }
 
-      routes.value = payload.routes ?? [];
+      routes.value = (payload.routes ?? []).map(route => ({ ...route, mobility_type: mobilityType.value }));
+      startContext.value = payload.start_context ?? null;
+      if (startContext.value) {
+        routes.value = routes.value.map(route => ({ ...route, start_context: startContext.value }));
+      }
       avoidedSegments.value = payload.avoided_segments ?? [];
       selectedRouteIndex.value = 0;
       selectedSegmentCode.value = routes.value[0]?.segment_codes?.[0] ?? null;
@@ -129,10 +173,12 @@ export function createRoutePlanner({
       return routes.value.length > 0;
     } catch (error) {
       if (version !== requestVersion) return false;
-      errorMessage.value = error instanceof Error
+      errorMessage.value = error instanceof TypeError
+        ? '暂时无法连接路线服务，请检查网络后重试。'
+        : error instanceof Error
         ? error.message
         : '无法连接后端服务，请确认 FastAPI 已启动。';
-      actionStatus.value = '路线生成失败，请检查后端服务。';
+      actionStatus.value = '未能生成路线，请查看提示并调整出行条件。';
       return false;
     } finally {
       if (version === requestVersion) loading.value = false;
@@ -179,7 +225,7 @@ export function createRoutePlanner({
   }
 
   return {
-    startName, endName, mobilityType, routeStrategy, routes, avoidedSegments,
+    startName, currentOrigin, startContext, setCurrentOrigin, clearCurrentOrigin, beginCurrentOrigin, endName, mobilityType, routeStrategy, routes, avoidedSegments,
     selectedRouteIndex, selectedSegmentCode, loading, errorMessage, actionStatus,
     selectedProfile, selectedStrategy, selectedRoute,
     planRoutes, selectRoute, selectSegment, selectStrategy, selectMobility,

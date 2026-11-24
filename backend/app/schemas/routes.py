@@ -1,4 +1,26 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class CurrentStartContext(BaseModel):
+    segment_code: str
+    name: str
+    snapped_coordinates: tuple[float, float]
+    distance_m: float = Field(ge=0)
+    notice: str
+
+
+class CurrentStartCandidate(BaseModel):
+    segment_code: str
+    name: str
+    snapped_coordinates: tuple[float, float]
+    distance_m: float = Field(ge=0)
+    allowed: bool
+    reasons: list[str]
+
+
+class CurrentStartOptionsResponse(BaseModel):
+    candidates: list[CurrentStartCandidate]
+    message: str
 
 
 class RouteSegmentDetailResponse(BaseModel):
@@ -44,3 +66,4 @@ class RouteRecommendResponse(BaseModel):
     strategy_description: str
     routes: list[RouteCandidateResponse]
     avoided_segments: list[AvoidedSegmentResponse]
+    start_context: CurrentStartContext | None = None

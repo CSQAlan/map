@@ -21,6 +21,7 @@
     "test:speech-navigation": "node scripts/check-speech-navigation.mjs",
     "test:map": "node scripts/check-map-lifecycle.mjs",
     "test:survey": "node scripts/check-survey-browser.mjs",
+    "test:origin": "node scripts/check-current-origin.mjs",
     "test:speech:live": "node scripts/check-speech-live.mjs"
   },
   "dependencies": {

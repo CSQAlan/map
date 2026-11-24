@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.core.database import get_db
 from app.main import app
+import time
 
 
 client = TestClient(app)
@@ -174,6 +175,35 @@ def test_recommend_route_api_returns_candidates() -> None:
     assert "avoided_segments" in data
     assert data["strategy"] == "BALANCED"
     assert data["strategy_label"] == "综合推荐"
+
+
+def test_current_location_mid_segment_and_candidate_api(monkeypatch):
+    from app.api.routes import routes as route_api
+    monkeypatch.setattr(route_api, 'ensure_location_covered', lambda *_args: None)
+    fix = dict(longitude=106.3064, latitude=29.60395, accuracy=5, timestamp_ms=time.time() * 1000)
+    candidates = client.get('/api/routes/start-options', params={**fix, 'mobility_type': 'WHEELCHAIR'})
+    assert candidates.status_code == 200
+    candidate = candidates.json()['candidates'][0]
+    assert candidate['segment_code'] == 'S_SY_GATE_TO_MAIN'
+    response = client.get('/api/routes/recommend', params={
+        **{f'start_{key}': value for key, value in fix.items()},
+        'start_segment_code': candidate['segment_code'], 'end_name': LOTUS_NAME, 'mobility_type': 'WHEELCHAIR',
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data['start_context']['segment_code'] == candidate['segment_code']
+    assert data['routes'][0]['distance_m'] == pytest.approx(46 + 154, abs=.1)
+    assert data['routes'][0]['segments'][0]['geometry_coordinates'][0] == pytest.approx([106.3064, 29.60395])
+
+
+def test_location_start_rejects_ambiguous_or_incomplete_parameters():
+    for params in [
+        {'start_longitude': 106},
+        {'start_name': GATE_NAME, 'start_longitude': 106},
+        {},
+    ]:
+        response = client.get('/api/routes/recommend', params={**params, 'end_name': LOTUS_NAME, 'mobility_type': 'WHEELCHAIR'})
+        assert response.status_code == 422
 
 
 def test_recommend_route_api_returns_strategy_metadata() -> None:

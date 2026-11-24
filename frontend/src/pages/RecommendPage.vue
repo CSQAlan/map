@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import StrategySelector from '../components/StrategySelector.vue';
 import LocationInput from '../components/LocationInput.vue';
 import MobilityPreferencePicker from '../components/elder/MobilityPreferencePicker.vue';
+import CurrentOriginPicker from '../components/elder/CurrentOriginPicker.vue';
 
 const props = defineProps({
   mobilityType: String,
@@ -47,6 +48,7 @@ const selectedStrategy = computed(() => props.strategyOptions.find((item) => ite
       <p v-if="selectedStrategy" class="strategy-note">{{ selectedStrategy.hint }}</p>
 
       <LocationInput :model-value="startName" :options="startOptions" label="起点" icon="起" @update:model-value="emit('update:startName', $event)" />
+      <CurrentOriginPicker />
       <LocationInput :model-value="endName" :options="endOptions" label="目的地" icon="终" @update:model-value="emit('update:endName', $event)" />
 
       <p v-if="errorMessage" class="error-line" role="alert">{{ errorMessage }}</p>

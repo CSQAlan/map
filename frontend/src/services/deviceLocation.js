@@ -18,6 +18,9 @@ function browserPosition() {
 }
 
 export async function getCurrentCoordinates() {
+  if (!Capacitor.isNativePlatform() && !globalThis.isSecureContext) {
+    throw new Error('当前网页连接不支持定位，请使用 HTTPS 页面或手机 App，也可手动选择起点。');
+  }
   if (Capacitor.isNativePlatform()) {
     const permissions = await Geolocation.requestPermissions({ permissions: ['location'] });
     if (permissions.location !== 'granted') {
@@ -25,13 +28,21 @@ export async function getCurrentCoordinates() {
     }
   }
 
-  const position = Capacitor.isNativePlatform()
-    ? await Geolocation.getCurrentPosition(locationOptions)
-    : await browserPosition();
+  let position;
+  try {
+    position = Capacitor.isNativePlatform()
+      ? await Geolocation.getCurrentPosition(locationOptions)
+      : await browserPosition();
+  } catch (error) {
+    if (Capacitor.isNativePlatform()) throw new Error('暂时无法获取位置，请检查设备定位权限与位置服务，或手动选择起点。');
+    throw error;
+  }
 
   return {
     latitude: Number(position.coords.latitude.toFixed(6)),
     longitude: Number(position.coords.longitude.toFixed(6)),
+    accuracy: Number(position.coords.accuracy),
+    timestamp: Number(position.timestamp),
   };
 }
 

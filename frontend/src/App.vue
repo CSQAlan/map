@@ -11,6 +11,7 @@ import GuestProfilePage from './pages/GuestProfilePage.vue';
 import { buildSegmentInstruction } from './services/speechOutput.js';
 import { createNavigationPublisher } from './services/navigationPublisher.js';
 import { remainingDistance } from './services/navigationJourney.js';
+import { mapFeaturesForOrigin } from './services/routeOriginMap.js';
 import NavigationPage from './pages/NavigationPage.vue';
 import RouteOptionsPage from './pages/RouteOptionsPage.vue';
 import ProfilePrompt from './components/ProfilePrompt.vue';
@@ -84,6 +85,7 @@ const {
   selectStrategy: setRouteStrategy, selectMobility: setMobilityType, startNavigation: beginRouteNavigation,
   returnToOptions,
 } = routePlanner;
+const routeMapFeatures = computed(() => mapFeaturesForOrigin(mapFeatures.value, selectedRoute.value));
 const {
   currentUser,
   isGuest,
@@ -573,7 +575,7 @@ async function bindFamilyToElder(payload) {
       v-else-if="activeMode === 'navigation'" :progress="navigationProgress" @progress="updateNavigationProgress"
       :selected-route="selectedRoute"
       :selected-profile="selectedProfile"
-      :map-features="mapFeatures"
+      :map-features="routeMapFeatures"
       :pilot-area="pilotArea"
       :map-failure="mapFailure"
       :map-retrying="mapRetrying"
@@ -593,7 +595,7 @@ async function bindFamilyToElder(payload) {
       :selected-route-index="selectedRouteIndex"
       :selected-route="selectedRoute"
       :avoided-segments="avoidedSegments"
-      :map-features="mapFeatures"
+      :map-features="routeMapFeatures"
       :pilot-area="pilotArea"
       :map-failure="mapFailure"
       :map-retrying="mapRetrying"

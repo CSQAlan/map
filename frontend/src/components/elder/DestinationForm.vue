@@ -1,5 +1,6 @@
 <script setup>
 import LocationInput from "../LocationInput.vue";
+import CurrentOriginPicker from './CurrentOriginPicker.vue';
 
 defineOptions({ name: "DestinationForm" });
 
@@ -23,6 +24,7 @@ function submitForm() {
 <template>
   <form class="destination-form" @submit.prevent="submitForm">
     <div class="destination-form__fields">
+      <div>
       <LocationInput
         :model-value="startName"
         :options="startOptions"
@@ -30,6 +32,8 @@ function submitForm() {
         icon="起"
         @update:model-value="emit('update:startName', $event)"
       />
+      <CurrentOriginPicker />
+      </div>
       <LocationInput
         :model-value="endName"
         :options="endOptions"
