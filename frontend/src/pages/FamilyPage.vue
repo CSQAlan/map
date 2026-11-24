@@ -1,15 +1,18 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ElderStatusCard from '../components/ElderStatusCard.vue';
 import FamilyAlertList from '../components/FamilyAlertList.vue';
 
-const props = defineProps({ user: Object, elder: Object, monitor: { type: Object, default: () => ({ navigation: { status: 'IDLE' } }) } });
+const props = defineProps({ user: Object, elder: Object, unavailable: String, monitor: { type: Object, default: () => ({ navigation: { status: 'IDLE' } }) } });
 const emit = defineEmits(['logout', 'refresh', 'manage-binding']);
 const activeTab = ref('live');
 const showAuthorization = ref(false);
+watch(() => props.unavailable, () => { showAuthorization.value = false; });
 const navigation = computed(() => props.monitor?.navigation || { status: 'IDLE' });
 const alerts = computed(() => props.monitor?.alerts || []);
-const elderName = computed(() => props.monitor?.elder?.nickname || props.elder?.nickname || props.elder?.realName || '已关联老人');
+const confirmedElder = computed(() => props.monitor?.elder || props.elder);
+watch(confirmedElder, () => { showAuthorization.value = false; });
+const elderName = computed(() => confirmedElder.value?.nickname || confirmedElder.value?.realName || '等待服务端确认关联');
 const isNavigating = computed(() => navigation.value.status === 'NAVIGATING');
 </script>
 
@@ -17,8 +20,11 @@ const isNavigating = computed(() => navigation.value.status === 'NAVIGATING');
   <section class="family-page desktop-family-page">
     <header class="family-header family-refresh-header">
       <div><p class="section-kicker">家属关爱中心</p><h1>您好，{{ user?.nickname || user?.phone || '家属' }}</h1><p>查看已关联老人的导航状态与路线信息；当前不提供实时定位。</p></div>
-      <div class="family-header-actions"><button class="family-security" type="button" @click="showAuthorization = true">已授权查看</button><button type="button" @click="$emit('manage-binding')">关联 / 更换老人</button><button type="button" @click="$emit('refresh')">刷新数据</button><button type="button" @click="$emit('logout')">退出登录</button></div>
+      <div class="family-header-actions"><button v-if="!unavailable && confirmedElder" class="family-security" type="button" @click="showAuthorization = true">演示关联信息</button><button :disabled="Boolean(unavailable)" type="button" @click="$emit('manage-binding')">关联 / 更换老人</button><button :disabled="Boolean(unavailable)" type="button" @click="$emit('refresh')">刷新数据</button><button type="button" @click="$emit('logout')">退出登录</button></div>
     </header>
+    <p v-if="unavailable" role="alert" class="error-line">{{ unavailable }}</p>
+    <p v-else-if="!confirmedElder" role="status">尚未取得本次服务端关联确认；网络不可用时不会展示历史关联信息。</p>
+    <template v-else>
     <ElderStatusCard
       :elder-name="elderName"
       :account="monitor?.elder?.account || elder?.account || '—'"
@@ -36,11 +42,12 @@ const isNavigating = computed(() => navigation.value.status === 'NAVIGATING');
       <section class="authorization-card">
         <button class="authorization-close" type="button" aria-label="关闭" @click="showAuthorization = false">×</button>
         <p class="section-kicker">授权信息</p><h2>已关联老人</h2>
-        <dl><div><dt>老人昵称</dt><dd>{{ elderName }}</dd></div><div><dt>数字账号</dt><dd>{{ monitor?.elder?.account || elder?.account || '—' }}</dd></div><div><dt>关联状态</dt><dd>已授权 · 有效</dd></div></dl>
+        <dl><div><dt>老人昵称</dt><dd>{{ elderName }}</dd></div><div><dt>数字账号</dt><dd>{{ monitor?.elder?.account || elder?.account || '—' }}</dd></div><div><dt>关联状态</dt><dd>演示关联，不代表可信身份认证或正式授权</dd></div></dl>
         <p>您可以查看该老人的导航路线、预计到达时间及紧急告警；当前不提供实时定位，也不能修改老人端的导航路线或个人资料。</p>
         <button class="secondary-action" type="button" @click="$emit('manage-binding'); showAuthorization = false">关联 / 更换老人</button>
       </section>
     </div>
+    </template>
   </section>
 </template>
 

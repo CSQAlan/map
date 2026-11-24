@@ -5,6 +5,12 @@ from fastapi import HTTPException
 from app.api.routes.auth import save_navigation_status
 from app.schemas.auth import NavigationStatusRequest
 
+@pytest.fixture(autouse=True)
+def explicit_demo_sharing(monkeypatch):
+    from app.api.routes import auth
+    from app.core.config import Settings
+    monkeypatch.setattr(auth, 'get_settings', lambda: Settings(_env_file=None, APP_ENV='test', ENABLE_DEMO_FAMILY_SHARING=True))
+
 class SnapshotDatabase:
     def __init__(self, revision):
         self.profile={'navigation_status':{'snapshot_revision':revision,'status':'COMPLETED'},'other':'preserved'}

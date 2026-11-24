@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>绑定与共享 · 本机演示</title><link rel="stylesheet" href="/styles.css"><script defer src="/app.js"></script></head>
+<body>
+<header>仅演示，测试角色，无真实数据</header>
+<main>
+<nav><a href="/elder">老人测试页</a><a href="/family">家属测试页</a></nav>
+<h1 id="title"></h1>
+<p>确认绑定不等于同意共享。共享必须由老人另行开启，双方都可以撤销。</p>
+<section aria-label="当前状态"><h2>绑定与共享</h2><p id="pair">正在读取本次进程状态…</p><p id="consent"></p><p id="shared"></p></section>
+<section id="elder" hidden>
+<h2>邀请测试家属</h2><button id="issue">生成新演示邀请码</button><output id="code"></output><p id="expiry"></p>
+<button id="confirm">明确确认绑定</button><button id="grant">单独开启共享</button>
+</section>
+<section id="family" hidden><h2>申请绑定</h2><label for="input">输入老人页的演示邀请码（勿填真实信息）</label><input id="input" maxlength="32" autocomplete="off" spellcheck="false"><button id="accept">发送绑定申请</button></section>
+<button id="revoke" class="danger">撤销共享，保留绑定</button>
+<p id="message" role="status" aria-live="polite"></p>
+<footer>仅在本机内存运行，重启即清空。没有 GPS、账号认证或真实位置。角色页可自由切换，不能用于真实授权。上线前仍需可信身份、不可猜测邀请、事务消费与审计。</footer>
+</main></body></html>

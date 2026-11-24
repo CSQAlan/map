@@ -1,5 +1,58 @@
 import { computed, ref } from 'vue';
 import { apiRequest } from '../services/apiClient.js';
+import { API_BASE_URL } from '../config/api.js';
+
+const familySharingDenied = ref(false);
+const confirmedFamilyElder = ref(null);
+const familySessionKey = ref(0);
+let familyRequestVersion = 0;
+let familySessionVersion = 0;
+
+function advanceFamilySession() {
+  familySessionVersion += 1;
+  familySessionKey.value += 1;
+  confirmedFamilyElder.value = null;
+}
+
+// Persist identity/preferences only, never server binding or monitoring data.
+function familyCache(user) {
+  const safe = {};
+  for (const key of ['id', 'role', 'phone', 'nickname', 'username', 'account', 'mobilityType', 'createdAt']) {
+    if (Object.hasOwn(user, key)) safe[key] = user[key];
+  }
+  return { ...safe, boundElder: null, bindingStatus: null };
+}
+
+function revokeFamilySharing() {
+  familySessionVersion += 1;
+  confirmedFamilyElder.value = null;
+  familyRequestVersion += 1;
+  familySharingDenied.value = true;
+  if (currentUser.value?.role === 'family') {
+    currentUser.value = { ...currentUser.value, boundElder: null, bindingStatus: null };
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem('familyMapUser') || 'null');
+    if (saved) localStorage.setItem('familyMapUser', JSON.stringify(familyCache(saved)));
+  } catch { /* No cached authorization may be used by the active session. */ }
+}
+
+async function familyRequest(path, body) {
+  const version = ++familyRequestVersion;
+  const sessionVersion = familySessionVersion;
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  if (response.status === 403) {
+    if (sessionVersion === familySessionVersion) revokeFamilySharing();
+    throw new Error('家属位置共享演示未开启或访问被拒绝，手机号不是可信身份认证。');
+  }
+  const payload = await response.json().catch(() => ({}));
+  if (version !== familyRequestVersion) throw new Error('家属操作已失效，请重新登录。');
+  if (!response.ok) throw new Error(typeof payload.detail === 'string' ? payload.detail : '家属操作失败');
+  familySharingDenied.value = false;
+  return payload;
+}
 
 const ADMIN_TOKEN_KEY = 'adminAccessToken';
 const currentUser = ref(null);
@@ -20,7 +73,7 @@ function readAdminToken() {
 
 function persistUser(user) {
   const key = user?.role === 'family' ? 'familyMapUser' : 'elderMapUser';
-  localStorage.setItem(key, JSON.stringify(user));
+  localStorage.setItem(key, JSON.stringify(user?.role === 'family' ? familyCache(user) : user));
   localStorage.setItem('mapLastLoginRole', user?.role === 'family' ? 'family' : 'elder');
 }
 
@@ -38,10 +91,17 @@ function sanitizeLegacyUserPassword(userKey) {
 }
 
 function restoreSession() {
+  advanceFamilySession();
+  familyRequestVersion += 1;
   currentUser.value = null;
   isGuest.value = false;
   sanitizeLegacyUserPassword('elderMapUser');
   sanitizeLegacyUserPassword('familyMapUser');
+  const cachedFamily = localStorage.getItem('familyMapUser');
+  if (cachedFamily) {
+    try { localStorage.setItem('familyMapUser', JSON.stringify(familyCache(JSON.parse(cachedFamily)))); }
+    catch { localStorage.removeItem('familyMapUser'); }
+  }
   localStorage.removeItem('adminMapCredentials');
   const lastRole = localStorage.getItem('mapLastLoginRole') ?? 'elder';
   const userKey = lastRole === 'family' ? 'familyMapUser' : 'elderMapUser';
@@ -70,6 +130,8 @@ function restoreSession() {
 }
 
 async function loginElder(credentials) {
+  advanceFamilySession();
+  familyRequestVersion += 1;
   const payload = await apiRequest('/api/auth/elder', {
     method: 'POST',
     body: { nickname: credentials.nickname, password: credentials.password },
@@ -104,14 +166,12 @@ async function loginElder(credentials) {
 }
 
 async function loginFamily(credentials) {
-  const payload = await apiRequest('/api/auth/family', {
-    method: 'POST',
-    body: { phone: credentials.phone },
-    errorMessage: '登录失败，请稍后重试',
-  });
+  advanceFamilySession();
+  if (currentUser.value?.role === 'family') currentUser.value = familyCache(currentUser.value);
+  const payload = await familyRequest('/api/auth/family', { phone: credentials.phone });
   let saved = {};
   try {
-    saved = JSON.parse(localStorage.getItem('familyMapUser') || '{}');
+    saved = familyCache(JSON.parse(localStorage.getItem('familyMapUser') || '{}'));
   } catch {
     saved = {};
   }
@@ -132,6 +192,7 @@ async function loginFamily(credentials) {
     bindingStatus: databaseBinding?.status || null,
     boundElder: databaseBinding?.elder || null,
   };
+  confirmedFamilyElder.value = databaseBinding?.status === 'ACTIVE' ? databaseBinding.elder || null : null;
   currentUser.value = user;
   isGuest.value = false;
   persistUser(user);
@@ -158,12 +219,16 @@ async function loginAdmin(credentials) {
 }
 
 function enterGuestMode({ clearLastRole = false } = {}) {
+  advanceFamilySession();
+  familyRequestVersion += 1;
   currentUser.value = null;
   isGuest.value = true;
   if (clearLastRole) localStorage.removeItem('mapLastLoginRole');
 }
 
 function clearCurrentUser() {
+  advanceFamilySession();
+  familyRequestVersion += 1;
   currentUser.value = null;
   isGuest.value = false;
   // Keep the cached profile for the login form, but revoke its active role.
@@ -184,6 +249,8 @@ function getCurrentRole() {
 }
 
 function logout(role) {
+  if (role !== 'admin') advanceFamilySession();
+  if (role !== 'admin') familyRequestVersion += 1;
   if (role === 'admin') {
     try {
       globalThis.sessionStorage?.removeItem(ADMIN_TOKEN_KEY);
@@ -215,16 +282,15 @@ function updateProfile(profileData) {
 async function bindFamily(payload) {
   const familyUser = currentUser.value;
   if (!familyUser?.id) throw new Error('家属登录状态已失效，请重新登录。');
-  const result = await apiRequest('/api/auth/family/bind', {
-    method: 'POST',
-    body: {
+  const result = await familyRequest('/api/auth/family/bind', {
       family_user_id: familyUser.id,
       elder_account: payload.elderAccount,
       binding_code: payload.bindingCode,
-    },
-    errorMessage: '关联失败',
   });
   const updatedFamily = { ...familyUser, boundElder: result.elder, bindingStatus: 'ACTIVE' };
+  // A fresh server-confirmed binding replaces any denied/old monitor context.
+  familySessionKey.value += 1;
+  confirmedFamilyElder.value = result.elder;
   currentUser.value = updatedFamily;
   persistUser(updatedFamily);
   return { family: updatedFamily, elder: result.elder };
@@ -246,6 +312,10 @@ export function useAuthSession() {
     logout,
     updateProfile,
     bindFamily,
+    familySharingDenied,
+    confirmedFamilyElder,
+    familySessionKey,
+    revokeFamilySharing,
   };
 }
 

@@ -15,6 +15,7 @@ export function createMapData({ fetcher = (...args) => fetch(...args), apiBaseUr
   let currentApiBaseUrl = apiBaseUrl;
   const startOptions = ref(toOptions(BUILT_IN_POIS));
   const endOptions = ref(toOptions(BUILT_IN_POIS));
+  const officialPois = ref(null);
   const mapFeatures = ref([]);
   const pilotArea = ref(null);
   const mapFailure = ref('');
@@ -32,9 +33,12 @@ export function createMapData({ fetcher = (...args) => fetch(...args), apiBaseUr
         .filter((poi) => poi?.name)
         .map((poi) => ({ label: poi.name, value: poi.name }));
       if (!options.length) throw new Error('地点列表为空');
+      officialPois.value = pois.filter(poi => typeof poi?.name === 'string' && poi.name.trim())
+        .map(({ name, poi_type }) => ({ name, poi_type }));
       startOptions.value = options.map((option) => ({ ...option }));
       endOptions.value = options.map((option) => ({ ...option }));
     } catch (error) {
+      officialPois.value = null;
       console.warn('使用内置地点列表：', error);
     }
   }
@@ -93,7 +97,7 @@ export function createMapData({ fetcher = (...args) => fetch(...args), apiBaseUr
   }
 
   return {
-    startOptions, endOptions, mapFeatures, pilotArea, mapFailure, mapLoading,
+    startOptions, endOptions, officialPois, mapFeatures, pilotArea, mapFailure, mapLoading,
     mapRetrying, diagnosticSuggestions, diagnosticsLoading,
     loadPoiOptions, loadPilotArea, loadMapData, loadDiagnostics, retryMapData,
     configure(options = {}) {

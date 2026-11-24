@@ -22,6 +22,15 @@ from app.services.admin_tokens import issue_admin_token, require_admin_id, token
 router = APIRouter()
 
 
+def require_demo_family_sharing() -> None:
+    if not get_settings().demo_family_sharing_enabled:
+        raise HTTPException(status_code=403, detail="家属位置共享演示未开启，手机号不构成可信身份认证；家属登录、绑定、查看和导航状态共享均不可用。本地导航不受影响。")
+
+
+def get_sharing_db(_=Depends(require_demo_family_sharing), db: Session = Depends(get_db)):
+    return db
+
+
 def password_hash(value: str) -> str:
     """Small demo-only password hash. Replace with bcrypt/argon2 before production."""
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
@@ -74,7 +83,8 @@ def elder_register_or_login(payload: ElderAuthRequest, db: Session = Depends(get
 
 
 @router.post("/family")
-def family_register_or_login(payload: FamilyAuthRequest, db: Session = Depends(get_db)) -> dict:
+def family_register_or_login(payload: FamilyAuthRequest, db: Session = Depends(get_sharing_db)) -> dict:
+    require_demo_family_sharing()
     row = db.execute(
         text("SELECT * FROM app_user WHERE username = :phone AND role = 'FAMILY'"),
         {"phone": payload.phone},
@@ -104,7 +114,8 @@ def family_register_or_login(payload: FamilyAuthRequest, db: Session = Depends(g
 
 
 @router.post("/family/bind")
-def bind_family(payload: FamilyBindRequest, db: Session = Depends(get_db)) -> dict:
+def bind_family(payload: FamilyBindRequest, db: Session = Depends(get_sharing_db)) -> dict:
+    require_demo_family_sharing()
     elder = db.execute(
         text("""SELECT au.id, au.username, au.display_name, ep.route_weight_profile
         FROM app_user au JOIN elder_profile ep ON ep.user_id = au.id
@@ -179,9 +190,10 @@ def list_users(
 
 @router.post("/elder/{elder_user_id}/navigation")
 def save_navigation_status(
-    elder_user_id: int, payload: NavigationStatusRequest, db: Session = Depends(get_db)
+    elder_user_id: int, payload: NavigationStatusRequest, db: Session = Depends(get_sharing_db)
 ) -> dict:
     """Store the latest elder navigation snapshot for linked-family monitoring."""
+    require_demo_family_sharing()
     profile = db.execute(
         text("SELECT route_weight_profile FROM elder_profile WHERE user_id = :id FOR UPDATE"),
         {"id": elder_user_id},
@@ -204,8 +216,9 @@ def save_navigation_status(
 
 
 @router.get("/family/{family_user_id}/monitor")
-def family_monitor(family_user_id: int, db: Session = Depends(get_db)) -> dict:
+def family_monitor(family_user_id: int, db: Session = Depends(get_sharing_db)) -> dict:
     """Return only the navigation snapshot of the elder bound to this family account."""
+    require_demo_family_sharing()
     row = db.execute(
         text("""SELECT au.id, au.username, au.display_name, ep.route_weight_profile
         FROM family_binding fb

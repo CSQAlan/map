@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     app_host: str = Field(default="0.0.0.0", alias="APP_HOST")
     app_port: int = Field(default=8000, alias="APP_PORT")
     app_debug: bool = Field(default=True, alias="APP_DEBUG")
+    enable_demo_family_sharing: bool = Field(default=False, alias="ENABLE_DEMO_FAMILY_SHARING")
     database_url: str = Field(
         default="postgresql+psycopg://postgres:postgres@127.0.0.1:5432/elder_map",
         alias="DATABASE_URL",
@@ -39,6 +40,14 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @property
+    def demo_family_sharing_enabled(self) -> bool:
+        return (
+            "app_env" in self.model_fields_set
+            and self.app_env in {"dev", "test"}
+            and self.enable_demo_family_sharing
+        )
 
     @property
     def allowed_cors_origins(self) -> list[str]:

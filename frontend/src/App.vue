@@ -32,6 +32,7 @@ import { apiRequest } from './services/apiClient.js';
 import { useAuthSession } from './composables/useAuthSession.js';
 import { useRoutePlanner } from './composables/useRoutePlanner.js';
 import { useMapData } from './composables/useMapData.js';
+import { createNearbyServices } from './composables/useNearbyServices.js';
 import { useFamilyMonitor } from './composables/useFamilyMonitor.js';
 import { useCollectionWorkflow } from './composables/useCollectionWorkflow.js';
 import { pathForLegacyMode } from './router/policy.js';
@@ -65,7 +66,7 @@ const activeLayout = computed(() => {
 const route = useRoute();
 const router = useRouter();
 const {
-  startOptions, endOptions, mapFeatures, pilotArea, mapFailure, mapLoading,
+  startOptions, endOptions, officialPois, mapFeatures, pilotArea, mapFailure, mapLoading,
   mapRetrying,
   loadPoiOptions, loadPilotArea, loadMapData, loadDiagnostics, retryMapData,
 } = useMapData({ apiBaseUrl: API_BASE_URL });
@@ -81,10 +82,22 @@ const {
   startName, endName, mobilityType, routeStrategy, routes, avoidedSegments,
   selectedRouteIndex, selectedSegmentCode, loading, errorMessage, actionStatus,
   selectedProfile, selectedRoute,
+  comparisonAvailable, comparisonState, comparisonError, walkingReference, compareWalkingRoute,
   planRoutes, selectRoute: setSelectedRoute, selectSegment: setSelectedSegment,
   selectStrategy: setRouteStrategy, selectMobility: setMobilityType, startNavigation: beginRouteNavigation,
   returnToOptions,
 } = routePlanner;
+const {
+  results: nearbyResults, status: nearbyStatus, message: nearbyMessage,
+  query: checkNearby, canChoose: canChooseNearby,
+} = createNearbyServices({
+  origin: startName, profile: mobilityType, pois: officialPois,
+  enabled: computed(() => route.path === '/elder/home' && !routePlanner.currentOrigin.value),
+  apiBaseUrl: API_BASE_URL,
+});
+function chooseNearby(name) {
+  if (canChooseNearby(name)) endName.value = name;
+}
 const routeMapFeatures = computed(() => mapFeaturesForOrigin(mapFeatures.value, selectedRoute.value));
 const {
   currentUser,
@@ -100,6 +113,10 @@ const {
   logout: endSession,
   updateProfile,
   bindFamily: bindFamilySession,
+  familySharingDenied,
+  confirmedFamilyElder,
+  familySessionKey,
+  revokeFamilySharing,
 } = useAuthSession();
 const questionnairePending = ref(false);
 
@@ -118,11 +135,14 @@ watch(activeMode, (mode) => {
 const adminUsers = ref([]);
 const loginError = ref('');
 const familyBindingError = ref('');
-const { monitor: familyMonitor, elder: boundElder, refresh: refreshFamilyMonitor, start: beginFamilyMonitoring, stop: stopFamilyMonitoring, reset: resetFamilyMonitor } = useFamilyMonitor({
+const { monitor: familyMonitor, elder: boundElder, unavailable: familyUnavailable, deny: denyFamilySharing, refresh: refreshFamilyMonitor, start: beginFamilyMonitoring, stop: stopFamilyMonitoring, reset: resetFamilyMonitor } = useFamilyMonitor({
   currentUser,
   activeMode,
   apiBaseUrl: API_BASE_URL,
+  onDenied: revokeFamilySharing,
+  sessionKey: familySessionKey,
 });
+watch(familySharingDenied, (denied) => { if (denied) denyFamilySharing(); });
 const adminLoginError = ref('');
 const adminActionError = ref('');
 const profileSaving = ref(false);
@@ -361,7 +381,16 @@ function exitAdmin() {
   activeMode.value = 'login';
 }
 
-const sendNavigationSnapshot = createNavigationPublisher();
+const sharingDenied = ref(false);
+const sendNavigationSnapshot = createNavigationPublisher({ fetcher: async (...args) => {
+  if (sharingDenied.value) return { ok: false, status: 403 };
+  const response = await fetch(...args);
+  if (response.status === 403) {
+    sharingDenied.value = true;
+    actionStatus.value = '家属位置共享不可用；本地导航仍可继续。';
+  }
+  return response;
+} });
 async function publishNavigationStatus(nextStatus = 'NAVIGATING') {
   if (isGuest.value || currentUser.value?.role !== 'elder' || !currentUser.value?.id || !selectedRoute.value) return false;
   const route = selectedRoute.value;
@@ -406,7 +435,7 @@ async function finishNavigation() {
   await returnToOptions({ ended: true });
   const synchronized = await synchronization;
   if (shouldSync && !synchronized && currentUser.value?.id === endingUserId && activeMode.value !== 'navigation') {
-    actionStatus.value = '导航已结束，但家属端状态暂未同步，请稍后重试。';
+    actionStatus.value = sharingDenied.value ? '本地导航已结束，家属位置共享不可用。' : '导航已结束，但家属端状态暂未同步，请稍后重试。';
   }
 }
 
@@ -548,7 +577,8 @@ async function bindFamilyToElder(payload) {
     <FamilyPage
       v-else-if="activeMode === 'family'"
       :user="currentUser"
-      :elder="currentUser?.boundElder || boundElder"
+      :elder="familyUnavailable ? null : confirmedFamilyElder || boundElder"
+      :unavailable="familyUnavailable"
       :monitor="familyMonitor"
       @refresh="refreshFamilyMonitor"
       @manage-binding="resetFamilyMonitor(); familyBindingError = ''; activeMode = 'family-binding'"
@@ -594,6 +624,12 @@ async function bindFamilyToElder(payload) {
       :routes="routes"
       :selected-route-index="selectedRouteIndex"
       :selected-route="selectedRoute"
+      :comparison-available="comparisonAvailable"
+      :comparison-state="comparisonState"
+      :comparison-error="comparisonError"
+      :walking-reference="walkingReference"
+      :profile-label="selectedProfile?.label"
+      @compare-walking="compareWalkingRoute"
       :avoided-segments="avoidedSegments"
       :map-features="routeMapFeatures"
       :pilot-area="pilotArea"
@@ -652,6 +688,11 @@ async function bindFamilyToElder(payload) {
       @reroute="reroute"
       @send-sos="sendSos"
       @open-profile="openProfile"
+      :nearby-results="nearbyResults"
+      :nearby-status="nearbyStatus"
+      :nearby-message="nearbyMessage"
+      @check-nearby="checkNearby"
+      @choose-nearby="chooseNearby"
       @open-assistant="activeMode = 'assistant'"
     />
 

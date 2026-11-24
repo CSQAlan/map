@@ -3,10 +3,12 @@ import { computed } from 'vue';
 import DestinationForm from '../components/elder/DestinationForm.vue';
 import MobilityPreferencePicker from '../components/elder/MobilityPreferencePicker.vue';
 import AppIcon from '../components/ui/AppIcon.vue';
-const props = defineProps({ startName: String, endName: String, startOptions: Array, endOptions: Array, profileOptions: Array, mobilityType: String, actionStatus: String, errorMessage: String, sosSubmitting: Boolean, loading: Boolean, isGuest: Boolean });
-const emit = defineEmits(['update:startName', 'update:endName', 'update:mobilityType', 'plan-route', 'open-route-options', 'reroute', 'send-sos', 'open-profile', 'open-assistant']);
+const props = defineProps({ startName: String, endName: String, startOptions: Array, endOptions: Array, profileOptions: Array, mobilityType: String, actionStatus: String, errorMessage: String, sosSubmitting: Boolean, loading: Boolean, isGuest: Boolean, nearbyResults: { type: Array, default: () => [] }, nearbyStatus: String, nearbyMessage: String });
+const emit = defineEmits(['update:startName', 'update:endName', 'update:mobilityType', 'plan-route', 'open-route-options', 'reroute', 'send-sos', 'open-profile', 'open-assistant', 'check-nearby', 'choose-nearby']);
 const currentProfile = computed(() => props.profileOptions?.find(option => option.value === props.mobilityType)?.label || '选择出行方式');
 const shortcuts = computed(() => (props.endOptions || []).filter(option => option.value !== props.startName).slice(0, 3));
+const formatNearbyDistance = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 });
+const nearbyDistance = value => formatNearbyDistance.format(value);
 function submitPlan() { if (props.startName?.trim() && props.endName?.trim()) emit('plan-route'); }
 </script>
 
@@ -33,6 +35,24 @@ function submitPlan() { if (props.startName?.trim() && props.endName?.trim()) em
         <DestinationForm :start-name="startName" :end-name="endName" :start-options="startOptions" :end-options="endOptions" :loading="loading" :error="errorMessage" @update:start-name="emit('update:startName', $event)" @update:end-name="emit('update:endName', $event)" @submit="submitPlan" />
         <div v-if="shortcuts.length" class="destination-shortcuts"><span>想去</span><button v-for="option in shortcuts" :key="option.value" type="button" @click="emit('update:endName', option.value)">{{ option.label }}</button></div>
         <details class="home-preferences"><summary><span><AppIcon name="shield" :size="19" />{{ currentProfile }}</span><span class="preference-change">更改 <AppIcon name="chevron" :size="15" /></span></summary><MobilityPreferencePicker :model-value="mobilityType" :options="profileOptions" label="选择适合您的出行情况" @update:model-value="emit('update:mobilityType', $event)" /></details>
+        <section class="nearby-services" aria-label="试点服务可达性">
+          <h3>试点服务可达性</h3>
+          <p>从手动选择的出发地点，按当前出行方式核对最多 3 个试点服务方向。距离按已登记路线计算，不保证现场通行。</p>
+          <button class="secondary-action" type="button" :disabled="nearbyStatus === 'loading'" @click="emit('check-nearby')">
+            {{ nearbyStatus === 'loading' ? '正在核对试点服务…' : '查看附近服务可达性' }}
+          </button>
+          <p v-if="nearbyMessage" role="status">{{ nearbyMessage }}</p>
+          <ul v-if="nearbyResults.length" aria-live="polite">
+            <li v-for="item in nearbyResults" :key="item.name">
+              <strong>{{ item.name }}</strong>
+              <span>{{ item.type === 'REST_AREA' ? '休息区' : '生活服务方向（人行道）' }}</span>
+              <span v-if="item.state === 'reachable'">已找到符合当前条件的登记路线 · {{ nearbyDistance(item.distance) }} 米</span>
+              <span v-else-if="item.state === 'unreachable'">现有试点路网未找到符合当前出行条件的路线</span>
+              <span v-else>暂时无法确认可达性，不代表没有路线</span>
+              <button v-if="item.state === 'reachable'" class="secondary-action" type="button" @click="emit('choose-nearby', item.name)">设为目的地</button>
+            </li>
+          </ul>
+        </section>
       </section>
     </div>
     <button class="home-assistant-entry" type="button" @click="emit('open-assistant')"><span class="assistant-entry-icon"><AppIcon name="chat" :size="26" /></span><span><strong>出行有疑问，问问小助手</strong><small>路线怎么看？轮椅出行要留意什么？</small></span><AppIcon name="arrow" :size="22" /></button>
@@ -40,3 +60,12 @@ function submitPlan() { if (props.startName?.trim() && props.endName?.trim()) em
     <p class="home-status" role="status"><AppIcon name="shield" :size="16" />{{ actionStatus }}</p>
   </section>
 </template>
+
+<style scoped>
+.nearby-services { grid-column: 1 / -1; min-width: 0; padding: 16px; border: 1px solid #c3d5cc; border-radius: 12px; background: #f1f7f3; line-height: 1.6; }
+.nearby-services h3 { margin: 0; font-size: 1.1rem; }
+.nearby-services p { margin: 8px 0; }
+.nearby-services ul { display: grid; gap: 8px; list-style: none; padding: 0; margin: 12px 0 0; }
+.nearby-services li { display: grid; justify-items: start; gap: 4px; min-width: 0; padding: 10px; border-radius: 8px; background: white; overflow-wrap: anywhere; }
+.nearby-services button { min-height: 44px; max-width: 100%; white-space: normal; }
+</style>

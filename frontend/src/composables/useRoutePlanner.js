@@ -1,4 +1,5 @@
 import { computed, ref, watch } from 'vue';
+import { shortestReturnedCandidate } from '../utils/routeComparison.js';
 
 const DEFAULT_PROFILE_OPTIONS = [
   { label: '轮椅老人', value: 'WHEELCHAIR', hint: '不走台阶，优先坡道、宽路和无障碍路段' },
@@ -55,14 +56,53 @@ export function createRoutePlanner({
   const loading = ref(false);
   const errorMessage = ref('');
   const actionStatus = ref('尚未开始导航，请先确认路线。');
+  const comparisonState = ref('idle');
+  const comparisonError = ref('');
+  const walkingReference = ref(null);
+  const plannedEndpoints = ref(null);
+  let comparisonVersion = 0;
 
   const selectedProfile = computed(() => currentProfileOptions.find((item) => item.value === mobilityType.value));
   const selectedStrategy = computed(() => currentStrategyOptions.find((item) => item.value === routeStrategy.value));
   const selectedRoute = computed(() => routes.value[selectedRouteIndex.value] ?? null);
+  const comparisonAvailable = computed(() => Boolean(selectedRoute.value && plannedEndpoints.value
+    && !currentOrigin.value && mobilityType.value !== 'INDEPENDENT'));
 
   let requestVersion = 0;
 
+  function clearComparison() {
+    comparisonVersion++;
+    walkingReference.value = null;
+    comparisonState.value = 'idle';
+    comparisonError.value = '';
+  }
+
+  async function compareWalkingRoute() {
+    if (!comparisonAvailable.value) return false;
+    clearComparison();
+    const version = comparisonVersion;
+    const planVersion = requestVersion;
+    comparisonState.value = 'loading';
+    try {
+      const params = new URLSearchParams({ ...plannedEndpoints.value, mobility_type: 'INDEPENDENT', strategy: 'SHORTEST' });
+      const response = await fetcher(`${currentApiBaseUrl}/api/routes/recommend?${params}`);
+      const payload = await response.json();
+      if (version !== comparisonVersion || planVersion !== requestVersion) return false;
+      if (!response.ok) throw new Error('reference unavailable');
+      walkingReference.value = shortestReturnedCandidate(payload.routes);
+      comparisonState.value = walkingReference.value ? 'ready' : 'empty';
+      return Boolean(walkingReference.value);
+    } catch {
+      if (version !== comparisonVersion || planVersion !== requestVersion) return false;
+      comparisonError.value = '普通步行参考暂时无法获取，可重试；当前路线与导航不受影响。';
+      comparisonState.value = 'error';
+      return false;
+    }
+  }
+
   function clearResults() {
+    clearComparison();
+    plannedEndpoints.value = null;
     routes.value = [];
     avoidedSegments.value = [];
     selectedRouteIndex.value = 0;
@@ -166,6 +206,7 @@ export function createRoutePlanner({
       }
       avoidedSegments.value = payload.avoided_segments ?? [];
       selectedRouteIndex.value = 0;
+      plannedEndpoints.value = !origin ? { start_name: resolvedStart, end_name: resolvedEnd } : null;
       selectedSegmentCode.value = routes.value[0]?.segment_codes?.[0] ?? null;
       actionStatus.value = routes.value.length
         ? `已按“${selectedProfile.value?.label}”生成路线，请比较方案后再开始导航。`
@@ -228,6 +269,7 @@ export function createRoutePlanner({
     startName, currentOrigin, startContext, setCurrentOrigin, clearCurrentOrigin, beginCurrentOrigin, endName, mobilityType, routeStrategy, routes, avoidedSegments,
     selectedRouteIndex, selectedSegmentCode, loading, errorMessage, actionStatus,
     selectedProfile, selectedStrategy, selectedRoute,
+    comparisonAvailable, comparisonState, comparisonError, walkingReference, compareWalkingRoute,
     planRoutes, selectRoute, selectSegment, selectStrategy, selectMobility,
     startNavigation, returnToOptions,
     configure(nextOptions = {}) {
