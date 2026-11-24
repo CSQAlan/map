@@ -1,6 +1,7 @@
 import AMapLoader from '@amap/amap-jsapi-loader';
+import { createAmapSession } from './amapSession.js';
 
-let amapPromise;
+let session;
 
 export function loadAmap() {
   const key = import.meta.env.VITE_AMAP_KEY;
@@ -12,13 +13,20 @@ export function loadAmap() {
   }
 
   if (securityJsCode) window._AMapSecurityConfig = { securityJsCode };
-  amapPromise ??= AMapLoader.load({
+  session ??= createAmapSession(AMapLoader, {
     key,
     version: '2.0',
     plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.PlaceSearch'],
-  }).catch((error) => {
-    amapPromise = null;
-    throw error;
+  }, {
+    cleanup() {
+      for (const script of document.querySelectorAll('script[src]')) {
+        const url = new URL(script.src, window.location.href);
+        if (url.hostname === 'webapi.amap.com' && url.pathname === '/maps' && url.searchParams.get('callback') === '___onAPILoaded') {
+          script.onerror = null;
+          script.remove();
+        }
+      }
+    },
   });
-  return amapPromise;
+  return session.load();
 }

@@ -1,125 +1,93 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import SurveyRecordsMap from '../components/SurveyRecordsMap.vue';
+import SurveyPhoto from '../components/SurveyPhoto.vue';
+import SurveyPhotoViewer from '../components/SurveyPhotoViewer.vue';
 import { useSurveyRecords } from '../composables/useSurveyRecords.js';
+import '../styles/survey-browser.css';
 
 const props = defineProps({ apiBaseUrl: { type: String, required: true } });
 const {
-  sites, features, selectedSiteCode, selectedRecordCode, loading, errorMessage, siteError,
-  selectedFeature, selectedPhotos, unlocatedFeatures, allLocatedCenter,
-  loadSites, loadRecords, selectRecord: setSelectedRecord,
+  sites, features, selectedSiteCode, selectedRecordCode, loading, sitesLoading, errorMessage, siteError,
+  selectedFeature, selectedPhotos, unlocatedFeatures, allLocatedCenter, reload, dispose, selectRecord,
 } = useSurveyRecords({ apiBaseUrl: props.apiBaseUrl });
-const selectedPhotoIndex = ref(0);
+const mapOpen = ref(window.matchMedia('(min-width: 1024px)').matches);
 const mapFailure = ref('');
-const lightboxPhoto = ref(null);
-
-const selectedPhoto = computed(() => selectedPhotos.value[selectedPhotoIndex.value] ?? null);
-
-function selectRecord(recordCode) {
-  setSelectedRecord(recordCode);
-  selectedPhotoIndex.value = 0;
+const photoIndex = ref(-1);
+const detail = ref(null);
+const busy = computed(() => loading.value || sitesLoading.value);
+const errors = computed(() => [...new Set([errorMessage.value, siteError.value].filter(Boolean))]);
+watch([selectedRecordCode, selectedSiteCode], () => { photoIndex.value = -1; });
+function viewRecord(code) {
+  selectRecord(code);
+  if (window.matchMedia('(max-width: 767px)').matches) {
+    // Bring the chosen photos into view without moving keyboard focus.
+    detail.value?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  }
 }
-
-onMounted(async () => {
-  window.addEventListener('keydown', handleLightboxKeydown);
-  await loadSites();
-  await loadRecords();
-});
-onBeforeUnmount(() => window.removeEventListener('keydown', handleLightboxKeydown));
-
-function handleLightboxKeydown(event) {
-  if (event.key === 'Escape') lightboxPhoto.value = null;
-}
-
-function movePhoto(step) {
-  if (!selectedPhotos.value.length) return;
-  selectedPhotoIndex.value = (selectedPhotoIndex.value + step + selectedPhotos.value.length) % selectedPhotos.value.length;
-}
+onMounted(reload);
+onBeforeUnmount(dispose);
 </script>
 
 <template>
-  <main class="survey-records-page">
-    <header class="survey-page-header">
-      <div>
-        <p class="section-kicker">社区现场资料 · 独立展示</p>
-        <h1>踩点资料地图</h1>
-      </div>
-      <label class="survey-site-select">
+  <section class="survey-library" aria-labelledby="survey-title">
+    <header class="survey-library-header">
+      <div><h1 id="survey-title">踩点资料</h1><p>看看大家拍下的道路、台阶和周边环境。</p></div>
+      <label class="survey-library-filter">
         <span>选择地点</span>
-        <select v-model="selectedSiteCode" aria-label="按踩点地点筛选">
-          <option value="">全部 7 个地点</option>
+        <select v-model="selectedSiteCode" aria-label="按踩点地点筛选" :disabled="sitesLoading">
+          <option value="">{{ sites.length ? `全部 ${sites.length} 个地点` : '全部地点' }}</option>
           <option v-for="site in sites" :key="site.site_code" :value="site.site_code">{{ site.name }}（{{ site.record_count }}）</option>
         </select>
       </label>
     </header>
-
-    <div class="survey-safety-notice" role="note">
-      <strong>待核查资料</strong>
-      <span>照片和位置尚未审核，不用于路线推荐。请勿据此判断通行安全。</span>
+    <div class="survey-library-notice" role="note"><strong>资料待核查</strong><span>照片和位置仅供了解环境，请勿据此判断通行安全。资料暂不用于路线推荐。</span></div>
+    <div v-if="errors.length" class="survey-library-error" role="alert">
+      <div><strong>资料还没有加载成功</strong><p v-for="error in errors" :key="error">{{ error }}</p></div>
+      <button type="button" class="secondary-action" :disabled="busy" @click="reload">重新加载资料</button>
     </div>
-
-    <p v-if="errorMessage" class="survey-error" role="alert">{{ errorMessage }}</p>
-    <p v-if="siteError" class="survey-error" role="alert">{{ siteError }}</p>
-    <p v-if="mapFailure" class="survey-map-warning" role="status">底图暂不可用，照片资料仍可查看：{{ mapFailure }}</p>
-    <div v-if="loading" class="survey-loading" role="status">正在读取踩点记录…</div>
-
-    <section class="survey-browser-layout" aria-label="地图与踩点记录">
-      <div class="survey-map-column">
-        <SurveyRecordsMap
-          :features="features"
-          :center="allLocatedCenter"
-          :selected-record-code="selectedRecordCode"
-          @select-record="selectRecord"
-          @map-error="mapFailure = $event"
-        />
-        <div v-if="unlocatedFeatures.length" class="survey-unlocated-block">
-          <h2>待定位记录 <span>{{ unlocatedFeatures.length }}</span></h2>
-          <p>这些照片没有可用定位，先保留在列表中。</p>
-          <div class="survey-record-list compact">
-            <button v-for="feature in unlocatedFeatures" :key="feature.properties.record_code" type="button" :class="['survey-record-card', { active: selectedRecordCode === feature.properties.record_code }]" @click="selectRecord(feature.properties.record_code)">
-              <span class="survey-card-mark">?</span>
-              <span class="survey-card-copy"><strong>{{ feature.properties.title }}</strong><small>{{ feature.properties.site_name }} · 待定位</small></span>
-            </button>
-          </div>
+    <p v-if="busy" class="survey-library-loading" role="status">正在读取踩点资料…</p>
+    <div v-else-if="!features.length && !errorMessage" class="survey-library-empty" role="status">
+      <h2>{{ selectedSiteCode ? '这个地点还没有踩点资料' : '暂无踩点资料' }}</h2>
+      <p>可以换个地点看看，或稍后重新加载。</p>
+      <button v-if="selectedSiteCode" type="button" class="secondary-action" @click="selectedSiteCode = ''">查看全部地点</button>
+      <button v-else type="button" class="secondary-action" @click="reload">重新加载资料</button>
+    </div>
+    <div v-if="features.length" class="survey-library-workspace">
+      <section class="survey-library-records" aria-label="全部踩点记录">
+        <header><h2>选择一条记录</h2><span>{{ features.length }} 条</span></header>
+        <select class="survey-library-record-select" aria-label="选择踩点记录" :value="selectedRecordCode" @change="viewRecord($event.target.value)">
+          <option v-for="feature in features" :key="feature.properties.record_code" :value="feature.properties.record_code">{{ feature.properties.title }} · {{ feature.properties.site_name }}</option>
+        </select>
+        <div class="survey-library-record-list">
+          <button v-for="feature in features" :key="feature.properties.record_code" type="button" class="survey-library-record"
+            :aria-pressed="selectedRecordCode === feature.properties.record_code" aria-controls="survey-record-detail"
+            @click="viewRecord(feature.properties.record_code)">
+            <strong>{{ feature.properties.title }}</strong>
+            <span>{{ feature.properties.site_name }}</span>
+            <small>{{ feature.geometry ? '已有位置 · 待核查' : '待补位置' }} · {{ feature.properties.evidence_photos?.length || 0 }} 张照片</small>
+          </button>
         </div>
+        <p class="survey-library-record-note">{{ unlocatedFeatures.length }} 条待补位置，全部照片均可查看。</p>
+      </section>
+      <div class="survey-library-content">
+        <section v-if="selectedFeature" id="survey-record-detail" ref="detail" class="survey-library-detail" aria-labelledby="survey-detail-title">
+          <div class="survey-library-detail-heading"><div><p>{{ selectedFeature.properties.site_name }}</p><h2 id="survey-detail-title">{{ selectedFeature.properties.title }}</h2></div><span class="survey-pending-badge">待核查</span></div>
+          <p class="survey-library-location">{{ selectedFeature.geometry ? (selectedFeature.properties.location_source === 'EXIF' ? '位置来自照片 GPS，尚未核查。' : '位置由管理员标注，尚未核查。') : '照片尚未补充位置，可先查看现场环境。' }}</p>
+          <div v-if="selectedFeature.properties.issue_tags?.length" class="survey-tags"><span v-for="tag in selectedFeature.properties.issue_tags" :key="tag">{{ tag }}</span></div>
+          <div v-if="selectedPhotos.length" class="survey-library-photos">
+            <SurveyPhoto v-for="(photo, index) in selectedPhotos" :key="photo.photo_id" :photo="photo" :api-base-url="apiBaseUrl" @open="photoIndex = index" />
+          </div>
+          <p v-else class="survey-library-location">这条记录暂无照片。</p>
+          <p v-if="selectedFeature.properties.notes?.length" class="survey-record-note">{{ selectedFeature.properties.notes.join('；') }}</p>
+        </section>
+        <details :open="mapOpen" class="survey-library-map" @toggle="mapOpen = $event.target.open">
+          <summary>在地图上查看位置<span>{{ mapOpen ? '收起' : '展开' }}</span></summary>
+          <p v-if="mapFailure" class="survey-library-map-hint">地图暂不可用，您仍可从列表查看全部资料。</p>
+          <SurveyRecordsMap v-if="mapOpen" :features="features" :center="allLocatedCenter" :selected-record-code="selectedRecordCode" @select-record="selectRecord" @map-error="mapFailure = $event" />
+        </details>
       </div>
-
-      <aside class="survey-detail-column">
-        <div v-if="selectedFeature" class="survey-detail-card">
-          <div class="survey-detail-heading">
-            <div><p class="section-kicker">{{ selectedFeature.properties.site_name }}</p><h2>{{ selectedFeature.properties.title }}</h2></div>
-            <span class="survey-pending-badge">待核查</span>
-          </div>
-          <p class="survey-location-label">
-            {{ selectedFeature.geometry ? (selectedFeature.properties.location_source === 'EXIF' ? '位置来自照片 GPS · 尚未核查' : '位置由管理员标注 · 尚未核查') : '暂无位置 · 待管理员补充' }}
-          </p>
-          <div v-if="selectedFeature.properties.issue_tags.length" class="survey-tags">
-            <span v-for="tag in selectedFeature.properties.issue_tags" :key="tag">文件名关键词：{{ tag }}</span>
-          </div>
-          <div v-if="selectedPhotos.length" class="survey-photo-grid">
-            <button v-for="(photo, index) in selectedPhotos" :key="photo.photo_id" type="button" class="survey-photo-card" @click="selectedPhotoIndex = index; lightboxPhoto = photo">
-              <img :src="`${props.apiBaseUrl}${photo.thumbnail_url}`" :alt="photo.caption" loading="lazy" />
-              <span>{{ photo.kind === 'map_reference' ? '配对地图截图' : '现场照片' }}</span>
-              <strong>{{ photo.caption }}</strong>
-            </button>
-          </div>
-          <p v-if="selectedFeature.properties.notes.length" class="survey-record-note">{{ selectedFeature.properties.notes.join('；') }}</p>
-          <div v-if="selectedPhotos.length > 1" class="survey-photo-controls">
-            <button type="button" @click="movePhoto(-1)">上一张</button>
-            <span>{{ selectedPhotoIndex + 1 }} / {{ selectedPhotos.length }}</span>
-            <button type="button" @click="movePhoto(1)">下一张</button>
-          </div>
-        </div>
-        <div v-else class="survey-empty-card">{{ features.length ? '选择一条记录查看照片。' : '当前筛选下暂无记录。' }}</div>
-
-        <div class="survey-count-summary"><strong>{{ features.length }}</strong><span>条踩点记录</span><strong>{{ unlocatedFeatures.length }}</strong><span>条待定位</span></div>
-      </aside>
-    </section>
-
-    <div v-if="lightboxPhoto" class="survey-lightbox" role="dialog" aria-modal="true" :aria-label="lightboxPhoto.caption" @click.self="lightboxPhoto = null">
-      <button type="button" class="survey-lightbox-close" aria-label="关闭照片" @click="lightboxPhoto = null">×</button>
-      <img :src="`${props.apiBaseUrl}${lightboxPhoto.display_url}`" :alt="lightboxPhoto.caption" />
-      <p>{{ lightboxPhoto.kind === 'map_reference' ? '地图参考截图' : '现场照片' }} · {{ lightboxPhoto.caption }}</p>
     </div>
-  </main>
+    <SurveyPhotoViewer :photos="selectedPhotos" :initial-index="photoIndex" :api-base-url="apiBaseUrl" @close="photoIndex = -1" />
+  </section>
 </template>

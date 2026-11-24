@@ -467,7 +467,7 @@ def seed_survey_records() -> dict[str, int]:
                         sort_order = EXCLUDED.sort_order
                     """
                 ),
-                {**site, "sort_order": sort_order},
+                {"site_code": site["site_code"], "name": site["site_name"], "sort_order": sort_order},
             )
 
         for record in manifest["records"]:
@@ -482,8 +482,8 @@ def seed_survey_records() -> dict[str, int]:
                     VALUES (
                         :record_code, :site_code, :title,
                         CAST(:issue_tags AS jsonb), CAST(:notes AS jsonb), CAST(:media_refs AS jsonb),
-                        CASE WHEN :longitude IS NULL THEN NULL
-                             ELSE ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) END,
+                        CASE WHEN CAST(:longitude AS double precision) IS NULL THEN NULL
+                             ELSE ST_SetSRID(ST_MakePoint(CAST(:longitude AS double precision), CAST(:latitude AS double precision)), 4326) END,
                         :location_source, :review_status
                     )
                     ON CONFLICT (record_code) DO UPDATE SET

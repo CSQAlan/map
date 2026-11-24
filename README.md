@@ -180,6 +180,28 @@ python -m app.scripts.init_map_data
 
 地图只显示有坐标的待核查标记；没有 GPS 的记录可在管理员后台对照现场图/地图截图补位置。补点不会审核记录，也不会把大学城资料加入师大苑导航路网。
 
+踩点页现已支持从列表查看全部记录，手机使用紧凑记录选择框，桌面保留记录侧栏；照片与地图分别加载，地图失败不影响照片浏览。读取资料超过 15 秒会显示中文超时提示，可点“重新加载资料”恢复。普通地图加载失败可原地重试；SDK 长时间无响应时使用“刷新页面重试地图”，防止旧脚本晚到与新地图冲突。刷新页面会清空尚未保存的输入，请先保留正在编辑的内容。
+
+专门的踩点浏览验收（先启动 `npm run dev`）：
+
+```powershell
+Set-Location frontend
+npm run test:survey
+```
+
+该命令通过模拟接口、图片和地图 SDK 检查 320/390/768/1440px 布局、断网恢复、地图超时与卸载、图片重试和大图键盘操作。截图与报告位于 `frontend/artifacts/survey-browser/`，不提交 Git。它不代表真实地图或数据库已通过验证。
+
+可选的真实 PostGIS 回归（数据库启动且表结构已初始化后，在项目根目录执行）：
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path backend).Path
+$env:RUN_SURVEY_DB_TESTS='1'
+python -m pytest backend/tests/test_survey_postgis.py -q
+Remove-Item Env:RUN_SURVEY_DB_TESTS
+```
+
+该测试使用事务内临时表，验证真实导入、无地点筛选查询和手工位置/审核状态保留，结束后回滚，不修改正式记录。
+
 ## 配置与安全提示
 
 - 当前默认账号、数据库密码和本地采集接口仅用于开发与演示。

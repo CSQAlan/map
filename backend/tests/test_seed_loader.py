@@ -44,6 +44,14 @@ def test_survey_seed_is_idempotent_and_never_overwrites_manual_locations(monkeyp
     counts = seeds.seed_survey_records()
 
     assert counts == {"survey_sites": 7, "survey_records": 67}
+    for sql, params in executions:
+        if "INSERT INTO survey_site" in sql:
+            assert params["name"]
+            # Exercise SQLAlchemy's real bind validation rather than accepting
+            # any dictionary in the fake connection.
+            from sqlalchemy.dialects.postgresql import psycopg
+            from sqlalchemy import text
+            text(sql).compile(dialect=psycopg.dialect()).construct_params(params)
     record_statements = [sql for sql, _ in executions if "INSERT INTO survey_record" in sql]
     assert len(record_statements) == 67
     assert all("COALESCE(survey_record.location, EXCLUDED.location)" in sql for sql in record_statements)

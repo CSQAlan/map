@@ -52,7 +52,7 @@ def list_survey_records(
                    sr.review_status, ST_AsGeoJSON(sr.location) AS location_geojson
             FROM survey_record sr
             JOIN survey_site ss ON ss.site_code = sr.site_code
-            WHERE (:site_code IS NULL OR sr.site_code = :site_code)
+            WHERE (CAST(:site_code AS varchar) IS NULL OR sr.site_code = :site_code)
             ORDER BY ss.sort_order, sr.title, sr.record_code
             """
         ),

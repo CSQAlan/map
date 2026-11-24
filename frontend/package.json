@@ -20,6 +20,7 @@
     "test:assistant:live": "node scripts/check-assistant-live.mjs",
     "test:speech-navigation": "node scripts/check-speech-navigation.mjs",
     "test:map": "node scripts/check-map-lifecycle.mjs",
+    "test:survey": "node scripts/check-survey-browser.mjs",
     "test:speech:live": "node scripts/check-speech-live.mjs"
   },
   "dependencies": {
