@@ -1,0 +1,19 @@
+# Current origin Implementation Plan
+
+> Execute inline task-by-task. User approved the design direction and delegated routine choices.
+
+**Goal:** 从已收录道路中途开始适老规划，明确无覆盖边界，并展示路线登记指标。
+
+**Architecture:** 独立 current_origin 纯几何服务处理投影/临时边；routes API 核验定位并复用原算法；前端共享起点状态与定位组件，不持久化坐标。
+
+**Tech Stack:** FastAPI/PostGIS、Vue 3、Capacitor Geolocation、node:test、pytest、Playwright。
+
+- [x] 检查现有定位、路线接口、路网、地图几何及用户确认的设计；呈现无覆盖边界，采用原绿色界面，无需新视觉方向选择。
+- [ ] 新增 `backend/app/services/current_origin.py`：折线投影、20 米范围、精度校验、保守临时有向边；用 `backend/tests/test_current_origin.py` 覆盖中途/端点/拒绝条件。
+- [ ] 扩展 `backend/app/api/routes/routes.py` 与 `schemas/routes.py`：候选起点端点、坐标起点参数组、范围核验及接入上下文；扩展 `backend/tests/test_routes_api.py` 验证旧 API 与新坐标流程。
+- [ ] 扩展 `frontend/src/services/deviceLocation.js` 保留 accuracy/timestamp；增加共享起点定位组件与状态；在首页/出行条件页接入，定位重试/确认/失效均有明确提示。
+- [ ] 扩展 `useRoutePlanner.js` 处理定位起点、坐标请求与过期拒绝；增加 node 测试，手动起点继续兼容。
+- [ ] 路线卡片添加真实登记指标；定位路线地图/文字首段使用裁剪后的几何，保持原始路段代码关联。
+- [ ] 增加浏览器定位模拟验收；运行相关后端测试、前端测试和生产构建；审阅变更，更新生产预览、说明与验证证据。
+
+实施参考：以 `getCurrentCoordinates()` 的 WGS84 输出构造 `{longitude, latitude, accuracy, timestamp}`，时间最多 60 秒。每次候选/规划请求都传递画像；后端在 `/recommend` 再次投影并核验选中的 segment_code，避免将客户端候选视作可信路网。
