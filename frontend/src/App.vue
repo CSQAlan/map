@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AssistantPage from './pages/AssistantPage.vue';
 import RecommendPage from './pages/RecommendPage.vue';
@@ -10,9 +10,13 @@ import ProfilePage from './pages/ProfilePage.vue';
 import GuestProfilePage from './pages/GuestProfilePage.vue';
 import { buildSegmentInstruction } from './services/speechOutput.js';
 import { createNavigationPublisher } from './services/navigationPublisher.js';
+import { createNavigationReceipt } from './composables/useNavigationReceipt.js';
 import { remainingDistance } from './services/navigationJourney.js';
 import { mapFeaturesForOrigin } from './services/routeOriginMap.js';
 import NavigationPage from './pages/NavigationPage.vue';
+import DetourJourneyPanel from './pages/DetourJourneyPanel.vue';
+import DetourEndConfirmation from './components/DetourEndConfirmation.vue';
+import { getCurrentCoordinates } from './services/deviceLocation.js';
 import RouteOptionsPage from './pages/RouteOptionsPage.vue';
 import ProfilePrompt from './components/ProfilePrompt.vue';
 import HealthQuestionnaire from './components/HealthQuestionnaire.vue';
@@ -38,6 +42,7 @@ import { useCollectionWorkflow } from './composables/useCollectionWorkflow.js';
 import { pathForLegacyMode } from './router/policy.js';
 import { findOptionByValue } from './utils/options.js';
 import { buildSosPayload } from './services/emergency.js';
+import { returnJourneyDraft } from './utils/returnJourney.js';
 
 const profileOptions = [
   { label: '轮椅老人', value: 'WHEELCHAIR', hint: '不走台阶，优先坡道、宽路和无障碍路段' },
@@ -81,12 +86,34 @@ const routePlanner = useRoutePlanner({
 const {
   startName, endName, mobilityType, routeStrategy, routes, avoidedSegments,
   selectedRouteIndex, selectedSegmentCode, loading, errorMessage, actionStatus,
-  selectedProfile, selectedRoute,
+  selectedProfile, selectedRoute, predepartureRouteSource,
   comparisonAvailable, comparisonState, comparisonError, walkingReference, compareWalkingRoute,
+  restPreviewAvailable, restPreviewState, restPreview, previewRestRoute, clearRestPreview,
+  exclusionOptions, exclusionState, exclusionPreview, previewExclusion, clearExclusionPreview,
+  detour, canUseExclusion, useExclusionRoute, cancelDetour,
   planRoutes, selectRoute: setSelectedRoute, selectSegment: setSelectedSegment,
   selectStrategy: setRouteStrategy, selectMobility: setMobilityType, startNavigation: beginRouteNavigation,
   returnToOptions,
 } = routePlanner;
+watch(() => route.path, clearRestPreview, { flush: 'sync' });
+onBeforeUnmount(clearRestPreview);
+watch(() => route.path, clearExclusionPreview, { flush: 'sync' });
+onBeforeUnmount(clearExclusionPreview);
+const { session: detourSession, phase: detourPhase, message: detourMessage,
+  pending: detourPending, candidates: detourCandidates, guiding: detourGuiding } = detour;
+watch(() => route.path, (path, previous) => {
+  if (detourSession.value && path !== previous && !(path === '/elder/navigation' && detourGuiding.value)) {
+    detour.pause('页面已切换，绕行约束保留，引导暂停；请重新定位并确认。');
+  }
+}, { flush: 'sync' });
+onBeforeUnmount(() => detour.pause('应用界面已退出，绕行引导暂停。'));
+function replanDetour() {
+  if (!(isGuest.value || currentUser.value?.role === 'elder') || !['/elder/routes', '/elder/navigation'].includes(route.path)) {
+    detour.pause('请回到老人路线页，核对当前账号和出行条件后重试。'); return;
+  }
+  return detour.replan(getCurrentCoordinates);
+}
+function cancelDetourJourney() { cancelDetour(); router.push('/elder/plan'); }
 const {
   results: nearbyResults, status: nearbyStatus, message: nearbyMessage,
   query: checkNearby, canChoose: canChooseNearby,
@@ -118,6 +145,113 @@ const {
   familySessionKey,
   revokeFamilySharing,
 } = useAuthSession();
+routePlanner.configure({ getJourneyScope: () => `${currentUser.value?.id ?? 'guest'}:${currentUser.value?.role ?? 'guest'}:${isGuest.value}` });
+// Pass only a local revision to clear a disclosure on account/input changes.
+// The memo never receives or serializes the account or endpoint values.
+const memoScope = ref(0);
+const arrival = createNavigationReceipt();
+const arrivalReceipt = arrival.receipt, arrivalSession = arrival.sessionId, manualConfirmedCount = arrival.confirmedCount;
+const manualUndo = arrival.undoCandidate;
+watch([memoScope, selectedRoute, detourSession, familySessionKey], arrival.reset, { deep: true, flush: 'sync' });
+watch(() => route.path, (path, previous) => {
+  if (!['/elder/navigation', '/elder/routes'].includes(path)
+      || (previous === '/elder/navigation' && path === '/elder/routes' && !arrivalReceipt.value)
+      || (path === '/elder/navigation' && previous !== path)) arrival.reset();
+}, { flush: 'sync' });
+onBeforeUnmount(arrival.reset);
+function confirmManualSegment(event) {
+  if (route.path !== '/elder/navigation' || activeMode.value !== 'navigation' || detourSession.value
+      || !(isGuest.value || currentUser.value?.role === 'elder') || event?.route !== selectedRoute.value
+      || event.index !== navigationProgress.value.index) return;
+  arrival.confirm(event);
+}
+function discardManualUndo(event) {
+  if (event?.session === arrivalSession.value && event.route === selectedRoute.value) arrival.discardUndo();
+}
+// Synchronous acknowledgement: the page moves only after the real Set accepted
+// this exact capability. Progress continues through the existing page publisher.
+function undoManualConfirmation(token) {
+  if (route.path !== '/elder/navigation' || activeMode.value !== 'navigation' || detourSession.value
+      || !(isGuest.value || currentUser.value?.role === 'elder') || token?.route !== selectedRoute.value
+      || token.nextIndex !== navigationProgress.value.index || navigationProgress.value.paused) return false;
+  return arrival.undo(token);
+}
+watch([currentUser, isGuest, startName, endName, mobilityType, routeStrategy,
+  routePlanner.currentOrigin, routePlanner.startContext], () => { memoScope.value++; }, { deep: true, flush: 'sync' });
+// Only the two direct detour exits use this local confirmation. Opening or
+// dismissing it must not enter the ordinary guidance/speech/end lifecycle.
+const detourEndRequest = shallowRef(null);
+let detourEndAlive = true, detourEndVersion = 0;
+function validDetourEndScope() {
+  const session = detourSession.value;
+  return detourEndAlive && session && route.path.startsWith('/elder/')
+    && (isGuest.value || currentUser.value?.role === 'elder')
+    && session.scope === `${currentUser.value?.id ?? 'guest'}:${currentUser.value?.role ?? 'guest'}:${isGuest.value}`
+    && session.endName === endName.value && session.mobilityType === mobilityType.value
+    && session.strategy === routeStrategy.value;
+}
+function clearDetourEndRequest() { detourEndRequest.value = null; }
+function requestDetourEnd(event) {
+  if (detourEndRequest.value || !validDetourEndScope()) return;
+  detourEndRequest.value = { id: ++detourEndVersion, session: detourSession.value,
+    selectedRoute: selectedRoute.value, path: route.fullPath, mode: activeMode.value,
+    scope: memoScope.value, trigger: event?.currentTarget };
+}
+async function dismissDetourEnd(request) {
+  if (!request || request !== detourEndRequest.value) return;
+  clearDetourEndRequest();
+  await nextTick();
+  if (detourEndAlive && !detourEndRequest.value && request.trigger?.isConnected) request.trigger.focus();
+}
+function confirmDetourEnd(request) {
+  if (!request || request !== detourEndRequest.value || !validDetourEndScope()
+      || request.session !== detourSession.value || request.selectedRoute !== selectedRoute.value
+      || request.path !== route.fullPath || request.mode !== activeMode.value || request.scope !== memoScope.value) return;
+  // Consume the exact request before the existing asynchronous end flow starts.
+  clearDetourEndRequest();
+  return finishNavigation();
+}
+watch([detourSession, selectedRoute, detourPhase, () => route.fullPath, activeMode, memoScope],
+  clearDetourEndRequest, { deep: true, flush: 'sync' });
+onBeforeUnmount(() => { detourEndAlive = false; clearDetourEndRequest(); });
+// Only a journey explicitly started in this App instance can offer a return draft.
+const activeReturnJourney = ref(null);
+const endedReturnJourney = ref(null);
+let returnJourneyVersion = 0;
+function returnJourneyContext() {
+  return {
+    allowed: isGuest.value || currentUser.value?.role === 'elder',
+    scope: `${currentUser.value?.id ?? 'guest'}:${currentUser.value?.role ?? 'guest'}:${isGuest.value}`,
+    route: selectedRoute.value, start: startName.value, end: endName.value,
+    mobility: mobilityType.value, strategy: routeStrategy.value,
+    detour: Boolean(detourSession.value),
+    currentOrigin: Boolean(routePlanner.currentOrigin.value || routePlanner.startContext.value || selectedRoute.value?.start_context),
+  };
+}
+const returnDraft = computed(() => returnJourneyDraft(
+  endedReturnJourney.value, returnJourneyContext(), startOptions.value, endOptions.value
+));
+function resetReturnJourney() {
+  returnJourneyVersion++;
+  activeReturnJourney.value = null;
+  endedReturnJourney.value = null;
+}
+watch([currentUser, isGuest, startName, endName, mobilityType, routeStrategy, selectedRoute,
+  routePlanner.currentOrigin, routePlanner.startContext, detourSession], resetReturnJourney, { flush: 'sync', deep: true });
+watch([startOptions, endOptions], () => {
+  const snapshot = activeReturnJourney.value || endedReturnJourney.value;
+  if (snapshot && !returnJourneyDraft(snapshot, returnJourneyContext(), startOptions.value, endOptions.value)) resetReturnJourney();
+}, { flush: 'sync', deep: true });
+watch(() => route.path, (path, previous) => {
+  if (!['/elder/navigation', '/elder/routes'].includes(path)) resetReturnJourney();
+  // Browser history cannot turn an ended journey into a newly started journey.
+  if (path === '/elder/navigation' && path !== previous) endedReturnJourney.value = null;
+}, { flush: 'sync' });
+onBeforeUnmount(resetReturnJourney);
+watch([currentUser, isGuest], () => { if (detourSession.value) detour.pause('会话已变化，保留绕行约束并暂停引导。'); }, { flush: 'sync' });
+watch(activeMode, mode => {
+  if (detourSession.value && !['navigation', 'route-options'].includes(mode)) detour.pause('角色或页面已变化，保留绕行约束并暂停引导。');
+}, { flush: 'sync' });
 const questionnairePending = ref(false);
 
 watch(
@@ -201,12 +335,33 @@ const routeEvidenceFeatures = computed(() => {
     .filter(Boolean);
 });
 const navigationProgress = ref({ index:0, paused:false });
+function navigationObstructionContext() {
+  return { allowed: isGuest.value || currentUser.value?.role === 'elder',
+    active: route.path === '/elder/navigation' && activeMode.value === 'navigation', index: navigationProgress.value.index };
+}
+routePlanner.configure({ getNavigationContext: navigationObstructionContext });
+routePlanner.configure({ getPredepartureContext: () => ({
+  allowed: isGuest.value || currentUser.value?.role === 'elder',
+  active: route.path === '/elder/routes' && activeMode.value === 'route-options',
+  session: familySessionKey.value,
+}) });
+function confirmNavigationObstruction(choice) {
+  const live = navigationObstructionContext();
+  if (!live.allowed || !live.active || detourSession.value || choice?.route !== selectedRoute.value
+      || choice.manualIndex !== live.index
+      || !routePlanner.obstructionState.value.options.some(option => option.route === choice.route
+        && ['trip', 'manualIndex', 'index', 'segment_code', 'name', 'kind'].every(key => option[key] === choice[key]))) return false;
+  return routePlanner.lockNavigationObstruction(choice);
+}
 watch(selectedRoute, () => { navigationProgress.value={ index:0, paused:false }; }, { flush:'sync' });
 const nextStepText = computed(() => {
   const segments=selectedRoute.value?.segments || [];
   return `${navigationProgress.value.paused ? '正在休息。' : ''}${buildSegmentInstruction(segments[navigationProgress.value.index], navigationProgress.value.index, segments.length)}`;
 });
-function updateNavigationProgress(progress) { navigationProgress.value=progress; publishNavigationStatus(); }
+function updateNavigationProgress(progress) {
+  if (detourSession.value && !detourGuiding.value) return;
+  navigationProgress.value=progress; publishNavigationStatus();
+}
 onMounted(() => {
   restoreSession();
   if (currentUser.value?.mobilityType) setMobilityType(currentUser.value.mobilityType);
@@ -247,6 +402,7 @@ function selectRoute(index) {
 }
 
 function reroute() {
+  if (detourSession.value) { replanDetour(); return; }
   activeMode.value = 'recommend';
 }
 
@@ -407,7 +563,21 @@ async function publishNavigationStatus(nextStatus = 'NAVIGATING') {
   return sendNavigationSnapshot(`${API_BASE_URL}/api/auth/elder/${currentUser.value.id}/navigation`, status);
 }
 async function startNavigation() {
+  arrival.reset();
+  const arrivalVersion = memoScope.value, arrivalIdentity = familySessionKey.value, arrivalRoute = selectedRoute.value;
+  resetReturnJourney();
+  const version = returnJourneyVersion;
+  const snapshot = returnJourneyContext();
   const started = await beginRouteNavigation();
+  if (started && version === returnJourneyVersion && arrivalVersion === memoScope.value && arrivalIdentity === familySessionKey.value
+      && selectedRoute.value === arrivalRoute && !detourSession.value && route.path === '/elder/navigation'
+      && (isGuest.value || currentUser.value?.role === 'elder')) {
+    arrival.begin(arrivalRoute);
+  }
+  if (started && version === returnJourneyVersion && route.path === '/elder/navigation'
+      && returnJourneyDraft(snapshot, returnJourneyContext(), startOptions.value, endOptions.value)) {
+    activeReturnJourney.value = snapshot;
+  }
   if (started) publishNavigationStatus();
 }
 
@@ -427,14 +597,37 @@ function openRouteConditions() {
   router.push('/elder/plan');
 }
 
-async function finishNavigation() {
+function prepareReturnJourney() {
+  const draft = returnDraft.value;
+  if (route.path !== '/elder/routes' || !draft) return;
+  resetReturnJourney();
+  // Existing synchronous input watchers invalidate old routes and pending requests.
+  startName.value = draft.start;
+  endName.value = draft.end;
+  router.push('/elder/home');
+}
+
+let ordinaryEnding = false;
+async function finishNavigation(result) {
+  if (!detourSession.value && ordinaryEnding) return;
+  if (!detourSession.value && result && (route.path !== '/elder/navigation' || result.route !== selectedRoute.value
+      || (result.session ? !arrival.finish(result) : arrivalSession.value !== 0))) return;
+  const ordinary = !detourSession.value;
+  if (ordinary) ordinaryEnding = true;
+  const endingScope = memoScope.value, endingRoute = selectedRoute.value, endingJourneyVersion = returnJourneyVersion;
+  const snapshot = activeReturnJourney.value;
+  endedReturnJourney.value = route.path === '/elder/navigation'
+    && returnJourneyDraft(snapshot, returnJourneyContext(), startOptions.value, endOptions.value) ? snapshot : null;
+  activeReturnJourney.value = null;
   const endingUserId = currentUser.value?.id;
   const shouldSync = !isGuest.value && currentUser.value?.role === 'elder' && Boolean(currentUser.value?.id);
   const synchronization = publishNavigationStatus('COMPLETED');
   navigationProgress.value = { index:0, paused:false };
   await returnToOptions({ ended: true });
+  if (ordinary) ordinaryEnding = false;
   const synchronized = await synchronization;
-  if (shouldSync && !synchronized && currentUser.value?.id === endingUserId && activeMode.value !== 'navigation') {
+  if (shouldSync && !synchronized && currentUser.value?.id === endingUserId && activeMode.value !== 'navigation'
+      && endingScope === memoScope.value && endingRoute === selectedRoute.value && endingJourneyVersion === returnJourneyVersion) {
     actionStatus.value = sharingDenied.value ? '本地导航已结束，家属位置共享不可用。' : '导航已结束，但家属端状态暂未同步，请稍后重试。';
   }
 }
@@ -522,6 +715,15 @@ async function bindFamilyToElder(payload) {
 <template>
   <component :is="activeLayout">
     <div class="app-content">
+    <DetourJourneyPanel v-if="detourSession && route.path.startsWith('/elder/')"
+      :session="detourSession" :phase="detourPhase" :message="detourMessage" :pending="detourPending"
+      :profile-label="findOptionByValue(profileOptions, detourSession.mobilityType)?.label"
+      :strategy-label="findOptionByValue(strategyOptions, detourSession.strategy)?.label"
+      :candidates="detourCandidates" :can-start="route.path === '/elder/routes'"
+      @replan="replanDetour" @confirm-start="detour.confirmStart" @confirm-route="detour.confirmRoute"
+      @start="startNavigation" @cancel="cancelDetourJourney" @end="requestDetourEnd"
+      @pause="detour.pause()" />
+    <section v-else-if="detourSession" role="status"><p>本机绕行已暂停，原排除条件尚未取消。</p><button type="button" @click="cancelDetourJourney">取消本次绕行</button></section>
 
     <LoginPage
       v-if="activeMode === 'login'"
@@ -603,7 +805,16 @@ async function bindFamilyToElder(payload) {
 
     <NavigationPage
       v-else-if="activeMode === 'navigation'" :progress="navigationProgress" @progress="updateNavigationProgress"
+      :arrival-session="arrivalSession" :manual-confirmed-count="manualConfirmedCount" @confirm-manual-segment="confirmManualSegment"
+      :manual-undo="manualUndo" :undo-manual-confirmation="undoManualConfirmation" @discard-manual-undo="discardManualUndo"
+      :text-memo-route-verified="routePlanner.textMemoRouteVerified.value" :memo-scope="memoScope"
+      :api-base-url="API_BASE_URL"
       :selected-route="selectedRoute"
+      :guidance-paused="Boolean(detourSession && !detourGuiding)"
+      :detour-active="Boolean(detourSession)"
+      :obstruction-state="routePlanner.obstructionState.value"
+      @confirm-obstruction="confirmNavigationObstruction"
+      @pause-detour="detour.pause($event)"
       :selected-profile="selectedProfile"
       :map-features="routeMapFeatures"
       :pilot-area="pilotArea"
@@ -613,6 +824,7 @@ async function bindFamilyToElder(payload) {
       :sos-submitting="sosSubmitting"
       @open-routes="openRouteOptions"
       @end-navigation="finishNavigation"
+      @request-detour-end="requestDetourEnd"
       @retry-map="retryMapData"
       @select-segment="selectMapSegment"
       @map-error="mapFailure = `地图加载失败：${$event}`"
@@ -621,13 +833,31 @@ async function bindFamilyToElder(payload) {
 
     <RouteOptionsPage
       v-else-if="activeMode === 'route-options'"
-      :routes="routes"
-      :selected-route-index="selectedRouteIndex"
+      :predeparture-route-source="predepartureRouteSource"
+      :predeparture-scope="`${memoScope}:${familySessionKey}`"
+      :arrival-receipt="arrivalReceipt"
+      :return-draft="returnDraft"
+      @prepare-return="prepareReturnJourney"
+      :routes="detourSession ? (selectedRoute ? [selectedRoute] : []) : routes"
+      :detour-active="Boolean(detourSession)"
+      :can-use-exclusion="canUseExclusion"
+      @use-exclusion="useExclusionRoute"
+      :selected-route-index="detourSession ? 0 : selectedRouteIndex"
       :selected-route="selectedRoute"
       :comparison-available="comparisonAvailable"
       :comparison-state="comparisonState"
       :comparison-error="comparisonError"
       :walking-reference="walkingReference"
+      :rest-preview-available="restPreviewAvailable"
+      :rest-preview-state="restPreviewState"
+      :rest-preview="restPreview"
+      @preview-rest="previewRestRoute"
+      @clear-rest-preview="clearRestPreview"
+      :exclusion-options="exclusionOptions"
+      :exclusion-state="exclusionState"
+      :exclusion-preview="exclusionPreview"
+      @preview-exclusion="previewExclusion"
+      @clear-exclusion="clearExclusionPreview"
       :profile-label="selectedProfile?.label"
       @compare-walking="compareWalkingRoute"
       :avoided-segments="avoidedSegments"
@@ -648,6 +878,10 @@ async function bindFamilyToElder(payload) {
       @map-error="mapFailure = `高德底图加载失败：${$event}`"
     />
 
+    <section v-else-if="detourSession && ['recommend', 'elder'].includes(activeMode)" class="routes-panel" role="status">
+      <p>绕行约束仍保留。普通起点与规划入口已暂停，不会从旧起点重新规划。</p>
+      <button type="button" @click="openRouteOptions">返回绕行路线页</button>
+    </section>
     <RecommendPage
       v-else-if="activeMode === 'recommend'"
       :mobility-type="mobilityType"
@@ -746,4 +980,6 @@ async function bindFamilyToElder(payload) {
     />
     </div>
   </component>
+  <DetourEndConfirmation v-if="detourEndRequest" :key="detourEndRequest.id" :request="detourEndRequest"
+    @dismiss="dismissDetourEnd" @confirm="confirmDetourEnd" />
 </template>

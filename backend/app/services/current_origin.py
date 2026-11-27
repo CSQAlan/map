@@ -4,6 +4,7 @@ import math
 import time
 
 from app.services.route_planner import is_segment_allowed, segment_avoidance_reasons
+from app.services.route_exclusion import exclude_active_segment
 
 MAX_ENTRY_DISTANCE_M = 20.0
 MAX_ACCURACY_M = 30.0
@@ -13,6 +14,61 @@ CURRENT_NODE = '__CURRENT_ORIGIN__'
 
 class CurrentOriginError(ValueError):
     pass
+
+
+class ExcludedOriginError(CurrentOriginError):
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+
+
+def exclusion_location_graph(segments, point, accuracy, mobility_type, excluded_code, selected_code=None):
+    """No snap/automatic substitute: remove the edge and reject uncertain entry.
+
+    Uses the existing entry gate and the fix's stated accuracy only. Distances
+    to two geometries can each change by accuracy; overlapping distance ranges
+    (difference <= 2*accuracy) cannot establish which edge the user is on.
+    This conservative rejection is not proof that an accepted fix is on-road.
+    Caller must first validate fix age/accuracy and pilot coverage.
+    """
+    try:
+        filtered = exclude_active_segment(segments, excluded_code)
+    except ValueError as error:
+        raise ExcludedOriginError('EXCLUDED_SEGMENT_UNAVAILABLE', str(error)) from error
+    if selected_code == excluded_code:
+        raise ExcludedOriginError('EXCLUDED_START_SELECTED', '确认的起点路段正是本次排除段，不能在该段接入。')
+
+    def distance(edge):
+        try:
+            coords = segment_coordinates(edge)
+            if (not isinstance(coords, list) or len(coords) < 2
+                    or any(not isinstance(p, (list, tuple)) or len(p) != 2
+                           or any(type(v) not in (int, float) or not math.isfinite(v) for v in p)
+                           or not -180 <= p[0] <= 180 or not -90 <= p[1] <= 90 for p in coords)):
+                raise ValueError('invalid geometry')
+            return project_to_line(point, coords)['distance_m']
+        except (ValueError, TypeError, KeyError, IndexError) as error:
+            raise ExcludedOriginError('EXCLUSION_GEOMETRY_UNCONFIRMED', '路段几何资料不足，无法确认定位与排除段的关系，请使用命名起点。') from error
+
+    excluded = next(edge for edge in segments if edge['segment_code'] == excluded_code)
+    excluded_distance = distance(excluded)
+    nearby = []
+    for edge in filtered:
+        if edge.get('status', 'ACTIVE') != 'ACTIVE' or not is_segment_allowed(edge, mobility_type):
+            continue
+        d = distance(edge)
+        if d <= MAX_ENTRY_DISTANCE_M:
+            nearby.append((edge, d))
+    if not nearby:
+        code = 'ON_EXCLUDED_SEGMENT' if excluded_distance == 0 else 'ONLY_EXCLUDED_NEARBY' if excluded_distance <= MAX_ENTRY_DISTANCE_M else 'NO_COMPATIBLE_START'
+        raise ExcludedOriginError(code, '附近没有可确认接入的同画像替代路段；不连接未知道路，不回到被排除段。')
+    if any(abs(d - excluded_distance) <= 2 * accuracy for _, d in nearby):
+        raise ExcludedOriginError('AMBIGUOUS_EXCLUDED_LOCATION', '定位误差内无法区分被排除段与替代边（包括重叠方向或共享节点），请重新定位或选择命名起点。')
+    if any(excluded_distance < d for _, d in nearby):
+        raise ExcludedOriginError('ON_EXCLUDED_SEGMENT' if excluded_distance == 0 else 'EXCLUDED_SEGMENT_NEAREST', '定位更靠近被排除段，不能自动跳到另一条道路，请使用命名起点。')
+    if selected_code is not None and not any(edge['segment_code'] == selected_code for edge, _ in nearby):
+        raise ExcludedOriginError('SELECTED_START_UNAVAILABLE', '已确认的替代路段不在可接入范围或不符合画像，不自动改选其他路段。')
+    return filtered
 
 
 def validate_fix(longitude, latitude, accuracy, timestamp_ms):

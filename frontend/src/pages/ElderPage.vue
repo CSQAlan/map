@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { NEARBY_ROUTE_BUDGETS, nearbyRouteBudget } from '../composables/useNearbyServices.js';
 import DestinationForm from '../components/elder/DestinationForm.vue';
 import MobilityPreferencePicker from '../components/elder/MobilityPreferencePicker.vue';
 import AppIcon from '../components/ui/AppIcon.vue';
@@ -9,6 +10,9 @@ const currentProfile = computed(() => props.profileOptions?.find(option => optio
 const shortcuts = computed(() => (props.endOptions || []).filter(option => option.value !== props.startName).slice(0, 3));
 const formatNearbyDistance = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 });
 const nearbyDistance = value => formatNearbyDistance.format(value);
+const nearbyBudget = ref('');
+const nearbyCards = computed(() => props.nearbyResults.map(item => ({ ...item, budgetState: nearbyRouteBudget(item, nearbyBudget.value) })));
+watch([() => props.startName, () => props.mobilityType], () => { nearbyBudget.value = ''; }, { flush: 'sync' });
 function submitPlan() { if (props.startName?.trim() && props.endName?.trim()) emit('plan-route'); }
 </script>
 
@@ -38,18 +42,32 @@ function submitPlan() { if (props.startName?.trim() && props.endName?.trim()) em
         <section class="nearby-services" aria-label="试点服务可达性">
           <h3>试点服务可达性</h3>
           <p>从手动选择的出发地点，按当前出行方式核对最多 3 个试点服务方向。距离按已登记路线计算，不保证现场通行。</p>
+          <label class="nearby-budget-choice">可选总路线距离预算
+            <select v-model="nearbyBudget" aria-label="附近服务总路线预算">
+              <option value="">不设预算（保留全部结果）</option>
+              <option v-for="budget in NEARBY_ROUTE_BUDGETS" :key="budget" :value="budget">{{ budget }} 米</option>
+            </select>
+          </label>
+          <p>这里比较全程路线距离，不是最长连续步行段。按现有综合推荐计算，不代表全局最短；超过预算也不表示不存在其他预算内路线。</p>
           <button class="secondary-action" type="button" :disabled="nearbyStatus === 'loading'" @click="emit('check-nearby')">
             {{ nearbyStatus === 'loading' ? '正在核对试点服务…' : '查看附近服务可达性' }}
           </button>
           <p v-if="nearbyMessage" role="status">{{ nearbyMessage }}</p>
           <ul v-if="nearbyResults.length" aria-live="polite">
-            <li v-for="item in nearbyResults" :key="item.name">
+            <li v-for="item in nearbyCards" :key="item.name">
               <strong>{{ item.name }}</strong>
+              <p v-if="item.boundaryText">{{ item.boundaryText }}</p>
               <span>{{ item.type === 'REST_AREA' ? '休息区' : '生活服务方向（人行道）' }}</span>
-              <span v-if="item.state === 'reachable'">已找到符合当前条件的登记路线 · {{ nearbyDistance(item.distance) }} 米</span>
+              <span v-if="['unset', 'within', 'over'].includes(item.budgetState)">已找到符合当前条件的登记路线 · {{ nearbyDistance(item.distance) }} 米</span>
               <span v-else-if="item.state === 'unreachable'">现有试点路网未找到符合当前出行条件的路线</span>
               <span v-else>暂时无法确认可达性，不代表没有路线</span>
-              <button v-if="item.state === 'reachable'" class="secondary-action" type="button" @click="emit('choose-nearby', item.name)">设为目的地</button>
+              <template v-if="nearbyBudget !== ''">
+                <strong v-if="item.budgetState === 'within'" class="nearby-budget-result">这条算出的路线在预算内（≤ {{ nearbyBudget }} 米，等于也算）</strong>
+                <strong v-else-if="item.budgetState === 'over'" class="nearby-budget-result">这条算出的路线超过预算（{{ nearbyBudget }} 米）</strong>
+                <span v-else-if="item.budgetState === 'no-route'">未找到同条件兼容路线，预算不适用；不是超标。</span>
+                <span v-else>预算暂未确认，未知或缺少距离不能当作零或超标。</span>
+              </template>
+              <button v-if="['unset', 'within', 'over'].includes(item.budgetState)" class="secondary-action" type="button" @click="emit('choose-nearby', item.name)">设为目的地</button>
             </li>
           </ul>
         </section>
@@ -68,4 +86,7 @@ function submitPlan() { if (props.startName?.trim() && props.endName?.trim()) em
 .nearby-services ul { display: grid; gap: 8px; list-style: none; padding: 0; margin: 12px 0 0; }
 .nearby-services li { display: grid; justify-items: start; gap: 4px; min-width: 0; padding: 10px; border-radius: 8px; background: white; overflow-wrap: anywhere; }
 .nearby-services button { min-height: 44px; max-width: 100%; white-space: normal; }
+.nearby-budget-choice { display: grid; gap: 8px; margin: 12px 0; font-size: 1.125rem; }
+.nearby-budget-choice select { min-height: 48px; width: 100%; max-width: 100%; padding: 8px; font: inherit; }
+.nearby-budget-result { font-size: 1.125rem; line-height: 1.7; }
 </style>

@@ -1,4 +1,15 @@
-import { ref, watch } from 'vue';
+import { ref, watch, getCurrentScope, onScopeDispose } from 'vue';
+import { arrivalBoundaryText } from '../utils/arrivalBoundary.js';
+
+export const NEARBY_ROUTE_BUDGETS = Object.freeze([100, 200, 300]);
+// Label one returned route only. Never infer a shorter route or change
+// reachability, directory membership, selection eligibility or query strategy.
+export function nearbyRouteBudget(item, budget) {
+  if (item?.state === 'unreachable') return 'no-route';
+  if (item?.state !== 'reachable' || !Number.isFinite(item.distance) || item.distance <= 0) return 'unknown';
+  if (!NEARBY_ROUTE_BUDGETS.includes(budget)) return 'unset';
+  return item.distance <= budget ? 'within' : 'over';
+}
 
 const SERVICES = new Set(['REST_AREA', 'SERVICE_ACCESS']);
 const NO_PATH = '现有路网中没有符合当前出行条件的可达路线';
@@ -13,7 +24,8 @@ function classify(response, body, start, end, mobility) {
   if (response.ok && body?.start_name === start && body?.end_name === end
       && body?.mobility_type === mobility && Number.isFinite(route?.distance_m)
       && route.distance_m > 0 && Array.isArray(route.segment_codes) && route.segment_codes.length) {
-    return { state: 'reachable', distance: route.distance_m };
+    const boundaryText = arrivalBoundaryText(route);
+    return { state: 'reachable', distance: route.distance_m, ...(boundaryText ? { boundaryText } : {}) };
   }
   return { state: 'unknown' };
 }
@@ -36,6 +48,7 @@ export function createNearbyServices({
     message.value = '';
   }
   watch([origin, profile, pois, enabled], clear, { flush: 'sync' });
+  if (getCurrentScope()) onScopeDispose(clear);
 
   async function checkOne(poi, start, mobility, batchSignal) {
     const params = new URLSearchParams({

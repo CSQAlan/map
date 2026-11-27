@@ -21,6 +21,7 @@ class CurrentStartCandidate(BaseModel):
 class CurrentStartOptionsResponse(BaseModel):
     candidates: list[CurrentStartCandidate]
     message: str
+    excluded_segment_code: str | None = None
 
 
 class RouteSegmentDetailResponse(BaseModel):
@@ -39,6 +40,31 @@ class RouteSegmentDetailResponse(BaseModel):
     explanation: str
 
 
+class ArrivalBoundaryResponse(BaseModel):
+    version: int
+    node_code: str
+    last_segment_code: str
+    kind: str
+    source: str
+    connection_step_count: int | None = None
+    connection_ramp_recorded: bool | None = None
+
+
+class NavigationRestStopResponse(BaseModel):
+    node_code: str
+    node_index: int
+    name: str
+
+
+class NavigationRestResponse(BaseModel):
+    version: int
+    source: str
+    segment_codes: list[str]
+    node_codes: list[str]
+    segment_lengths_m: list[float]
+    stops: list[NavigationRestStopResponse]
+
+
 class RouteCandidateResponse(BaseModel):
     rank: int
     route_score: float
@@ -48,6 +74,8 @@ class RouteCandidateResponse(BaseModel):
     segment_names: list[str | None]
     segments: list[RouteSegmentDetailResponse]
     summary: str
+    arrival_boundary: ArrivalBoundaryResponse | None = None
+    navigation_rest: NavigationRestResponse | None = None
 
 
 class AvoidedSegmentResponse(BaseModel):
@@ -55,6 +83,19 @@ class AvoidedSegmentResponse(BaseModel):
     name: str | None
     avoidance_level: str
     reasons: list[str]
+
+
+class RestRoutePreviewResponse(BaseModel):
+    stop_name: str
+    stop_after_segment_index: int
+    baseline_distance_m: float
+    distance_m: float
+    baseline_steps: int | None
+    steps: int | None
+    segment_codes: list[str]
+    segment_names: list[str]
+    matches_baseline: bool
+    segment_lengths_m: list[float] | None = None
 
 
 class RouteRecommendResponse(BaseModel):
@@ -67,3 +108,5 @@ class RouteRecommendResponse(BaseModel):
     routes: list[RouteCandidateResponse]
     avoided_segments: list[AvoidedSegmentResponse]
     start_context: CurrentStartContext | None = None
+    rest_preview: RestRoutePreviewResponse | None = None
+    excluded_segment_code: str | None = None

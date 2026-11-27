@@ -2,14 +2,20 @@ import { ref } from 'vue';
 export function createSpeechOutput({ synthesis = globalThis.speechSynthesis, Utterance = globalThis.SpeechSynthesisUtterance } = {}) {
   const playing = ref(false); const error = ref(''); let revision = 0;
   function stop() { revision++; synthesis?.cancel(); playing.value = false; }
-  function speak(text) {
+  function speak(text, { rate = 0.85, localOnly = false } = {}) {
     stop(); error.value = '';
     if (!synthesis || !Utterance) { error.value = '当前设备不支持语音播报，请查看文字提示。'; return false; }
     if (!text?.trim()) return false;
     const id = revision; const utterance = new Utterance(text.replace(/[*#`]/g, '').slice(0, 3500));
-    const voices = synthesis.getVoices().filter(voice => /^zh/i.test(voice.lang));
-    utterance.voice = voices.find(voice => voice.localService) || voices[0] || null;
-    utterance.lang = 'zh-CN'; utterance.rate = 0.85;
+    let voices;
+    try { voices = synthesis.getVoices().filter(voice => /^zh/i.test(voice.lang)); }
+    catch (cause) { if (!localOnly) throw cause; voices = []; }
+    utterance.voice = localOnly ? voices.find(voice => voice.localService === true) || null
+      : voices.find(voice => voice.localService) || voices[0] || null;
+    if (localOnly && !utterance.voice) {
+      error.value = '本地中文语音暂不可用，无法慢速播报；请查看本段文字。'; return false;
+    }
+    utterance.lang = 'zh-CN'; utterance.rate = Number.isFinite(rate) && rate >= 0.1 && rate <= 10 ? rate : 0.85;
     utterance.onend = () => { if (id === revision) playing.value = false; };
     utterance.onerror = () => { if (id === revision) { playing.value = false; error.value = '播报未完成，请重试或查看文字提示。'; } };
     try { playing.value = true; synthesis.speak(utterance); return true; } catch { playing.value = false; error.value = '无法播放语音，请查看文字提示。'; return false; }

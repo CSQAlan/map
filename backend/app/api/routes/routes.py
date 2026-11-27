@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.schemas.routes import CurrentStartOptionsResponse, RouteRecommendResponse
-from app.services.current_origin import CurrentOriginError, attach_origin, nearby_starts, validate_fix
+from app.services.current_origin import CurrentOriginError, attach_origin, nearby_starts, validate_fix, exclusion_location_graph
+from app.services.rest_route_preview import rest_route_preview
+from app.services.route_exclusion import exclude_active_segment
 from app.services.route_planner import (
     ROUTE_STRATEGY_METADATA,
     SUPPORTED_MOBILITY_TYPES,
@@ -40,16 +42,22 @@ def current_start_options(
     mobility_type: str = Query(...),
     area_code: Literal['SHIDAYUAN'] = Query('SHIDAYUAN'),
     db: Session = Depends(get_db),
+    exclude_segment_code: str | None = Query(None, min_length=1, max_length=100),
 ):
     if mobility_type not in SUPPORTED_MOBILITY_TYPES:
         raise HTTPException(status_code=422, detail='请选择有效的出行方式。')
     try:
         validate_fix(longitude, latitude, accuracy, timestamp_ms)
         ensure_location_covered(db, longitude, latitude, area_code)
-        candidates = nearby_starts(load_active_segments(db, area_code), [longitude, latitude], mobility_type)
-        return {'candidates': candidates, 'message': '' if candidates else '当前位置附近没有已收录道路，请手动选择起点。这一段暂不提供适老导航。'}
+        segments = load_active_segments(db, area_code)
+        if exclude_segment_code is not None:
+            segments = exclusion_location_graph(segments, [longitude, latitude], accuracy, mobility_type, exclude_segment_code)
+        candidates = nearby_starts(segments, [longitude, latitude], mobility_type)
+        return {'candidates': candidates, 'message': '' if candidates else '当前位置附近没有已收录道路，请手动选择起点。这一段暂不提供适老导航。',
+                **({'excluded_segment_code': exclude_segment_code} if exclude_segment_code is not None else {})}
     except CurrentOriginError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        detail = {'code': getattr(error, 'code', 'INVALID_CURRENT_ORIGIN'), 'message': str(error)} if exclude_segment_code is not None else str(error)
+        raise HTTPException(status_code=422, detail=detail) from error
 
 @router.get("/recommend", response_model=RouteRecommendResponse)
 def recommend_route(
@@ -67,7 +75,12 @@ def recommend_route(
     start_timestamp_ms: float | None = Query(None, ge=0),
     start_segment_code: str | None = Query(None, max_length=100),
     db: Session = Depends(get_db),
+    prefer_rest: bool = False,
+    exclude_segment_code: str | None = Query(None, min_length=1, max_length=100),
 ) -> RouteRecommendResponse:
+    from app.services.arrival_boundary import arrival_boundary
+    from app.services.navigation_rest_stops import navigation_rest_stops
+
     if mobility_type not in SUPPORTED_MOBILITY_TYPES:
         raise HTTPException(status_code=422, detail="Unsupported mobility_type")
     normalized_strategy = normalize_route_strategy(strategy)
@@ -75,6 +88,8 @@ def recommend_route(
         raise HTTPException(status_code=422, detail="Unsupported strategy")
     fields = [start_longitude, start_latitude, start_accuracy, start_timestamp_ms, start_segment_code]
     has_location = any(field is not None for field in fields)
+    if exclude_segment_code is not None and prefer_rest:
+        raise HTTPException(status_code=422, detail={'code': 'EXCLUSION_REST_CONFLICT', 'message': '本次避开不能与休息点预览合并请求。'})
     if has_location and (start_name is not None or any(field is None for field in fields)):
         raise HTTPException(status_code=422, detail='请选择地名起点或完整的定位起点，不能同时使用。')
     if not has_location and not start_name:
@@ -84,16 +99,26 @@ def recommend_route(
 
     end_node_code = resolve_poi_node_code(db, end_name, area_code)
     active_segments = load_active_segments(db, area_code)
+    boundary_segments = active_segments
+    if exclude_segment_code is not None and not has_location:
+        try:
+            active_segments = exclude_active_segment(active_segments, exclude_segment_code)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail={'code': 'EXCLUDED_SEGMENT_UNAVAILABLE', 'message': str(error)}) from error
     start_context = None
     if has_location:
         try:
             validate_fix(start_longitude, start_latitude, start_accuracy, start_timestamp_ms)
             ensure_location_covered(db, start_longitude, start_latitude, area_code)
+            if exclude_segment_code is not None:
+                active_segments = exclusion_location_graph(active_segments, [start_longitude, start_latitude], start_accuracy,
+                                                          mobility_type, exclude_segment_code, start_segment_code)
             active_segments, start_node_code, start_context = attach_origin(
                 active_segments, [start_longitude, start_latitude], start_segment_code, mobility_type)
             start_name = f'当前位置附近 · {start_context["name"]}'
         except CurrentOriginError as error:
-            raise HTTPException(status_code=422, detail=str(error)) from error
+            detail = {'code': getattr(error, 'code', 'INVALID_CURRENT_ORIGIN'), 'message': str(error)} if exclude_segment_code is not None else str(error)
+            raise HTTPException(status_code=422, detail=detail) from error
     else:
         start_node_code = resolve_poi_node_code(db, start_name, area_code)
     if start_node_code == end_node_code:
@@ -110,10 +135,26 @@ def recommend_route(
         raise HTTPException(
             status_code=404,
             detail={
+                **({'code': 'NO_ROUTE_WITH_EXCLUSION'} if exclude_segment_code is not None else {}),
                 "message": "现有路网中没有符合当前出行条件的可达路线。请核对起点和目的地，或选择其他已知起点。",
                 "avoided_segments": avoided_segments,
             },
         )
+    preview = None
+    rest_pois = None
+    if prefer_rest and not has_location and mobility_type == "SLOW_WALKER":
+        rest_pois = load_registered_rest_stops(db, area_code)
+        preview = rest_route_preview(
+            active_segments, start_node_code, end_node_code, mobility_type,
+            normalized_strategy, rest_pois,
+        )
+    else:
+        # Optional display evidence must not replace or prevent a computed route.
+        # Unavailable catalog is distinct from a successfully loaded empty one.
+        try:
+            rest_pois = load_registered_rest_stops(db, area_code)
+        except Exception:
+            rest_pois = None
     return RouteRecommendResponse(
         start_name=start_name,
         end_name=end_name,
@@ -121,9 +162,13 @@ def recommend_route(
         strategy=normalized_strategy,
         strategy_label=ROUTE_STRATEGY_METADATA[normalized_strategy]["label"],
         strategy_description=ROUTE_STRATEGY_METADATA[normalized_strategy]["description"],
-        routes=routes,
+        routes=[{**route, 'arrival_boundary': arrival_boundary(area_code, end_node_code, route, boundary_segments),
+                 'navigation_rest': navigation_rest_stops(route, active_segments, start_node_code, end_node_code, rest_pois)}
+                for route in routes],
         avoided_segments=avoided_segments,
         start_context=start_context,
+        rest_preview=preview,
+        excluded_segment_code=exclude_segment_code,
     )
 
 
@@ -164,6 +209,25 @@ def resolve_poi_node_code(db: Session, name: str, area_code: str) -> str:
     if exists is None:
         raise HTTPException(status_code=422, detail=f"Linked route node not found: {node_code}")
     return str(node_code)
+
+
+def load_registered_rest_stops(db: Session, area_code: str) -> list[dict]:
+    rows = db.execute(
+        text(
+            """
+            SELECT pf.name, pf.linked_node_code, rn.osm_node_ref AS registered_node_code
+            FROM poi_facility pf
+            JOIN pilot_area pa ON pa.id = pf.pilot_area_id
+            LEFT JOIN road_node rn ON rn.osm_node_ref = pf.linked_node_code
+              AND rn.pilot_area_id = pf.pilot_area_id
+            WHERE pf.poi_type = 'REST_AREA' AND pf.status = 'ACTIVE'
+              AND pa.area_code = :area_code AND pa.status = 'ACTIVE'
+            ORDER BY pf.id
+            """
+        ),
+        {"area_code": area_code},
+    ).mappings()
+    return [dict(row) for row in rows]
 
 
 def load_active_segments(db: Session, area_code: str) -> list[dict]:
